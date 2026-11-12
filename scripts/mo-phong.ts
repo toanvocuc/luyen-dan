@@ -1,7 +1,8 @@
 // Mô phỏng cân bằng: chạy `npm run mo-phong`. Không cần trình duyệt.
-// In ra, với từng đan phương và từng kiểu chơi, tỉ lệ nổ lò + phân bố phẩm cấp + giá trị kỳ vọng mỗi mẻ.
-import { DAN_PHUONG, DUOC_LIEU, HE_SO_GIA, HE_SO_DAN_VAN, LUAT, laDanThat, NANG_CAP_GOC, PHU_LIEU, timDuocLieu, type Tuoi } from '../src/game/duLieu.ts';
-import { batDauMe, giuLua, moLo, tinhTiLe, vaoChuThien, type Me } from '../src/game/luyenDan.ts';
+// Với từng đan phương và từng kiểu chơi (tay nghề giữ lửa, tuổi thuốc, tôi đan tới cấp mấy thì dừng),
+// in ra tỉ lệ nổ lò, số viên, phân bố phẩm, và lãi kỳ vọng mỗi mẻ khi bán ở phường thị.
+import { DAN_PHUONG, LUAT, NANG_CAP_GOC, giaBan, laDanThat, timDuocLieu, type Tuoi } from '../src/game/duLieu.ts';
+import { batDauMe, coTheToi, giuLua, moLo, toiDan, type Me } from '../src/game/luyenDan.ts';
 
 // bộ sinh số ngẫu nhiên có hạt giống, để kết quả lặp lại được
 function taoRng(hat: number) {
@@ -18,63 +19,81 @@ function taoRng(hat: number) {
 interface KieuChoi {
   ten: string;
   tuoi: Tuoi;
-  /** Phần thời gian giữ lửa trong vùng; phần còn lại chia đều nóng/lạnh. */
+  /** Phần thời gian giữ lửa trong vùng; phần còn lại 70% nguội, 30% nóng. */
   trong: number;
-  chuThien: number;
-  phuLieu: string | null;
+  /** Tôi đan tới cấp này thì thu. */
+  dungO: number;
 }
 
 const KIEU: KieuChoi[] = [
-  { ten: 'vụng, thuốc rẻ, thu ngay', tuoi: 0, trong: 0.45, chuThien: 0, phuLieu: null },
-  { ten: 'khá, thuốc rẻ, thu ngay', tuoi: 0, trong: 0.75, chuThien: 0, phuLieu: null },
-  { ten: 'khá, thuốc trăm năm, thu ngay', tuoi: 1, trong: 0.75, chuThien: 0, phuLieu: null },
-  { ten: 'khá, trăm năm, 2 chu thiên', tuoi: 1, trong: 0.75, chuThien: 2, phuLieu: null },
-  { ten: 'giỏi, ngàn năm, Hỏa Tinh, 3 chu thiên', tuoi: 2, trong: 0.9, chuThien: 3, phuLieu: 'hoa-tinh' },
-  { ten: 'giỏi, ngàn năm, Ngưng Thần, 3 chu thiên', tuoi: 2, trong: 0.9, chuThien: 3, phuLieu: 'ngung-than-thao' },
+  { ten: 'vụng (45%), thuốc 10 năm, không tôi', tuoi: 0, trong: 0.45, dungO: 0 },
+  { ten: 'khá (70%), thuốc 10 năm, không tôi', tuoi: 0, trong: 0.7, dungO: 0 },
+  { ten: 'khá (70%), thuốc 10 năm, tôi +2', tuoi: 0, trong: 0.7, dungO: 2 },
+  { ten: 'khá (70%), thuốc 10 năm, tôi +4', tuoi: 0, trong: 0.7, dungO: 4 },
+  { ten: 'khá (70%), thuốc 10 năm, tôi +6', tuoi: 0, trong: 0.7, dungO: 6 },
+  { ten: 'khá (70%), thuốc 100 năm, tôi +3', tuoi: 1, trong: 0.7, dungO: 3 },
+  { ten: 'giỏi (85%), thuốc 1000 năm, tôi +3', tuoi: 2, trong: 0.85, dungO: 3 },
+  { ten: 'giỏi (85%), thuốc 1000 năm, tôi +6', tuoi: 2, trong: 0.85, dungO: 6 },
 ];
 
-function luyen(me: Me, giay: number, trong: number): Me {
+function khongHoa(me: Me, giay: number, trong: number): Me {
   const conLai = giay * (1 - trong);
   let m = giuLua(me, 'trong', giay * trong);
-  m = giuLua(m, 'lanh', conLai / 2);
-  return giuLua(m, 'nong', conLai / 2);
+  m = giuLua(m, 'lanh', conLai * 0.7);
+  return giuLua(m, 'nong', conLai * 0.3);
 }
 
-const pt = (x: number) => (x * 100).toFixed(1).padStart(5) + '%';
+const pt = (x: number) => (x * 100).toFixed(0).padStart(3) + '%';
 const SO_ME = 20000;
 const rng = taoRng(12345);
 
 for (const phuong of DAN_PHUONG) {
-  console.log(`\n=== ${phuong.ten} (độ khó ${phuong.doKho}, giá gốc ${phuong.giaGoc}) ===`);
-  console.log('kiểu chơi'.padEnd(40), 'nổ lò   phế    hạ     trung  thượng cực  | vốn   thu/mẻ  lãi/mẻ');
+  console.log(`\n=== ${phuong.ten} (độ khó ${phuong.doKho}, hạ phẩm bán ${giaBan(phuong, 0)}) ===`);
+  console.log('kiểu chơi'.padEnd(38), 'hỏng  viên  phế   hạ trung thượng cực(văn) |  vốn   thu   lãi');
   for (const k of KIEU) {
-    const pl = PHU_LIEU.find((p) => p.id === k.phuLieu) ?? null;
-    let me = batDauMe([k.tuoi, k.tuoi, k.tuoi], pl, NANG_CAP_GOC);
-    me = luyen(me, phuong.doan.reduce((s, d) => s + d.giay, 0), k.trong);
-    for (let c = 0; c < k.chuThien; c++) {
-      me = vaoChuThien(me);
-      // mỗi chu thiên vùng hẹp hơn nên giữ lửa kém đi một chút
-      me = luyen(me, LUAT.chuThien.giay, Math.max(0.2, k.trong - 0.08 * (c + 1)));
-    }
-    const t = tinhTiLe(phuong, me, NANG_CAP_GOC);
-    const von = phuong.lieu.reduce((s, id) => s + timDuocLieu(id).gia[k.tuoi], 0) + (pl?.gia ?? 0);
-
+    const tongGiay = phuong.doan.reduce((s, d) => s + d.giay, 0);
+    const von = phuong.lieu.reduce((s, id) => s + timDuocLieu(id).gia[k.tuoi], 0);
     let thu = 0;
-    let no = 0;
+    let hong = 0;
+    let tongVien = 0;
+    const dem = [0, 0, 0, 0, 0]; // phế, hạ, trung, thượng, đan văn
     for (let i = 0; i < SO_ME; i++) {
-      const kq = moLo(phuong, me, NANG_CAP_GOC, rng);
-      if (kq.noLo) {
-        no++;
+      let me = khongHoa(batDauMe([k.tuoi, k.tuoi, k.tuoi], null, NANG_CAP_GOC), tongGiay, k.trong);
+      let no = false;
+      while (me.cap < k.dungO && coTheToi(me)) {
+        const r = toiDan(phuong, me, NANG_CAP_GOC, rng());
+        me = r.me;
+        if (r.loai === 'no') {
+          no = true;
+          break;
+        }
+      }
+      if (no) {
+        hong++;
+        thu -= LUAT.giaSuaLo;
         continue;
       }
-      for (const v of kq.vien) if (laDanThat(v.pham)) thu += phuong.giaGoc * HE_SO_GIA[v.pham] * (v.danVan ? HE_SO_DAN_VAN : 1);
+      if (me.soVien <= 0) {
+        hong++;
+        continue;
+      }
+      for (const v of moLo(phuong, me, rng).vien) {
+        tongVien++;
+        if (v.danVan) {
+          dem[4]++;
+          thu += giaBan(phuong, 3, true);
+        } else if (laDanThat(v.pham)) {
+          dem[v.pham + 1]++;
+          thu += giaBan(phuong, v.pham);
+        } else dem[0]++;
+      }
     }
-    const thuTb = thu / SO_ME;
+    const tv = Math.max(1, tongVien);
     console.log(
-      k.ten.padEnd(40),
-      pt(no / SO_ME), ...t.vien.map(pt),
-      '|', String(von).padStart(4), thuTb.toFixed(0).padStart(7), (thuTb - von).toFixed(0).padStart(7),
+      k.ten.padEnd(38),
+      pt(hong / SO_ME), (tongVien / SO_ME).toFixed(1).padStart(5), ...dem.map((d) => pt(d / tv).padStart(5)),
+      '   |', String(von).padStart(4), (thu / SO_ME).toFixed(0).padStart(5), (thu / SO_ME - von).toFixed(0).padStart(5),
     );
   }
 }
-console.log(`\n(${SO_ME} mẻ mỗi dòng; ${DUOC_LIEU.length} dược liệu, ${DAN_PHUONG.length} đan phương)`);
+console.log(`\n(${SO_ME} mẻ mỗi dòng. "hỏng" = nổ lò hoặc tổn hết viên. Lãi đã trừ tiền sửa lò ${LUAT.giaSuaLo}.)`);
