@@ -98,6 +98,19 @@ export function duLieu(k: Kho, lieu: readonly string[], tuoi: readonly Tuoi[], p
   return true;
 }
 
+/** Liệt kê dược liệu còn thiếu cho lựa chọn hiện tại (gộp theo vị và tuổi thuốc). */
+export function thieuGi(k: Kho, lieu: readonly string[], tuoi: readonly Tuoi[]): { id: string; tuoi: Tuoi; thieu: number }[] {
+  const can = new Map<string, number>();
+  lieu.forEach((id, i) => can.set(`${id}|${tuoi[i]}`, (can.get(`${id}|${tuoi[i]}`) ?? 0) + 1));
+  const ra: { id: string; tuoi: Tuoi; thieu: number }[] = [];
+  for (const [khoa, n] of can) {
+    const [id, t] = khoa.split('|');
+    const co = k.duocLieu[id]?.[Number(t)] ?? 0;
+    if (co < n) ra.push({ id, tuoi: Number(t) as Tuoi, thieu: n - co });
+  }
+  return ra;
+}
+
 /** Trừ nguyên liệu khi khai lò. */
 export function truNguyenLieu(k: Kho, lieu: readonly string[], tuoi: readonly Tuoi[], phuLieuId: string | null): Kho {
   const duocLieu = { ...k.duocLieu };

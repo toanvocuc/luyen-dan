@@ -15,7 +15,10 @@ import {
   type DanPhuong,
   type Tuoi,
 } from '../game/duLieu.ts';
-import { duLieu, nhanKetQua, suaLo, truNguyenLieu, type Kho } from '../game/kho.ts';
+import { duLieu, nhanKetQua, suaLo, thieuGi, truNguyenLieu, type Kho } from '../game/kho.ts';
+
+/** Nhãn ngắn của tuổi thuốc trên nút chọn. */
+const TEN_TUOI_SO = ['10', '100', '1000'] as const;
 import {
   batDauMe,
   coTheToi,
@@ -97,6 +100,10 @@ export function LoDan({ kho, doiKho }: { kho: Kho; doiKho: (ham: (k: Kho) => Kho
   const phuLieu = timPhuLieu(phuLieuId);
   const meXem = pha === 'phoi' || !me ? batDauMe(tuoi, phuLieu, nangCap) : me;
   const duNguyenLieu = duLieu(kho, phuong.lieu, tuoi, phuLieuId);
+  const thieu = thieuGi(kho, phuong.lieu, tuoi);
+  const chuThieu = thieu.length
+    ? `Thiếu ${thieu.map((t) => `${timDuocLieu(t.id).ten} ${TEN_TUOI_NGAN[t.tuoi]}`).join(', ')}`
+    : 'Thiếu phụ liệu';
   const daThongThao = (kho.thongThao[phuong.id] ?? 0) >= LUAT.thongThao;
 
   const daMo = (i: number) => i === 0 || (kho.thongThao[DAN_PHUONG[i - 1].id] ?? 0) >= ME_DE_MO_KHOA;
@@ -268,12 +275,31 @@ export function LoDan({ kho, doiKho }: { kho: Kho; doiKho: (ham: (k: Kho) => Kho
     datPha('phoi');
   };
 
-  const doiTuoi = (i: number) =>
+  const datTuoiO = (i: number, t: Tuoi) =>
     datTuoi((c) => {
       const m = [...c] as [Tuoi, Tuoi, Tuoi];
-      m[i] = ((c[i] + 1) % 3) as Tuoi;
+      m[i] = t;
       return m;
     });
+
+  // Mỗi khi về bước phối liệu hoặc đổi đan phương: tự chọn tuổi thuốc đang có sẵn cho từng ô
+  // (ưu tiên giữ lựa chọn cũ nếu còn đủ, không thì lấy tuổi thấp nhất còn hàng).
+  useEffect(() => {
+    if (pha !== 'phoi') return;
+    const con: Record<string, number[]> = {};
+    const chon = phuong.lieu.map((id, i) => {
+      con[id] ??= [...(kho.duocLieu[id] ?? [0, 0, 0])];
+      const uuTien = [tuoi[i], 0, 1, 2] as Tuoi[];
+      const t = uuTien.find((x) => con[id][x] > 0) ?? tuoi[i];
+      con[id][t] -= 1;
+      return t;
+    }) as [Tuoi, Tuoi, Tuoi];
+    if (chon.some((t, i) => t !== tuoi[i])) datTuoi(chon);
+    // phụ liệu đã dùng hết thì bỏ chọn, kẻo nút khai lò báo thiếu mà không rõ vì sao
+    if (phuLieuId && (kho.phuLieu[phuLieuId] ?? 0) < 1) datPhuLieuId(null);
+    // chỉ chạy khi đổi pha, đổi đan phương hoặc kho dược liệu thay đổi (mua thêm ở phường thị)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pha, phuongId, kho.duocLieu, kho.phuLieu]);
 
   const giu = (dangGiu: boolean) => (e: React.PointerEvent<HTMLDivElement>) => {
     if (pha !== 'lua') return;
@@ -380,15 +406,21 @@ export function LoDan({ kho, doiKho }: { kho: Kho; doiKho: (ham: (k: Kho) => Kho
             <div className="hang-lieu">
               {phuong.lieu.map((id, i) => {
                 const d = timDuocLieu(id);
-                const con = kho.duocLieu[id]?.[tuoi[i]] ?? 0;
+                const co = kho.duocLieu[id] ?? [0, 0, 0];
+                const biThieu = thieu.some((t) => t.id === id && t.tuoi === tuoi[i]);
                 return (
-                  <button key={i} className={`o-lieu tuoi-${tuoi[i]} ${con < 1 ? 'thieu' : ''}`} onClick={() => doiTuoi(i)}>
+                  <div key={i} className={`o-lieu tuoi-${tuoi[i]} ${biThieu ? 'thieu' : ''}`}>
                     <img src={anhDuocLieu(id)} alt="" />
                     <b>{d.ten}</b>
-                    <span className="tuoi">
-                      {TEN_TUOI_NGAN[tuoi[i]]} · còn {con}
+                    <span className="chon-tuoi">
+                      {([0, 1, 2] as Tuoi[]).map((t) => (
+                        <button key={t} className={`nut-tuoi tuoi-${t} ${tuoi[i] === t ? 'chon' : ''}`} disabled={co[t] < 1} onClick={() => datTuoiO(i, t)}>
+                          <em>{TEN_TUOI_SO[t]}</em>
+                          <small>×{co[t]}</small>
+                        </button>
+                      ))}
                     </span>
-                  </button>
+                  </div>
                 );
               })}
             </div>
@@ -408,7 +440,7 @@ export function LoDan({ kho, doiKho }: { kho: Kho; doiKho: (ham: (k: Kho) => Kho
                 </button>
               ))}
             </div>
-            <p className="chu-nho an-khi-thap">{phuLieu ? phuLieu.moTa + '.' : phuong.moTa + ' Chạm dược liệu để đổi tuổi thuốc.'}</p>
+            <p className="chu-nho an-khi-thap">{phuLieu ? phuLieu.moTa + '.' : phuong.moTa + ' Chọn tuổi thuốc (năm) cho từng vị: thuốc càng lâu năm, phẩm đan càng cao.'}</p>
             <div className="hang-nut">
               {kho.loHu ? (
                 <button className="nut chinh" onClick={() => doiKho(suaLo)}>
@@ -417,7 +449,7 @@ export function LoDan({ kho, doiKho }: { kho: Kho; doiKho: (ham: (k: Kho) => Kho
               ) : (
                 <>
                   <button className="nut chinh" disabled={!duNguyenLieu} onClick={() => khaiLo(false)}>
-                    {duNguyenLieu ? 'Khai lò' : 'Thiếu dược liệu'}
+                    {duNguyenLieu ? 'Khai lò' : chuThieu}
                   </button>
                   {daThongThao && (
                     <button className="nut" disabled={!duNguyenLieu} onClick={() => khaiLo(true)}>
