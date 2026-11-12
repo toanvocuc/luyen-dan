@@ -1,4 +1,4 @@
-// Màn hình lò đan: phối liệu -> khống hỏa -> tôi đan (quay xác suất, liều hay chốt) -> mở lò.
+// Màn hình lò đan: phối liệu -> khống hỏa -> tôi đan (dừng con lắc đúng khoảng xanh) -> mở lò.
 import { useEffect, useRef, useState } from 'react';
 import {
   DAN_PHUONG,
@@ -16,9 +16,6 @@ import {
   type Tuoi,
 } from '../game/duLieu.ts';
 import { duLieu, nhanKetQua, suaLo, thieuGi, truNguyenLieu, type Kho } from '../game/kho.ts';
-
-/** Nhãn ngắn của tuổi thuốc trên nút chọn. */
-const TEN_TUOI_SO = ['10', '100', '1000'] as const;
 import {
   batDauMe,
   coTheToi,
@@ -27,20 +24,27 @@ import {
   moLo,
   quaAp,
   rongVung,
-  tiLeToi,
   tiLeVien,
+  tocDoGoc,
   toiDan,
+  viTriConLac,
+  vungToi,
   type KetQua,
   type KetQuaToi,
   type Me,
   type Vung,
+  type VungToi,
 } from '../game/luyenDan.ts';
-import { ThanhTiLe, doanPham, doanToi } from './ThanhTiLe.tsx';
+import { ThanhTiLe, doanPham } from './ThanhTiLe.tsx';
 
 type Pha = 'phoi' | 'lua' | 'toi' | 'mo';
 
 /** Số mẻ phải luyện thành ở đan phương trước thì mới mở đan phương kế. */
 const ME_DE_MO_KHOA = 3;
+/** Nhãn ngắn của tuổi thuốc trên nút chọn. */
+const TEN_TUOI_SO = ['10', '100', '1000'] as const;
+/** Con lắc đứng yên bấy nhiêu mili giây sau mỗi lần bấm để người chơi kịp thấy mình dừng ở đâu. */
+const NGHI_SAU_BAM = 750;
 
 const kep = (x: number, a: number, b: number) => Math.min(b, Math.max(a, x));
 const muot = (x: number) => {
@@ -65,8 +69,8 @@ function tamVong(phuong: DanPhuong, t: number): { tam: number; doan: number } {
 
 const CHU_TOI: Record<KetQuaToi, string> = {
   no: 'Nổ lò!',
-  ton: 'Tổn một viên',
-  giu: 'Không đổi',
+  lech: 'Lệch! Tổn một viên',
+  truot: 'Trượt! Áp lò tăng',
   thanh: 'Thành! +1',
   'dai-thanh': 'Đại thành! +2',
 };
@@ -84,8 +88,8 @@ export function LoDan({ kho, doiKho }: { kho: Kho; doiKho: (ham: (k: Kho) => Kho
   const [xungDot, datXungDot] = useState(0);
   const [ketQua, datKetQua] = useState<KetQua | null>(null);
   const [soHien, datSoHien] = useState(0);
-  const [quay, datQuay] = useState<{ den: number; luot: number } | null>(null);
-  const [dangQuay, datDangQuay] = useState(false);
+  const [vt, datVt] = useState<VungToi | null>(null);
+  const [dangNghi, datDangNghi] = useState(false);
   const [baoToi, datBaoToi] = useState<{ loai: KetQuaToi; luot: number } | null>(null);
 
   const meRef = useRef<Me | null>(null);
@@ -95,6 +99,13 @@ export function LoDan({ kho, doiKho }: { kho: Kho; doiKho: (ham: (k: Kho) => Kho
   const apRef = useRef<HTMLDivElement>(null);
   const tienDoRef = useRef<HTMLDivElement>(null);
   const canhRef = useRef<HTMLDivElement>(null);
+  // con lắc tôi đan
+  const vtRef = useRef<VungToi | null>(null);
+  const phaLacRef = useRef(0);
+  const viTriRef = useRef(0);
+  const nghiRef = useRef(false);
+  const khoaBamRef = useRef(0);
+  const conLacRef = useRef<HTMLDivElement>(null);
 
   const nangCap = kho.nangCap;
   const phuLieu = timPhuLieu(phuLieuId);
@@ -112,6 +123,24 @@ export function LoDan({ kho, doiKho }: { kho: Kho; doiKho: (ham: (k: Kho) => Kho
     datKetQua(kq);
     datPha('mo');
     doiKho((k) => nhanKetQua(k, phuong.id, kq));
+  };
+
+  /** Đặt bố cục thanh tôi đan cho lần bấm kế tiếp. */
+  const datVungToi = (m: Me) => {
+    const v = vungToi(phuong, m, Math.random());
+    vtRef.current = v;
+    datVt(v);
+  };
+
+  const vaoToi = (m: Me) => {
+    phaLacRef.current = Math.random() * Math.PI * 2;
+    nghiRef.current = false;
+    datDangNghi(false);
+    datBaoToi(null);
+    datVungToi(m);
+    // nửa giây đầu chưa nhận bấm, kẻo cú chạm cuối của bước khống hỏa bị tính thành một lần tôi đan
+    khoaBamRef.current = performance.now() + 500;
+    datPha('toi');
   };
 
   // ---- vòng lặp khống hỏa ----
@@ -135,6 +164,7 @@ export function LoDan({ kho, doiKho }: { kho: Kho; doiKho: (ham: (k: Kho) => Kho
     let doanCu = -1;
     let nhiet = tamVong(phuong, 0).tam;
     let vanToc = 0;
+    let giayNong = 0;
     let raf = 0;
     giuRef.current = false;
 
@@ -161,8 +191,9 @@ export function LoDan({ kho, doiKho }: { kho: Kho; doiKho: (ham: (k: Kho) => Kho
       const { tam, doan } = tamVong(phuong, t);
       const tamKep = kep(tam + lech, rong / 2, 100 - rong / 2);
       const v: Vung = nhiet > tamKep + rong / 2 ? 'nong' : nhiet < tamKep - rong / 2 ? 'lanh' : 'trong';
+      giayNong = v === 'nong' ? giayNong + dt : 0;
       // giây đầu tiên không tính điểm, cho người chơi kịp đặt tay
-      if (t >= 1) meRef.current = giuLua(meRef.current!, v, dt);
+      if (t >= 1) meRef.current = giuLua(meRef.current!, v, dt, nangCap, giayNong);
 
       if (kimRef.current) kimRef.current.style.bottom = `${nhiet}%`;
       if (vungRef.current) {
@@ -171,7 +202,10 @@ export function LoDan({ kho, doiKho }: { kho: Kho; doiKho: (ham: (k: Kho) => Kho
       }
       if (apRef.current) apRef.current.style.height = `${kep(meRef.current!.apLo / LUAT.apNoLo, 0, 1) * 100}%`;
       if (tienDoRef.current) tienDoRef.current.style.width = `${kep(t / tong, 0, 1) * 100}%`;
-      if (canhRef.current) canhRef.current.style.setProperty('--lua', String(nhiet / 100));
+      if (canhRef.current) {
+        canhRef.current.style.setProperty('--lua', String(nhiet / 100));
+        canhRef.current.classList.toggle('bao-dong', meRef.current!.apLo >= LUAT.apNoLo * 0.6);
+      }
 
       if (doan !== doanCu) {
         doanCu = doan;
@@ -189,7 +223,7 @@ export function LoDan({ kho, doiKho }: { kho: Kho; doiKho: (ham: (k: Kho) => Kho
       }
       if (t >= tong) {
         datMe(meRef.current);
-        datPha('toi');
+        vaoToi(meRef.current!);
         return;
       }
       raf = requestAnimationFrame(buoc);
@@ -209,12 +243,67 @@ export function LoDan({ kho, doiKho }: { kho: Kho; doiKho: (ham: (k: Kho) => Kho
     window.addEventListener('keyup', phimLen);
     return () => {
       cancelAnimationFrame(raf);
+      canhRef.current?.classList.remove('bao-dong');
       window.removeEventListener('keydown', phimXuong);
       window.removeEventListener('keyup', phimLen);
     };
     // chỉ chạy lại khi bắt đầu một lượt khống hỏa mới
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pha, luot]);
+
+  // ---- tôi đan: con lắc chạy qua lại, bấm để dừng ----
+  const bamToi = () => {
+    const m = meRef.current;
+    const v = vtRef.current;
+    if (pha !== 'toi' || !m || !v || nghiRef.current || !coTheToi(m) || performance.now() < khoaBamRef.current) return;
+    const kq = toiDan(m, v, viTriRef.current, nangCap);
+    meRef.current = kq.me;
+    datMe(kq.me);
+    datBaoToi((b) => ({ loai: kq.loai, luot: (b?.luot ?? 0) + 1 }));
+    nghiRef.current = true;
+    datDangNghi(true);
+    setTimeout(() => {
+      if (kq.loai === 'no') ketThuc({ noLo: true, vien: [] });
+      else if (kq.me.soVien <= 0) ketThuc({ noLo: false, vien: [] });
+      else {
+        // khoảng xanh nhảy sang chỗ mới, hẹp hơn nếu vừa lên cấp
+        datVungToi(kq.me);
+        nghiRef.current = false;
+        datDangNghi(false);
+      }
+    }, NGHI_SAU_BAM);
+  };
+  const bamToiRef = useRef(bamToi);
+  bamToiRef.current = bamToi;
+
+  useEffect(() => {
+    if (pha !== 'toi') return;
+    let truoc = performance.now();
+    let raf = 0;
+    const buoc = (now: number) => {
+      const dt = Math.min(0.05, (now - truoc) / 1000);
+      truoc = now;
+      const v = vtRef.current;
+      if (v && !nghiRef.current) {
+        phaLacRef.current += tocDoGoc(v) * dt;
+        viTriRef.current = viTriConLac(phaLacRef.current);
+        if (conLacRef.current) conLacRef.current.style.left = `${viTriRef.current * 100}%`;
+      }
+      raf = requestAnimationFrame(buoc);
+    };
+    raf = requestAnimationFrame(buoc);
+    const phim = (e: KeyboardEvent) => {
+      if (e.code === 'Space' && !e.repeat) {
+        e.preventDefault();
+        bamToiRef.current();
+      }
+    };
+    window.addEventListener('keydown', phim);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('keydown', phim);
+    };
+  }, [pha]);
 
   // ---- mở lò: hiện từng viên một ----
   useEffect(() => {
@@ -228,13 +317,11 @@ export function LoDan({ kho, doiKho }: { kho: Kho; doiKho: (ham: (k: Kho) => Kho
     if (!duNguyenLieu || kho.loHu) return;
     doiKho((k) => truNguyenLieu(k, phuong.lieu, tuoi, phuLieuId));
     let m = batDauMe(tuoi, phuLieu, nangCap);
-    datQuay(null);
-    datBaoToi(null);
     if (nhanh) {
-      m = luyenNhanh(phuong, m);
+      m = luyenNhanh(phuong, m, nangCap);
       meRef.current = m;
       datMe(m);
-      datPha('toi');
+      vaoToi(m);
       return;
     }
     meRef.current = m;
@@ -244,25 +331,8 @@ export function LoDan({ kho, doiKho }: { kho: Kho; doiKho: (ham: (k: Kho) => Kho
     datPha('lua');
   };
 
-  // ---- tôi đan: kim chạy trên thanh rồi dừng ở đúng số quay được ----
-  const toi = () => {
-    if (!meRef.current || dangQuay || !coTheToi(meRef.current)) return;
-    const r = Math.random();
-    const kq = toiDan(phuong, meRef.current, nangCap, r);
-    datDangQuay(true);
-    datQuay((q) => ({ den: r, luot: (q?.luot ?? 0) + 1 }));
-    setTimeout(() => {
-      meRef.current = kq.me;
-      datMe(kq.me);
-      datBaoToi((b) => ({ loai: kq.loai, luot: (b?.luot ?? 0) + 1 }));
-      datDangQuay(false);
-      if (kq.loai === 'no') ketThuc({ noLo: true, vien: [] });
-      else if (kq.me.soVien <= 0) ketThuc({ noLo: false, vien: [] });
-    }, 650);
-  };
-
   const thuDan = () => {
-    if (!meRef.current || dangQuay) return;
+    if (!meRef.current || nghiRef.current) return;
     ketThuc(moLo(phuong, meRef.current));
   };
 
@@ -270,8 +340,8 @@ export function LoDan({ kho, doiKho }: { kho: Kho; doiKho: (ham: (k: Kho) => Kho
     meRef.current = null;
     datMe(null);
     datKetQua(null);
-    datQuay(null);
     datBaoToi(null);
+    datVt(null);
     datPha('phoi');
   };
 
@@ -297,11 +367,15 @@ export function LoDan({ kho, doiKho }: { kho: Kho; doiKho: (ham: (k: Kho) => Kho
     if (chon.some((t, i) => t !== tuoi[i])) datTuoi(chon);
     // phụ liệu đã dùng hết thì bỏ chọn, kẻo nút khai lò báo thiếu mà không rõ vì sao
     if (phuLieuId && (kho.phuLieu[phuLieuId] ?? 0) < 1) datPhuLieuId(null);
-    // chỉ chạy khi đổi pha, đổi đan phương hoặc kho dược liệu thay đổi (mua thêm ở phường thị)
+    // chỉ chạy khi đổi pha, đổi đan phương hoặc kho thay đổi (mua thêm ở phường thị)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pha, phuongId, kho.duocLieu, kho.phuLieu]);
 
   const giu = (dangGiu: boolean) => (e: React.PointerEvent<HTMLDivElement>) => {
+    if (pha === 'toi') {
+      if (dangGiu) bamToi();
+      return;
+    }
     if (pha !== 'lua') return;
     giuRef.current = dangGiu;
     if (dangGiu) {
@@ -315,6 +389,7 @@ export function LoDan({ kho, doiKho }: { kho: Kho; doiKho: (ham: (k: Kho) => Kho
 
   const moXong = !!ketQua && (ketQua.noLo || soHien >= ketQua.vien.length);
   const soDanThat = ketQua ? ketQua.vien.filter((v) => v.pham >= 0).length : 0;
+  const phanAp = me ? kep(me.apLo / LUAT.apNoLo, 0, 1) : 0;
 
   return (
     <main className="lo-dan">
@@ -347,7 +422,7 @@ export function LoDan({ kho, doiKho }: { kho: Kho; doiKho: (ham: (k: Kho) => Kho
               <span className="nhan">Nguội</span>
             </div>
             <div className={`trang-thai-lua ${vung}`}>
-              {vung === 'trong' ? 'Hỏa hầu vừa đẹp' : vung === 'nong' ? 'Quá nóng — áp lò đang tăng' : 'Quá nguội — đan khí đang rò'}
+              {vung === 'trong' ? 'Hỏa hầu vừa đẹp' : vung === 'nong' ? 'Quá nóng — áp lò dâng nhanh!' : 'Quá nguội — đan khí đang rò'}
             </div>
             {xungDot > 0 && (
               <div key={xungDot} className="bao-xung-dot">
@@ -440,7 +515,9 @@ export function LoDan({ kho, doiKho }: { kho: Kho; doiKho: (ham: (k: Kho) => Kho
                 </button>
               ))}
             </div>
-            <p className="chu-nho an-khi-thap">{phuLieu ? phuLieu.moTa + '.' : phuong.moTa + ' Chọn tuổi thuốc (năm) cho từng vị: thuốc càng lâu năm, phẩm đan càng cao.'}</p>
+            <p className="chu-nho an-khi-thap">
+              {phuLieu ? phuLieu.moTa + '.' : phuong.moTa + ' Chọn tuổi thuốc (năm) cho từng vị: thuốc càng lâu năm, phẩm đan càng cao.'}
+            </p>
             <div className="hang-nut">
               {kho.loHu ? (
                 <button className="nut chinh" onClick={() => doiKho(suaLo)}>
@@ -469,11 +546,11 @@ export function LoDan({ kho, doiKho }: { kho: Kho; doiKho: (ham: (k: Kho) => Kho
             <div className="tien-do">
               <div ref={tienDoRef} />
             </div>
-            <p className="chu-nho">Nhấn giữ màn hình để tăng lửa, thả tay để hạ lửa. Lửa có đà — hãy đón trước vùng sáng.</p>
+            <p className="chu-nho">Nhấn giữ màn hình để tăng lửa, thả tay để hạ lửa. Lửa có đà — hãy đón trước vùng sáng. Quá nóng một chút là áp lò dâng rất nhanh.</p>
           </>
         )}
 
-        {pha === 'toi' && me && (
+        {pha === 'toi' && me && vt && (
           <>
             <div className="dau-toi">
               <b>Tôi đan +{me.cap}</b>
@@ -484,16 +561,45 @@ export function LoDan({ kho, doiKho }: { kho: Kho; doiKho: (ham: (k: Kho) => Kho
               </span>
               <span>{me.soVien} viên</span>
             </div>
-            <ThanhTiLe doan={doanToi(tiLeToi(phuong, me, nangCap))} kim={quay} />
+
+            <div className={`thanh-toi ${dangNghi ? 'nghi' : ''}`}>
+              <span className="dai gan" style={{ left: `${(vt.tam - vt.xanh / 2 - vt.gan) * 100}%`, width: `${(vt.xanh + 2 * vt.gan) * 100}%` }} />
+              <span className="dai xanh" style={{ left: `${(vt.tam - vt.xanh / 2) * 100}%`, width: `${vt.xanh * 100}%` }} />
+              <span className="dai vang" style={{ left: `${(vt.tam - vt.vang / 2) * 100}%`, width: `${vt.vang * 100}%` }} />
+              <div ref={conLacRef} className="con-lac" />
+            </div>
+            <div className="chu-thich-toi">
+              <span className="toi-dai-thanh">Vàng: +2</span>
+              <span className="toi-thanh">Xanh: +1</span>
+              <span className="toi-truot">Sát ngoài: áp lò tăng</span>
+              <span className="toi-lech">Xa: tổn một viên</span>
+            </div>
+
+            <div className={`thanh-ap ${phanAp >= 0.6 ? 'nguy' : ''}`}>
+              <span>Áp lò</span>
+              <div>
+                <i style={{ width: `${phanAp * 100}%` }} />
+              </div>
+              <b>{Math.round(phanAp * 100)}%</b>
+            </div>
+
+            <p className="chu-nho an-khi-thap">Bấm Tôi đan (hoặc chạm vào lò) đúng lúc con lắc trắng nằm trong khoảng xanh. Mỗi cấp con lắc chạy nhanh hơn và khoảng xanh hẹp lại.</p>
             <div className="neu-thu">
               <span>Nếu thu bây giờ:</span>
               <ThanhTiLe doan={doanPham(tiLeVien(phuong, me))} gon />
             </div>
             <div className="hang-nut">
-              <button className="nut chinh" disabled={dangQuay || !coTheToi(me)} onClick={toi}>
+              <button
+                className="nut chinh"
+                disabled={dangNghi || !coTheToi(me)}
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  bamToi();
+                }}
+              >
                 {coTheToi(me) ? 'Tôi đan' : 'Đã tới đỉnh'}
               </button>
-              <button className="nut" disabled={dangQuay} onClick={thuDan}>
+              <button className="nut" disabled={dangNghi} onClick={thuDan}>
                 Thu đan
               </button>
             </div>
@@ -504,7 +610,7 @@ export function LoDan({ kho, doiKho }: { kho: Kho; doiKho: (ham: (k: Kho) => Kho
           <>
             <div className="ten-doan">
               {ketQua.noLo
-                ? 'Lò nổ tung, cả mẻ đan tan thành khói. Lò cần sửa.'
+                ? 'Áp lò vượt ngưỡng, lò nổ tung, cả mẻ đan tan thành khói. Lò cần sửa.'
                 : ketQua.vien.length === 0
                   ? 'Đan khí tan hết trong lúc tôi luyện — không còn viên nào.'
                   : moXong

@@ -999,3 +999,128 @@ button {
   opacity: 1;
   color: var(--mau-no-lo);
 }
+
+/* ================= tôi đan: con lắc ================= */
+.thanh-toi {
+  position: relative;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--dong);
+  /* nền đỏ = vùng lệch: mất một viên */
+  background: linear-gradient(#5a1c16, #3a120e);
+  box-shadow: inset 0 0 10px #000;
+  overflow: hidden;
+}
+.thanh-toi .dai {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+.thanh-toi .dai.gan {
+  background: #6b5a3a;
+}
+.thanh-toi .dai.xanh {
+  background: linear-gradient(#5fd89c, #2f9a68);
+  box-shadow: 0 0 10px rgba(76, 195, 138, 0.9);
+}
+.thanh-toi .dai.vang {
+  background: linear-gradient(#fff0a8, #f0b93a);
+  box-shadow: 0 0 10px #ffd76a;
+}
+.con-lac {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  left: 0;
+  width: 4px;
+  margin-left: -2px;
+  border-radius: 2px;
+  background: #fff;
+  box-shadow: 0 0 8px #fff, 0 0 3px #000;
+}
+/* vừa bấm: con lắc đứng lại và nháy để thấy rõ mình dừng ở đâu */
+.thanh-toi.nghi .con-lac {
+  width: 6px;
+  margin-left: -3px;
+  animation: nhay-lac 0.25s ease-in-out 3;
+}
+@keyframes nhay-lac {
+  50% {
+    opacity: 0.35;
+  }
+}
+.chu-thich-toi {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 2px 8px;
+  font-size: 11px;
+}
+.toi-truot {
+  color: #c9ae78;
+}
+.toi-lech {
+  color: #e8705a;
+}
+
+.thanh-ap {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--chu-mo);
+}
+.thanh-ap > div {
+  height: 9px;
+  border-radius: 5px;
+  background: #140a09;
+  border: 1px solid var(--dong-toi);
+  overflow: hidden;
+}
+.thanh-ap i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #7a2a1a, #ff5a36);
+  transition: width 0.2s;
+}
+.thanh-ap b {
+  min-width: 38px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--chu);
+}
+.thanh-ap.nguy b,
+.thanh-ap.nguy span {
+  color: #ff7a5a;
+}
+.thanh-ap.nguy > div {
+  border-color: #ff5a36;
+  animation: bao-dong 0.5s ease-in-out infinite alternate;
+}
+
+/* áp lò vượt 60% lúc khống hỏa: cột áp nháy đỏ, lò rung */
+.canh.bao-dong .ap-lo .ong {
+  border-color: #ff5a36;
+  animation: bao-dong 0.35s ease-in-out infinite alternate;
+}
+.canh.bao-dong .lo {
+  animation: rung-nhe 0.18s linear infinite;
+}
+@keyframes bao-dong {
+  to {
+    box-shadow: 0 0 14px #ff5a36;
+  }
+}
+@keyframes rung-nhe {
+  0%,
+  100% {
+    transform: translateX(-50%);
+  }
+  25% {
+    transform: translateX(-50.8%);
+  }
+  75% {
+    transform: translateX(-49.2%);
+  }
+}

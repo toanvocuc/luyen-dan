@@ -46,12 +46,10 @@ export interface DanPhuong {
   moTa: string;
   /** Ba vị dược liệu cần bỏ vào lò. */
   lieu: readonly [string, string, string];
-  /** Độ khó: kéo phẩm cấp xuống, giảm tỉ lệ tôi đan thành công. */
+  /** Độ khó: kéo phẩm cấp xuống, thu hẹp khoảng xanh khi tôi đan. */
   doKho: number;
   /** Bề rộng vùng hỏa hầu (đơn vị nhiệt 0–100). */
   rongVung: number;
-  /** Tỉ lệ nổ lò gốc mỗi lần tôi đan (0–1). */
-  noLoGoc: number;
   /** Số lần "dược tính xung đột" (vùng hỏa hầu nhảy đột ngột) trong một mẻ. */
   xungDot: number;
   doan: readonly DoanHoa[];
@@ -67,7 +65,6 @@ export const DAN_PHUONG: readonly DanPhuong[] = [
     lieu: ['linh-thao', 'linh-thao', 'chu-qua'],
     doKho: 0,
     rongVung: 20,
-    noLoGoc: 0.02,
     xungDot: 2,
     doan: [
       { ten: 'Văn hỏa', tam: 34, giay: 8 },
@@ -83,7 +80,6 @@ export const DAN_PHUONG: readonly DanPhuong[] = [
     lieu: ['chu-qua', 'han-bang-hoa', 'linh-thao'],
     doKho: 0.3,
     rongVung: 18,
-    noLoGoc: 0.03,
     xungDot: 3,
     doan: [
       { ten: 'Văn hỏa', tam: 30, giay: 6 },
@@ -100,7 +96,6 @@ export const DAN_PHUONG: readonly DanPhuong[] = [
     lieu: ['dia-tam-sam', 'han-bang-hoa', 'tu-van-chi'],
     doKho: 0.6,
     rongVung: 16,
-    noLoGoc: 0.04,
     xungDot: 3,
     doan: [
       { ten: 'Vũ hỏa', tam: 78, giay: 5 },
@@ -117,7 +112,6 @@ export const DAN_PHUONG: readonly DanPhuong[] = [
     lieu: ['han-bang-hoa', 'long-tu-thao', 'tu-van-chi'],
     doKho: 0.85,
     rongVung: 15,
-    noLoGoc: 0.05,
     xungDot: 4,
     doan: [
       { ten: 'Hàn hỏa', tam: 22, giay: 6 },
@@ -134,7 +128,6 @@ export const DAN_PHUONG: readonly DanPhuong[] = [
     lieu: ['dia-tam-sam', 'kim-diep-truc', 'huyet-lien'],
     doKho: 1.1,
     rongVung: 14,
-    noLoGoc: 0.06,
     xungDot: 4,
     doan: [
       { ten: 'Văn hỏa', tam: 36, giay: 5 },
@@ -152,7 +145,6 @@ export const DAN_PHUONG: readonly DanPhuong[] = [
     lieu: ['huyet-lien', 'long-tu-thao', 'kim-diep-truc'],
     doKho: 1.4,
     rongVung: 13,
-    noLoGoc: 0.08,
     xungDot: 5,
     doan: [
       { ten: 'Vũ hỏa', tam: 84, giay: 5 },
@@ -180,8 +172,8 @@ export interface PhuLieu {
 }
 
 export const PHU_LIEU: readonly PhuLieu[] = [
-  { id: 'hoa-tinh', ten: 'Hỏa Tinh', moTa: 'Phẩm đan tăng mạnh, nhưng lò khai sẵn áp cao', chatLuong: 15, apLo: 12, soVien: 0, gia: 40 },
-  { id: 'ngung-than-thao', ten: 'Ngưng Thần Thảo', moTa: 'Lò ổn định hơn, đổi lại ít hơn một viên', chatLuong: 0, apLo: -12, soVien: -1, gia: 25 },
+  { id: 'hoa-tinh', ten: 'Hỏa Tinh', moTa: 'Phẩm đan tăng mạnh, nhưng lò khai sẵn một phần tư áp', chatLuong: 15, apLo: 25, soVien: 0, gia: 40 },
+  { id: 'ngung-than-thao', ten: 'Ngưng Thần Thảo', moTa: 'Lò chịu thêm một phần tư áp, đổi lại ít hơn một viên', chatLuong: 0, apLo: -25, soVien: -1, gia: 25 },
 ];
 
 /** Hệ số giá theo phẩm cấp (nhân với giaGoc của đan phương). */
@@ -195,26 +187,42 @@ export const LUAT = {
 
   /** Khống hỏa: nhiệt có quán tính — nhấn giữ là gia tốc lên, thả là gia tốc xuống. */
   lua: { tangToc: 150, giamToc: 120, can: 2.6 },
-  /** Mỗi giây trong vùng / quá nguội / quá nóng. */
-  chinh: { trong: 1.75, lanh: -0.7, nongAp: 5 },
-  /** Áp lò chạm ngưỡng này trong lúc khống hỏa là nổ lò tại chỗ. */
-  apNoLo: 60,
+  /**
+   * Khống hỏa, tính theo giây:
+   * - trong vùng: chất lượng +trong, áp lò xả bớt xaAp;
+   * - quá nguội: chất lượng +lanh (âm);
+   * - quá nóng: áp lò +nongAp, và càng nằm lì ngoài vùng càng dâng nhanh (nhân thêm nongTangToc mỗi giây liên tục).
+   */
+  chinh: { trong: 1.75, lanh: -1.5, nongAp: 18, nongTangToc: 0.6, xaAp: 3 },
+  /** Áp lò chạm ngưỡng này là nổ lò tại chỗ — cả lúc khống hỏa lẫn lúc tôi đan. */
+  apNoLo: 100,
   /** Dược tính xung đột: vùng hỏa hầu lệch đi tối đa bấy nhiêu. */
   xungDotBien: 24,
 
-  /** Tôi đan: mỗi lần bấm là một lần quay [nổ lò, tổn, giữ, thành, đại thành]. */
+  /**
+   * Tôi đan: con lắc chạy qua lại trên thanh, người chơi bấm để dừng.
+   * Dừng trong khoảng vàng = đại thành (+2), khoảng xanh = thành (+1),
+   * sát ngoài khoảng xanh = trượt (áp lò tăng), xa hơn = lệch (mất một viên, áp lò tăng mạnh).
+   * Bề rộng tính theo phần của thanh (0–1).
+   */
   toi: {
     capToiDa: 9,
-    thanhGoc: 0.6,
-    thanhMoiCap: 0.05,
-    thanhDoKho: 0.08,
-    thanhMoiChatLuong: 0.002,
-    daiThanhGoc: 0.08,
-    daiThanhMoiChatLuong: 0.001,
-    noMoiCap: 0.012,
-    noMoiAp: 0.003,
-    tonGoc: 0.05,
-    tonMoiCap: 0.022,
+    xanhGoc: 0.28,
+    xanhMoiCap: 0.022,
+    xanhDoKho: 0.03,
+    xanhMoiChatLuong: 0.0006,
+    xanhToiThieu: 0.06,
+    vangGoc: 0.07,
+    vangMoiCap: 0.006,
+    vangToiThieu: 0.015,
+    /** Dải "trượt" mỗi bên khoảng xanh. */
+    gan: 0.06,
+    /** Thời gian con lắc đi hết một lượt từ đầu này sang đầu kia (giây). */
+    quetGoc: 1.3,
+    quetMoiCap: 0.09,
+    quetToiThieu: 0.45,
+    apTruot: 18,
+    apLech: 40,
     /** Mỗi cấp tôi đan đẩy tâm phẩm cấp lên bấy nhiêu. */
     phamMoiCap: 0.28,
   },
@@ -242,7 +250,7 @@ export const LUAT = {
 
 /** Nâng cấp đan phòng — cấp 0 là chưa nâng. */
 export interface NangCap {
-  /** Lò chịu áp: giảm tỉ lệ nổ lò. */
+  /** Lò chịu áp: mỗi cấp giảm 10% lượng áp lò tăng lên. */
   lo: number;
   /** Linh hỏa: vùng hỏa hầu rộng hơn. */
   lua: number;
