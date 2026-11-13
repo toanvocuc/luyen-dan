@@ -213,7 +213,7 @@ def main():
         for ten in sorted(os.listdir(vao)):
             if not ten.lower().endswith('.png'):
                 continue
-            canh = 256 if ten.startswith('nut-') else 1024
+            canh = 256 if ten.startswith(('nut-', 'tong-')) else 1024
             im = thu_nho(cat_sat(tach_nen(Image.open(os.path.join(vao, ten)))), canh)
             im.save(os.path.join(RA, 'ui', ten), optimize=True)
             print('ok ui/' + ten, im.size)

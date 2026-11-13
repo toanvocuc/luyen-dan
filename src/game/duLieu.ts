@@ -75,6 +75,23 @@ export interface DanPhuong {
   tuoiToiThieu?: Tuoi;
   /** Chưa có ảnh riêng thì mượn ảnh của đan phương này. */
   anh?: string;
+  /** Tác dụng khi người chơi tự uống. Không có = đan này không uống được (đan đột phá dùng ở nút Đột phá). */
+  uong?: TacDung;
+}
+
+/**
+ * Tác dụng khi uống một viên, giá trị theo phẩm [hạ, trung, thượng, cực, đan văn]:
+ * - 'tang-toc': tu vi mỗi giây được cộng thêm bấy nhiêu lần tốc độ gốc, kéo dài `giay` giây mỗi viên (uống nhiều viên thì nối dài thời gian);
+ * - 'tu-vi': lập tức được bấy nhiêu phần tu vi của tầng đang đứng;
+ * - 'tu-chat': tư chất tăng vĩnh viễn bấy nhiêu điểm;
+ * - 'dot-pha': lần đột phá kế tiếp được cộng bấy nhiêu vào tỉ lệ thành công (cộng dồn tới LUAT.dotPha.congToiDa).
+ * `doc` nhân vào lượng độc tố của viên đan (đan càng mạnh càng độc).
+ */
+export interface TacDung {
+  loai: 'tang-toc' | 'tu-vi' | 'tu-chat' | 'dot-pha';
+  giaTri: readonly [number, number, number, number, number];
+  giay?: number;
+  doc?: number;
 }
 
 const DAN_GOC: readonly DanPhuong[] = [
@@ -83,6 +100,7 @@ const DAN_GOC: readonly DanPhuong[] = [
     ten: 'Tụ Khí Đan',
     moTa: 'Đan nhập môn, giúp tu sĩ Luyện Khí tụ linh khí.',
     bac: 'Luyện Khí',
+    uong: { loai: 'tang-toc', giaTri: [1, 1.5, 2.5, 4, 6], giay: 120 },
     lieu: ['linh-thao', 'linh-thao', 'chu-qua'],
     doKho: 0,
     rongVung: 20,
@@ -116,6 +134,7 @@ const DAN_GOC: readonly DanPhuong[] = [
     ten: 'Tẩy Tủy Đan',
     moTa: 'Gột tạp chất trong kinh mạch, chuẩn bị cho Trúc Cơ.',
     bac: 'Luyện Khí',
+    uong: { loai: 'tu-chat', giaTri: [1, 2, 3, 5, 8], doc: 2 },
     lieu: ['dia-tam-sam', 'han-bang-hoa', 'tu-van-chi'],
     doKho: 0.6,
     rongVung: 16,
@@ -133,6 +152,7 @@ const DAN_GOC: readonly DanPhuong[] = [
     ten: 'Băng Tâm Đan',
     moTa: 'Tĩnh tâm ngưng thần, giúp tu sĩ chống lại tâm ma.',
     bac: 'Trúc Cơ',
+    uong: { loai: 'dot-pha', giaTri: [0.04, 0.07, 0.11, 0.16, 0.22] },
     lieu: ['han-bang-hoa', 'long-tu-thao', 'tu-van-chi'],
     doKho: 0.85,
     rongVung: 15,
@@ -169,6 +189,7 @@ const DAN_GOC: readonly DanPhuong[] = [
     ten: 'Phá Chướng Đan',
     moTa: 'Phá vỡ bình cảnh. Đan khó luyện nhất, cũng quý nhất.',
     bac: 'Trúc Cơ',
+    uong: { loai: 'tu-vi', giaTri: [0.2, 0.35, 0.6, 1, 1], doc: 1.5 },
     lieu: ['huyet-lien', 'long-tu-thao', 'kim-diep-truc'],
     doKho: 1.4,
     rongVung: 13,
@@ -373,7 +394,13 @@ export const LUAT = {
    * Đột phá: tỉ lệ thành công theo phẩm viên đan [hạ, trung, thượng, cực]; đan văn chắc chắn thành.
    * Mỗi điểm khí vận lệch khỏi 50 cộng/trừ khiVan. Thất bại mất viên đan và hao matTuVi phần tu vi của tầng hiện tại.
    */
-  dotPha: { tiLe: [0.5, 0.7, 0.85, 0.95], khiVan: 0.002, matTuVi: 0.3 },
+  dotPha: { tiLe: [0.5, 0.7, 0.85, 0.95], khiVan: 0.002, matTuVi: 0.3, congToiDa: 0.3 },
+  /**
+   * Đan độc: mỗi viên uống vào cộng moiVien[phẩm] điểm độc ([hạ, trung, thượng, cực, đan văn]) — phẩm càng cao càng ít độc
+   * nhưng không bao giờ hết hẳn. Thanh độc đầy ở `day`; viên nào làm vượt mức đó thì không uống được.
+   * Độc tự tan giayMoiDiem giây một điểm theo đồng hồ thật, kể cả lúc tắt game.
+   */
+  doc: { day: 100, moiVien: [12, 8, 4, 2, 1], giayMoiDiem: 30 },
   /** Lợi thế luyện đan theo cảnh giới (thần thức mạnh dần): mỗi cảnh giới trên Luyện Khí cộng bấy nhiêu. */
   canhGioi: { pham: 0.18, rongVung: 0.4 },
 

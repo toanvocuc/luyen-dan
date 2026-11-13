@@ -2480,3 +2480,59 @@ button {
   font-size: 11.5px;
   color: var(--chu-mo);
 }
+
+/* ---------- uống đan và đan độc ---------- */
+.dong-doc {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--chu-mo);
+}
+.dong-doc .tien-do {
+  flex: 1;
+  height: 7px;
+}
+.tien-do.doc > div {
+  background: linear-gradient(90deg, #6a3fa0, #d06ad8);
+}
+.dong-doc b {
+  font-variant-numeric: tabular-nums;
+  color: #d9a8e6;
+}
+.dong-uong {
+  border-top: 1px solid rgba(185, 147, 90, 0.25);
+  padding-bottom: 6px;
+}
+.dong-uong > .dong-tui {
+  border-top: 0;
+  padding-bottom: 2px;
+}
+.tac-dung {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1px 10px;
+  padding-left: 50px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--chu);
+}
+.tac-dung .doc {
+  color: #d9a8e6;
+}
+.tac-dung .qua-doc {
+  color: #ff9a80;
+}
+.tac-dung em {
+  flex-basis: 100%;
+  font-style: normal;
+  color: #ff9a80;
+}
+.tac-dung.khong > span:first-child:last-child {
+  color: var(--chu-mo);
+}
+@media (max-width: 380px) {
+  .tac-dung {
+    padding-left: 40px;
+  }
+}

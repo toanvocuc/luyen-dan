@@ -36,6 +36,12 @@ export interface Kho {
   donHang: { ds: (Don | null)[]; luc: number[] };
   /** id tông môn -> danh vọng đã tích. */
   danhVong: Record<string, number>;
+  /** Đan độc: số điểm tại thời điểm `luc` (ms); từ đó tới giờ độc đã tự tan bớt, xem docHienTai. */
+  doc: { diem: number; luc: number };
+  /** Đang được tăng tốc tu luyện nhờ đan: cộng thêm `nhan` lần tốc độ gốc trong `giay` giây chơi nữa. */
+  tangToc: { nhan: number; giay: number };
+  /** Phần cộng vào tỉ lệ thành công của lần đột phá kế tiếp (từ Băng Tâm Đan); dùng xong thì về 0. */
+  congDotPha: number;
 }
 
 /** Một đơn đặt đan của tông môn. */
@@ -97,6 +103,9 @@ export function khoMoi(nv: NhanVat | null = null): Kho {
     loDan: { dung: 'thanh-dong-lo', co: ['thanh-dong-lo'] },
     donHang: { ds: [], luc: [] },
     danhVong: {},
+    doc: { diem: 0, luc: 0 },
+    tangToc: { nhan: 0, giay: 0 },
+    congDotPha: 0,
   };
 }
 
@@ -125,6 +134,8 @@ export function napKho(): Kho {
           loDan: { ...moi.loDan, ...k.loDan },
           donHang: { ...moi.donHang, ...k.donHang },
           danhVong: { ...k.danhVong },
+          doc: { ...moi.doc, ...k.doc },
+          tangToc: { ...moi.tangToc, ...k.tangToc },
         };
       }
     }
@@ -494,18 +505,27 @@ export function tuViCan(tang: number, canhGioi: number): number {
 /** Đã viên mãn tầng cuối chưa (phải dùng đan đột phá mới lên tiếp được). */
 export const vienMan = (k: Kho) => k.tuVi.tang >= soTang(k.tuVi.canhGioi) && k.tuVi.diem >= tuViCan(k.tuVi.tang, k.tuVi.canhGioi);
 
+/** Tu vi mỗi giây khi không có đan trợ lực (linh căn quyết định). */
+export const tocDoGoc = (k: Kho) => LUAT.tuViMoiGiay * loiThe(k.nhanVat).tocDoTuLuyen;
+/** Tu vi mỗi giây ngay lúc này, đã tính phần tăng tốc nhờ đan. */
+export const tocDoTuVi = (k: Kho) => tocDoGoc(k) * (1 + (k.tangToc.giay > 0 ? k.tangToc.nhan : 0));
+
 /** Cộng tu vi theo số giây đã trôi qua, tự lên tầng khi đủ điểm, dừng ở viên mãn tầng cuối. */
 export function tuLuyen(k: Kho, giay: number): Kho {
   if (!k.nhanVat || vienMan(k)) return k;
   const cg = k.tuVi.canhGioi;
   let { tang, diem } = k.tuVi;
-  diem += giay * LUAT.tuViMoiGiay * loiThe(k.nhanVat).tocDoTuLuyen;
+  // phần tăng tốc nhờ đan chỉ tính cho số giây còn hiệu lực
+  const giayNhanh = Math.min(giay, k.tangToc.giay);
+  diem += (giay + giayNhanh * k.tangToc.nhan) * tocDoGoc(k);
   while (tang < soTang(cg) && diem >= tuViCan(tang, cg)) {
     diem -= tuViCan(tang, cg);
     tang += 1;
   }
   if (tang >= soTang(cg)) diem = Math.min(diem, tuViCan(tang, cg));
-  return { ...k, tuVi: { ...k.tuVi, tang, diem } };
+  const conGiay = k.tangToc.giay - giayNhanh;
+  const tangToc = giayNhanh > 0 ? { nhan: conGiay > 0 ? k.tangToc.nhan : 0, giay: conGiay } : k.tangToc;
+  return { ...k, tuVi: { ...k.tuVi, tang, diem }, tangToc };
 }
 
 /** Lợi thế luyện đan của người chơi: bẩm sinh (thiên mệnh), cộng phần do cảnh giới mang lại, cộng tính chất của lò đang dùng. */
@@ -525,6 +545,91 @@ export function loiTheKho(k: Kho): LoiThe {
   };
 }
 
+// ---------- uống đan ----------
+
+/** Lượng đan độc đang có trong người lúc này (đã trừ phần tự tan theo thời gian). */
+export function docHienTai(k: Kho, luc = Date.now()): number {
+  return Math.max(0, k.doc.diem - Math.max(0, luc - k.doc.luc) / 1000 / LUAT.doc.giayMoiDiem);
+}
+/** Chỉ số phẩm trong các bảng năm mức [hạ, trung, thượng, cực, đan văn]. */
+const mucPham = (loai: PhamThat | 'dv') => (loai === 'dv' ? 4 : loai);
+/** Độc tố của một viên đan. */
+export const docMoiVien = (p: DanPhuong, loai: PhamThat | 'dv') => LUAT.doc.moiVien[mucPham(loai)] * (p.uong?.doc ?? 1);
+
+export interface XemUong {
+  /** Uống được không; không thì `lyDo` nói vì sao. */
+  duoc: boolean;
+  lyDo?: string;
+  /** Độc tố sẽ cộng thêm và mức sau khi uống. */
+  docThem: number;
+  docSau: number;
+  /** Câu tả tác dụng của đúng số viên đang chọn. */
+  moTa: string;
+}
+
+/** Xem trước việc uống `soLuong` viên: độc tố tăng bao nhiêu, được gì, có uống nổi không. Không đổi gì trong kho. */
+export function xemUong(k: Kho, phuongId: string, loai: PhamThat | 'dv', soLuong: number, luc = Date.now()): XemUong {
+  const p = timDanPhuong(phuongId);
+  const td = p.uong;
+  const docThem = docMoiVien(p, loai) * soLuong;
+  const docSau = docHienTai(k, luc) + docThem;
+  if (!td) return { duoc: false, lyDo: p.dotPha ? 'Đan đột phá, dùng ở nút Đột phá' : 'Đan này không uống được', docThem: 0, docSau: docHienTai(k, luc), moTa: '' };
+  const v = td.giaTri[mucPham(loai)];
+  const co = loai === 'dv' ? k.danVan[phuongId] ?? 0 : k.tuiDan[phuongId][loai];
+  let moTa = '';
+  let lyDo: string | undefined;
+  if (td.loai === 'tang-toc') {
+    const giay = (td.giay ?? 60) * soLuong;
+    moTa = `Tu vi mỗi giây +${Math.round(v * 100)}% trong ${Math.floor(giay / 60)} phút${giay % 60 ? ` ${giay % 60} giây` : ''}`;
+    if (vienMan(k)) lyDo = 'Đã viên mãn, uống cũng không thêm tu vi';
+  } else if (td.loai === 'tu-vi') {
+    const cg = k.tuVi.canhGioi;
+    moTa = `Lập tức +${Math.round(tuViCan(k.tuVi.tang, cg) * v * soLuong)} tu vi`;
+    if (vienMan(k)) lyDo = 'Đã viên mãn, uống cũng không thêm tu vi';
+  } else if (td.loai === 'tu-chat') {
+    const tc = k.nhanVat?.tuChat ?? 0;
+    moTa = `Tư chất +${Math.min(100 - tc, v * soLuong)} vĩnh viễn (đang ${tc}/100)`;
+    if (tc >= 100) lyDo = 'Tư chất đã tới đỉnh';
+  } else {
+    const con = LUAT.dotPha.congToiDa - k.congDotPha;
+    moTa = `Lần đột phá tới +${Math.round(Math.min(con, v * soLuong) * 100)}% thành công (đang +${Math.round(k.congDotPha * 100)}%, tối đa +${Math.round(LUAT.dotPha.congToiDa * 100)}%)`;
+    if (con <= 0.0001) lyDo = 'Tâm đã tĩnh hết mức, uống thêm vô ích';
+  }
+  if (co < soLuong) lyDo = 'Không đủ viên';
+  else if (docSau > LUAT.doc.day + 0.0001) lyDo = 'Đan độc sẽ vượt ngưỡng chịu đựng';
+  return { duoc: !lyDo, lyDo, docThem, docSau, moTa };
+}
+
+/** Uống `soLuong` viên. Không uống được (xem xemUong) thì trả lại đúng kho cũ. */
+export function uongDan(k: Kho, phuongId: string, loai: PhamThat | 'dv', soLuong: number, luc = Date.now()): Kho {
+  const xem = xemUong(k, phuongId, loai, soLuong, luc);
+  const p = timDanPhuong(phuongId);
+  const td = p.uong;
+  if (!xem.duoc || !td || !k.nhanVat) return k;
+  const v = td.giaTri[mucPham(loai)];
+  let moi: Kho = { ...k, doc: { diem: xem.docSau, luc } };
+  if (loai === 'dv') moi.danVan = { ...k.danVan, [phuongId]: (k.danVan[phuongId] ?? 0) - soLuong };
+  else {
+    const tui = [...k.tuiDan[phuongId]] as [number, number, number, number];
+    tui[loai] -= soLuong;
+    moi.tuiDan = { ...k.tuiDan, [phuongId]: tui };
+  }
+  if (td.loai === 'tang-toc') {
+    // thời gian nối dài; mức tăng lấy theo viên mạnh nhất còn hiệu lực
+    const dangCo = k.tangToc.giay > 0 ? k.tangToc.nhan : 0;
+    moi.tangToc = { nhan: Math.max(dangCo, v), giay: Math.max(0, k.tangToc.giay) + (td.giay ?? 60) * soLuong };
+  } else if (td.loai === 'tu-vi') {
+    // cộng thẳng tu vi rồi để tuLuyen lo việc lên tầng (0 giây = không cộng gì thêm)
+    const them = tuViCan(k.tuVi.tang, k.tuVi.canhGioi) * v * soLuong;
+    moi = tuLuyen({ ...moi, tuVi: { ...moi.tuVi, diem: moi.tuVi.diem + them } }, 0);
+  } else if (td.loai === 'tu-chat') {
+    moi.nhanVat = { ...k.nhanVat, tuChat: Math.min(100, k.nhanVat.tuChat + v * soLuong) };
+  } else {
+    moi.congDotPha = Math.min(LUAT.dotPha.congToiDa, k.congDotPha + v * soLuong);
+  }
+  return moi;
+}
+
 // ---------- đột phá ----------
 
 /** Đan đột phá mà cảnh giới hiện tại cần; đã ở đỉnh (Tiên Đế) thì không có. */
@@ -535,7 +640,7 @@ export const danDotPha = (k: Kho): DanPhuong | null =>
 export function tiLeDotPha(k: Kho, pham: PhamThat, danVan: boolean): number {
   if (danVan) return 1;
   const kv = ((k.nhanVat?.khiVan ?? 50) - 50) * LUAT.dotPha.khiVan;
-  return Math.min(0.99, Math.max(0.05, LUAT.dotPha.tiLe[pham] + kv));
+  return Math.min(0.99, Math.max(0.05, LUAT.dotPha.tiLe[pham] + kv + k.congDotPha));
 }
 
 /**
@@ -559,5 +664,5 @@ export function dotPha(k: Kho, pham: PhamThat, danVan: boolean, r: number): { kh
   const tuVi = thanh
     ? { canhGioi: k.tuVi.canhGioi + 1, tang: 1, diem: 0 }
     : { ...k.tuVi, diem: Math.floor(k.tuVi.diem * (1 - LUAT.dotPha.matTuVi)) };
-  return { thanh, kho: { ...k, tuVi, tuiDan: { ...k.tuiDan, [p.id]: tui }, danVan: { ...k.danVan, [p.id]: dv } } };
+  return { thanh, kho: { ...k, tuVi, congDotPha: 0, tuiDan: { ...k.tuiDan, [p.id]: tui }, danVan: { ...k.danVan, [p.id]: dv } } };
 }

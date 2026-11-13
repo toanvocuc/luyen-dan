@@ -1,8 +1,9 @@
 // Động phủ: nhân vật ngồi tu luyện, tu vi tự tăng; từ đây mở hành trang, xem thiên mệnh, sang đan phòng.
 import { useState } from 'react';
 import { CANH_GIOI, DAN_PHUONG, DUOC_LIEU, LUAT, PHU_LIEU, TEN_PHAM, TEN_TUOI_NGAN, anhDan, anhDuocLieu, type PhamThat } from '../game/duLieu.ts';
-import { danDotPha, dotPha, soTang, tiLeDotPha, tuViCan, vienMan, type Kho } from '../game/kho.ts';
-import { loiThe, type NhanVat } from '../game/nhanVat.ts';
+import { danDotPha, docHienTai, dotPha, soTang, tiLeDotPha, tocDoTuVi, tuViCan, uongDan, vienMan, xemUong, type Kho } from '../game/kho.ts';
+import type { NhanVat } from '../game/nhanVat.ts';
+import { dongHo, useBayGio } from './PhuongThi.tsx';
 import { BupBe } from './BupBe.tsx';
 import { dongThienMenh } from './ThienMenh.tsx';
 
@@ -59,8 +60,21 @@ export function TuTien({
     datKetQuaDotPha({ thanh: kq.thanh, ten: CANH_GIOI[kho.tuVi.canhGioi + 1], luot: Date.now() });
   };
   const day = vienMan(kho);
-  const tocDo = LUAT.tuViMoiGiay * loiThe(nhanVat).tocDoTuLuyen;
-  const coDan = DAN_PHUONG.filter((p) => kho.tuiDan[p.id].some((n) => n > 0) || (kho.danVan[p.id] ?? 0) > 0);
+  const tocDo = tocDoTuVi(kho);
+  const luc = useBayGio();
+  const docNay = docHienTai(kho, luc);
+  /** Số viên muốn uống của từng dòng trong hành trang (khoá = id đan | phẩm); chưa chỉnh thì là 1. */
+  const [soUong, datSoUong] = useState<Record<string, number>>({});
+  // mỗi loại đan ở mỗi phẩm là một dòng, phẩm cao đứng trước
+  const dongDan: { khoa: string; id: string; ten: string; loai: PhamThat | 'dv'; co: number }[] = [];
+  for (const p of DAN_PHUONG) {
+    const dv = kho.danVan[p.id] ?? 0;
+    if (dv > 0) dongDan.push({ khoa: `${p.id}|dv`, id: p.id, ten: p.ten, loai: 'dv', co: dv });
+    for (const ph of [3, 2, 1, 0] as PhamThat[]) {
+      const co = kho.tuiDan[p.id][ph];
+      if (co > 0) dongDan.push({ khoa: `${p.id}|${ph}`, id: p.id, ten: p.ten, loai: ph, co });
+    }
+  }
   const coLieu = DUOC_LIEU.filter((d) => kho.duocLieu[d.id].some((n) => n > 0));
   const coPhu = PHU_LIEU.filter((p) => (kho.phuLieu[p.id] ?? 0) > 0);
   const coHat = DUOC_LIEU.filter((d) => (kho.hatGiong[d.id] ?? 0) > 0);
@@ -95,6 +109,17 @@ export function TuTien({
         <div className="tien-do">
           <div style={{ width: `${Math.min(100, (kho.tuVi.diem / can) * 100)}%` }} />
         </div>
+        {(docNay >= 0.5 || kho.tangToc.giay > 0) && (
+          <div className="dong-doc">
+            <span>Đan độc</span>
+            <div className="tien-do doc">
+              <div style={{ width: `${Math.min(100, (docNay / LUAT.doc.day) * 100)}%` }} />
+            </div>
+            <b>
+              {Math.round(docNay)}/{LUAT.doc.day}
+            </b>
+          </div>
+        )}
         <p className="chu-nho">
           {day
             ? danCan
@@ -102,7 +127,9 @@ export function TuTien({
               : 'Đã đứng trên đỉnh tiên lộ.'
             : phamNhan
               ? `Đang rèn thân dưỡng khí: +${tocDo.toFixed(1)} tu vi mỗi giây.`
-              : `Đang thổ nạp linh khí: +${tocDo.toFixed(1)} tu vi mỗi giây.`}
+              : kho.tangToc.giay > 0
+                ? `Đan lực đang vận hành: +${tocDo.toFixed(1)} tu vi mỗi giây, còn ${dongHo(Math.ceil(kho.tangToc.giay))}.`
+                : `Đang thổ nạp linh khí: +${tocDo.toFixed(1)} tu vi mỗi giây.`}
         </p>
         {day && danCan && (
           <button className="nut chinh nut-dot-pha" onClick={() => datBang('dot-pha')}>
@@ -228,23 +255,62 @@ export function TuTien({
             <p className="chu-nho">{kho.linhThach} linh thạch</p>
 
             <h3>Đan dược</h3>
-            {coDan.length === 0 && <p className="chu-nho trai">Chưa có viên đan nào.</p>}
-            {coDan.map((p) => (
-              <div key={p.id} className="dong-tui">
-                <img src={anhDan(p.id)} alt="" />
-                <div className="than-dong">
-                  <b>{p.ten}</b>
-                  <div className="hang-pham">
-                    {TEN_PHAM.map((ten, i) => kho.tuiDan[p.id][i] > 0 && (
-                      <span key={ten} className={`pham-${i}`}>
-                        {ten} ×{kho.tuiDan[p.id][i]}
-                      </span>
-                    ))}
-                    {(kho.danVan[p.id] ?? 0) > 0 && <span className="pham-dv">Đan văn ×{kho.danVan[p.id]}</span>}
+            <p className="chu-nho trai">
+              Đan độc {Math.round(docNay)}/{LUAT.doc.day} — tự tan {Math.round(3600 / LUAT.doc.giayMoiDiem)} điểm mỗi giờ. Đan phẩm càng cao càng ít độc.
+            </p>
+            {dongDan.length === 0 && <p className="chu-nho trai">Chưa có viên đan nào.</p>}
+            {dongDan.map((d) => {
+              const n = Math.min(d.co, Math.max(1, soUong[d.khoa] ?? 1));
+              const dat = (x: number) => datSoUong((c) => ({ ...c, [d.khoa]: Math.min(d.co, Math.max(1, x)) }));
+              const xem = xemUong(kho, d.id, d.loai, n, luc);
+              const uongDuoc = xem.moTa !== '';
+              return (
+                <div key={d.khoa} className="dong-uong">
+                  <div className="dong-tui dong-ban">
+                    <img src={anhDan(d.id)} alt="" />
+                    <div className="than-dong">
+                      <b>{d.ten}</b>
+                      <div className="hang-pham">
+                        <span className={d.loai === 'dv' ? 'pham-dv' : `pham-${d.loai}`}>
+                          {d.loai === 'dv' ? 'Đan văn' : TEN_PHAM[d.loai]} ×{d.co}
+                        </span>
+                      </div>
+                    </div>
+                    {uongDuoc && (
+                      <>
+                        <span className="chinh-so">
+                          <button className="nut-nho" disabled={n <= 1} onClick={() => dat(n - 1)} aria-label="Bớt">
+                            −
+                          </button>
+                          <button className="so" onClick={() => dat(n >= d.co ? 1 : d.co)} title="Chạm để chọn tất cả">
+                            {n}
+                          </button>
+                          <button className="nut-nho" disabled={n >= d.co} onClick={() => dat(n + 1)} aria-label="Thêm">
+                            +
+                          </button>
+                        </span>
+                        <button className="nut-nho nut-ban" disabled={!xem.duoc} onClick={() => doiKho((k) => uongDan(k, d.id, d.loai, n))}>
+                          Uống
+                        </button>
+                      </>
+                    )}
+                  </div>
+                  <div className={`tac-dung ${xem.duoc ? '' : 'khong'}`}>
+                    {uongDuoc ? (
+                      <>
+                        <span>{xem.moTa}</span>
+                        <span className={xem.docSau > LUAT.doc.day ? 'qua-doc' : 'doc'}>
+                          Độc +{Math.round(xem.docThem)} → {Math.round(xem.docSau)}/{LUAT.doc.day}
+                        </span>
+                        {xem.lyDo && <em>{xem.lyDo}</em>}
+                      </>
+                    ) : (
+                      <span>{xem.lyDo}</span>
+                    )}
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             <h3>Dược liệu</h3>
             {coLieu.length === 0 && <p className="chu-nho trai">Kho dược liệu đang trống.</p>}
