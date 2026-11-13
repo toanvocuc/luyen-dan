@@ -1,6 +1,7 @@
 // Màn hình lò đan: phối liệu -> khống hỏa -> tôi đan (dừng con lắc đúng khoảng xanh) -> mở lò.
 import { useEffect, useRef, useState } from 'react';
 import {
+  CAC_BAC,
   DAN_PHUONG,
   LUAT,
   PHU_LIEU,
@@ -8,10 +9,12 @@ import {
   TEN_TUOI_NGAN,
   anhDan,
   anhDuocLieu,
+  giaBan,
   laDanThat,
   timDanPhuong,
   timDuocLieu,
   timPhuLieu,
+  type Bac,
   type DanPhuong,
   type Tuoi,
 } from '../game/duLieu.ts';
@@ -81,6 +84,8 @@ export function LoDan({ kho, doiKho }: { kho: Kho; doiKho: (ham: (k: Kho) => Kho
   const [tuoi, datTuoi] = useState<[Tuoi, Tuoi, Tuoi]>([0, 0, 0]);
   const [phuLieuId, datPhuLieuId] = useState<string | null>(null);
   const [pha, datPha] = useState<Pha>('phoi');
+  const [moChon, datMoChon] = useState(false);
+  const [locBac, datLocBac] = useState<Bac | null>(null);
   const [luot, datLuot] = useState(0);
   const [me, datMe] = useState<Me | null>(null);
   const [vung, datVung] = useState<Vung>('trong');
@@ -460,24 +465,64 @@ export function LoDan({ kho, doiKho }: { kho: Kho; doiKho: (ham: (k: Kho) => Kho
         )}
       </div>
 
+      {moChon && (
+        <div className="lop-phu" onClick={() => datMoChon(false)}>
+          <div className="bang tam chon-phuong" onClick={(e) => e.stopPropagation()}>
+            <h2>Chọn đan phương</h2>
+            <div className="hang-loc">
+              <button className={`the nho ${locBac === null ? 'chon' : ''}`} onClick={() => datLocBac(null)}>
+                Tất cả ({DAN_PHUONG.length})
+              </button>
+              {CAC_BAC.map((b) => (
+                <button key={b} className={`the nho ${locBac === b ? 'chon' : ''}`} onClick={() => datLocBac(b)}>
+                  {b} ({DAN_PHUONG.filter((p) => p.bac === b).length})
+                </button>
+              ))}
+            </div>
+            <div className="luoi-phuong">
+              {DAN_PHUONG.map((p, i) => {
+                if (locBac && p.bac !== locBac) return null;
+                const mo = daMo(i);
+                return (
+                  <button
+                    key={p.id}
+                    className={`o-phuong ${p.id === phuongId ? 'chon' : ''} ${mo ? '' : 'khoa'}`}
+                    disabled={!mo}
+                    onClick={() => {
+                      datPhuongId(p.id);
+                      datMoChon(false);
+                    }}
+                  >
+                    <img src={anhDan(p.id)} alt="" />
+                    <b>{p.ten}</b>
+                    <small>{mo ? `Bán từ ${giaBan(p, 0)} linh thạch` : `Cần ${ME_DE_MO_KHOA} mẻ ${DAN_PHUONG[i - 1].ten}`}</small>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="hang-nut">
+              <button className="nut-nho" onClick={() => datMoChon(false)}>
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <section className="bang day">
         {pha === 'phoi' && (
           <>
             <ThanhTiLe doan={doanPham(tiLeVien(phuong, meXem))} />
-            <div className="hang-phuong">
-              {DAN_PHUONG.map((p, i) => (
-                <button
-                  key={p.id}
-                  className={`the-phuong ${p.id === phuongId ? 'chon' : ''}`}
-                  disabled={!daMo(i)}
-                  onClick={() => datPhuongId(p.id)}
-                  title={daMo(i) ? p.moTa : `Luyện thành ${ME_DE_MO_KHOA} mẻ ${DAN_PHUONG[i - 1].ten} để mở`}
-                >
-                  <img src={anhDan(p.id)} alt="" />
-                  <span>{daMo(i) ? p.ten : 'Chưa mở'}</span>
-                </button>
-              ))}
-            </div>
+            <button className="phuong-dang-chon" onClick={() => datMoChon(true)}>
+              <img src={anhDan(phuong.id)} alt="" />
+              <span className="than">
+                <b>{phuong.ten}</b>
+                <small>
+                  Đan {phuong.bac} · đã luyện {kho.thongThao[phuong.id] ?? 0} mẻ
+                </small>
+              </span>
+              <span className="doi">Đổi đan phương ›</span>
+            </button>
             <div className="hang-lieu">
               {phuong.lieu.map((id, i) => {
                 const d = timDuocLieu(id);

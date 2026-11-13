@@ -1124,3 +1124,106 @@ button {
     transform: translateX(-49.2%);
   }
 }
+
+/* ---------- đan phương đang chọn + bảng chọn (đủ chỗ cho vài chục loại đan) ---------- */
+.phuong-dang-chon {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 5px 10px 5px 6px;
+  border-radius: 10px;
+  border: 1px solid var(--dong);
+  background: linear-gradient(rgba(185, 147, 90, 0.28), rgba(185, 147, 90, 0.08));
+  text-align: left;
+}
+.phuong-dang-chon img {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+}
+.phuong-dang-chon .than {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+.phuong-dang-chon b {
+  font-size: 15px;
+  color: #fff3d0;
+}
+.phuong-dang-chon small {
+  font-size: 11.5px;
+  color: var(--chu-mo);
+}
+.phuong-dang-chon .doi {
+  flex: 0 0 auto;
+  font-size: 12.5px;
+  color: var(--dong);
+}
+.chon-phuong {
+  display: flex;
+  flex-direction: column;
+  max-height: 86%;
+}
+.hang-loc {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 8px;
+}
+.hang-loc .the {
+  flex: 0 0 auto;
+  padding: 4px 12px;
+  white-space: nowrap;
+}
+.luoi-phuong {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  overflow-y: auto;
+  min-height: 0;
+  padding: 2px;
+}
+.o-phuong {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 4px 6px;
+  border-radius: 10px;
+  border: 1px solid var(--dong-toi);
+  background: rgba(255, 255, 255, 0.04);
+  line-height: 1.3;
+}
+.o-phuong img {
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+}
+.o-phuong b {
+  font-size: 12.5px;
+}
+.o-phuong small {
+  font-size: 10.5px;
+  color: var(--chu-mo);
+}
+.o-phuong.chon {
+  border-color: var(--dong);
+  background: linear-gradient(rgba(185, 147, 90, 0.35), rgba(185, 147, 90, 0.12));
+  box-shadow: 0 0 8px rgba(185, 147, 90, 0.5);
+}
+.o-phuong.khoa {
+  opacity: 0.55;
+}
+.o-phuong.khoa img {
+  filter: grayscale(1) brightness(0.55);
+}
+@media (max-height: 700px) {
+  .phuong-dang-chon img {
+    width: 30px;
+    height: 30px;
+  }
+}

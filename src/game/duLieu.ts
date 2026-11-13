@@ -40,10 +40,16 @@ export interface DoanHoa {
   giay: number;
 }
 
+/** Các bậc đan, xếp từ thấp lên cao. Thêm bậc mới thì thêm vào đây. */
+export const CAC_BAC = ['Luyện Khí', 'Trúc Cơ'] as const;
+export type Bac = (typeof CAC_BAC)[number];
+
 export interface DanPhuong {
   id: string;
   ten: string;
   moTa: string;
+  /** Bậc của đan (theo cảnh giới người dùng) — dùng để gom nhóm trong bảng chọn đan phương. */
+  bac: Bac;
   /** Ba vị dược liệu cần bỏ vào lò. */
   lieu: readonly [string, string, string];
   /** Độ khó: kéo phẩm cấp xuống, thu hẹp khoảng xanh khi tôi đan. */
@@ -62,6 +68,7 @@ export const DAN_PHUONG: readonly DanPhuong[] = [
     id: 'tu-khi-dan',
     ten: 'Tụ Khí Đan',
     moTa: 'Đan nhập môn, giúp tu sĩ Luyện Khí tụ linh khí.',
+    bac: 'Luyện Khí',
     lieu: ['linh-thao', 'linh-thao', 'chu-qua'],
     doKho: 0,
     rongVung: 20,
@@ -77,6 +84,7 @@ export const DAN_PHUONG: readonly DanPhuong[] = [
     id: 'hoi-xuan-dan',
     ten: 'Hồi Xuân Đan',
     moTa: 'Chữa thương, hồi phục khí huyết sau khi giao đấu.',
+    bac: 'Luyện Khí',
     lieu: ['chu-qua', 'han-bang-hoa', 'linh-thao'],
     doKho: 0.3,
     rongVung: 18,
@@ -93,6 +101,7 @@ export const DAN_PHUONG: readonly DanPhuong[] = [
     id: 'tay-tuy-dan',
     ten: 'Tẩy Tủy Đan',
     moTa: 'Gột tạp chất trong kinh mạch, chuẩn bị cho Trúc Cơ.',
+    bac: 'Luyện Khí',
     lieu: ['dia-tam-sam', 'han-bang-hoa', 'tu-van-chi'],
     doKho: 0.6,
     rongVung: 16,
@@ -109,6 +118,7 @@ export const DAN_PHUONG: readonly DanPhuong[] = [
     id: 'bang-tam-dan',
     ten: 'Băng Tâm Đan',
     moTa: 'Tĩnh tâm ngưng thần, giúp tu sĩ chống lại tâm ma.',
+    bac: 'Trúc Cơ',
     lieu: ['han-bang-hoa', 'long-tu-thao', 'tu-van-chi'],
     doKho: 0.85,
     rongVung: 15,
@@ -125,6 +135,7 @@ export const DAN_PHUONG: readonly DanPhuong[] = [
     id: 'truc-co-dan',
     ten: 'Trúc Cơ Đan',
     moTa: 'Đan đột phá: giúp tu sĩ Luyện Khí viên mãn bước lên Trúc Cơ.',
+    bac: 'Trúc Cơ',
     lieu: ['dia-tam-sam', 'kim-diep-truc', 'huyet-lien'],
     doKho: 1.1,
     rongVung: 14,
@@ -142,6 +153,7 @@ export const DAN_PHUONG: readonly DanPhuong[] = [
     id: 'pha-chuong-dan',
     ten: 'Phá Chướng Đan',
     moTa: 'Phá vỡ bình cảnh. Đan khó luyện nhất, cũng quý nhất.',
+    bac: 'Trúc Cơ',
     lieu: ['huyet-lien', 'long-tu-thao', 'kim-diep-truc'],
     doKho: 1.4,
     rongVung: 13,
