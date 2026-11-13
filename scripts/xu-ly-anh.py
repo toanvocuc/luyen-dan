@@ -227,6 +227,9 @@ def main():
             sang = a.max(axis=2)
             # nền đen của Gemini thường là xám rất tối chứ không phải 0: cắt đáy rồi kéo giãn lại
             sang = np.clip((sang - 0.07) / 0.86, 0, 1)
+            # dấu ✦ của Gemini luôn nằm ở góc dưới phải: xoá hẳn góc đó (các mảnh hiệu ứng đều để trống góc)
+            h, w = sang.shape
+            sang[int(h * 0.84):, int(w * 0.80):] = 0
             ra = np.dstack([np.ones_like(a), sang[..., None]])
             im = Image.fromarray((ra * 255).round().astype(np.uint8), 'RGBA')
             im = thu_nho(im, 96 if ten.startswith('hat') else 640)
