@@ -193,6 +193,35 @@ export const HE_SO_GIA = [1, 2.5, 7, 20] as const;
 /** Viên có đan văn bán gấp bấy nhiêu lần. */
 export const HE_SO_DAN_VAN = 3;
 
+/** Mười bốn cảnh giới tu tiên, từ thấp lên cao. */
+export const CANH_GIOI = [
+  'Phàm Nhân', 'Luyện Khí', 'Trúc Cơ', 'Kim Đan', 'Nguyên Anh', 'Hóa Thần', 'Luyện Hư',
+  'Hợp Thể', 'Đại Thừa', 'Chân Tiên', 'Kim Tiên', 'Huyền Tiên', 'Tiên Vương', 'Tiên Đế',
+] as const;
+
+/**
+ * Ảnh nền có 5 bậc, cảnh giới càng cao nền càng tiên khí:
+ * 1 = Phàm Nhân–Luyện Khí, 2 = Trúc Cơ–Kim Đan, 3 = Nguyên Anh–Luyện Hư, 4 = Hợp Thể–Chân Tiên, 5 = Kim Tiên–Tiên Đế.
+ */
+export function bacNen(canhGioi: number): number {
+  if (canhGioi <= 1) return 1;
+  if (canhGioi <= 3) return 2;
+  if (canhGioi <= 6) return 3;
+  if (canhGioi <= 9) return 4;
+  return 5;
+}
+/**
+ * Giá trị CSS background-image cho một màn (dong-phu hoặc dan-phong) ở cảnh giới cho trước.
+ * Xếp chồng từ bậc hiện tại lùi dần về bậc 1 rồi tới ảnh gốc: bậc nào chưa có ảnh thì trình duyệt tự rơi xuống lớp dưới.
+ */
+export function anhNen(man: 'dong-phu' | 'dan-phong', canhGioi: number): string {
+  const lop: string[] = [];
+  for (let b = bacNen(canhGioi); b >= 1; b--) lop.push(`url(./hinh/nen/${man}-${b}.jpg)`);
+  if (man === 'dong-phu') lop.push('url(./hinh/nen/dan-phong-1.jpg)');
+  lop.push('url(./hinh/nen-dan-phong.jpg)');
+  return lop.join(', ');
+}
+
 /** Các hằng số của cơ chế luyện đan. */
 export const LUAT = {
   soVienGoc: 5,
@@ -257,7 +286,7 @@ export const LUAT = {
   /** Trợ cấp tông môn khi cạn túi. */
   troCap: 40,
 
-  /** Tu luyện: Luyện Khí có bấy nhiêu tầng; lên tầng n cần n × tuViMoiTang điểm; mỗi giây được tuViMoiGiay điểm (nhân với linh căn). */
+  /** Tu luyện: mỗi cảnh giới có bấy nhiêu tầng; lên tầng n cần n × tuViMoiTang điểm; mỗi giây được tuViMoiGiay điểm (nhân với linh căn). */
   soTang: 9,
   tuViMoiTang: 60,
   tuViMoiGiay: 1,

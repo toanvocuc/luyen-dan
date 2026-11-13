@@ -7,8 +7,8 @@ export interface Kho {
   phienBan: 3;
   /** Chưa tạo nhân vật thì null. */
   nhanVat: NhanVat | null;
-  /** Tu vi: tầng Luyện Khí hiện tại (1–9) và điểm đã tích trong tầng. */
-  tuVi: { tang: number; diem: number };
+  /** Tu vi: cảnh giới (chỉ số trong CANH_GIOI), tầng hiện tại (1–9) và điểm đã tích trong tầng. */
+  tuVi: { canhGioi: number; tang: number; diem: number };
   linhThach: number;
   /** id dược liệu -> số lượng theo tuổi thuốc [mười, trăm, ngàn năm]. */
   duocLieu: Record<string, [number, number, number]>;
@@ -50,7 +50,8 @@ export function khoMoi(nv: NhanVat | null = null): Kho {
   return {
     phienBan: 3,
     nhanVat: nv,
-    tuVi: { tang: 1, diem: 0 },
+    // bắt đầu ở Luyện Khí tầng 1 (chỉ số 1); Phàm Nhân (0) để dành cho phần mở đầu sau này
+    tuVi: { canhGioi: 1, tang: 1, diem: 0 },
     linhThach: xt?.linhThach ?? 120,
     duocLieu,
     phuLieu: { 'hoa-tinh': 0, 'ngung-than-thao': 0 },
@@ -231,5 +232,5 @@ export function tuLuyen(k: Kho, giay: number): Kho {
     tang += 1;
   }
   if (tang >= LUAT.soTang) diem = Math.min(diem, tuViCan(tang));
-  return { ...k, tuVi: { tang, diem } };
+  return { ...k, tuVi: { ...k.tuVi, tang, diem } };
 }

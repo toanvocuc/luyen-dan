@@ -1,12 +1,29 @@
 // Động phủ: nhân vật ngồi tu luyện, tu vi tự tăng; từ đây mở hành trang, xem thiên mệnh, sang đan phòng.
 import { useState } from 'react';
-import { DAN_PHUONG, DUOC_LIEU, LUAT, PHU_LIEU, TEN_PHAM, TEN_TUOI_NGAN, anhDan, anhDuocLieu } from '../game/duLieu.ts';
+import { CANH_GIOI, DAN_PHUONG, DUOC_LIEU, LUAT, PHU_LIEU, TEN_PHAM, TEN_TUOI_NGAN, anhDan, anhDuocLieu } from '../game/duLieu.ts';
 import { tuViCan, vienMan, type Kho } from '../game/kho.ts';
 import { loiThe, type NhanVat } from '../game/nhanVat.ts';
 import { BupBe } from './BupBe.tsx';
 import { dongThienMenh } from './ThienMenh.tsx';
 
 type Bang = null | 'hanh-trang' | 'thien-menh';
+
+/**
+ * Nút tròn ở đáy động phủ. Nếu có ảnh public/hinh/ui/nut-<id>.png thì dùng ảnh đó,
+ * chưa có thì hiện một chữ trong vòng tròn. Không truyền onClick = tính năng chưa làm, nút bị khoá.
+ */
+function NutTron({ id, ten, chu, noiBat = false, onClick }: { id: string; ten: string; chu: string; noiBat?: boolean; onClick?: () => void }) {
+  const [coAnh, datCoAnh] = useState(true);
+  return (
+    <button className={`nut-tron ${noiBat ? 'noi-bat' : ''}`} disabled={!onClick} onClick={onClick}>
+      <span className="mat-nut">
+        {coAnh ? <img src={`./hinh/ui/nut-${id}.png`} alt="" draggable={false} onError={() => datCoAnh(false)} /> : <b>{chu}</b>}
+      </span>
+      <span className="ten-nut">{ten}</span>
+      {!onClick && <em>Sắp có</em>}
+    </button>
+  );
+}
 
 export function TuTien({ kho, nhanVat, onLuyenDan, onChoiLai }: { kho: Kho; nhanVat: NhanVat; onLuyenDan: () => void; onChoiLai: () => void }) {
   const [bang, datBang] = useState<Bang>(null);
@@ -22,7 +39,9 @@ export function TuTien({ kho, nhanVat, onLuyenDan, onChoiLai }: { kho: Kho; nhan
       <header className="dau-tu-tien">
         <div>
           <b>{nhanVat.ten}</b>
-          <small>Luyện Khí tầng {kho.tuVi.tang}</small>
+          <small>
+            {CANH_GIOI[kho.tuVi.canhGioi]} tầng {kho.tuVi.tang}
+          </small>
         </div>
         <span className="linh-thach">
           <i className="cham-linh-thach" />
@@ -47,20 +66,16 @@ export function TuTien({ kho, nhanVat, onLuyenDan, onChoiLai }: { kho: Kho; nhan
         </div>
         <p className="chu-nho">
           {day
-            ? 'Luyện Khí đã viên mãn. Cần Trúc Cơ Đan để đột phá — tính năng đột phá sẽ có ở bản sau.'
+            ? `${CANH_GIOI[kho.tuVi.canhGioi]} đã viên mãn. Cần đan đột phá để lên ${CANH_GIOI[kho.tuVi.canhGioi + 1] ?? 'đỉnh'} — tính năng đột phá sẽ có ở bản sau.`
             : `Đang thổ nạp linh khí: +${tocDo.toFixed(1)} tu vi mỗi giây.`}
         </p>
-        <div className="hang-nut ba">
-          <button className="nut" onClick={() => datBang('thien-menh')}>
-            Thiên mệnh
-          </button>
-          <button className="nut" onClick={() => datBang('hanh-trang')}>
-            Hành trang
-          </button>
-          <button className="nut chinh" onClick={onLuyenDan}>
-            Luyện đan
-          </button>
-        </div>
+        <nav className="day-nut-tron">
+          <NutTron id="tui-do" ten="Túi đồ" chu="囊" onClick={() => datBang('hanh-trang')} />
+          <NutTron id="luyen-dan" ten="Luyện đan" chu="丹" noiBat onClick={onLuyenDan} />
+          <NutTron id="mon-phai" ten="Môn phái" chu="門" />
+          <NutTron id="vuon-duoc" ten="Vườn dược" chu="草" />
+          <NutTron id="thien-menh" ten="Thiên mệnh" chu="命" onClick={() => datBang('thien-menh')} />
+        </nav>
       </section>
 
       {bang === 'thien-menh' && (

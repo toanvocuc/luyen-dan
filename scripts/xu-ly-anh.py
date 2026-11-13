@@ -184,6 +184,30 @@ def main():
             im = thu_nho(cat_sat(tach_nen(Image.open(os.path.join(vao, ten)), tron)), canh)
             im.save(os.path.join(RA, thu_muc, ten), optimize=True)
             print('ok', thu_muc + '/' + ten, im.size)
+    # ảnh nền theo bậc cảnh giới: Hinh_anh/nen/dong-phu-1.png … dan-phong-5.png -> public/hinh/nen/*.jpg (chưa có thì bỏ qua)
+    vao = os.path.join(GOC, 'nen')
+    if os.path.isdir(vao):
+        os.makedirs(os.path.join(RA, 'nen'), exist_ok=True)
+        for ten in sorted(os.listdir(vao)):
+            goc_ten, duoi = os.path.splitext(ten)
+            if duoi.lower() not in ('.png', '.jpg', '.jpeg', '.webp'):
+                continue
+            im = thu_nho(Image.open(os.path.join(vao, ten)).convert('RGB'), 1920)
+            im.save(os.path.join(RA, 'nen', goc_ten + '.jpg'), quality=86)
+            print('ok nen/' + ten, im.size)
+
+    # ảnh giao diện: Hinh_anh/ui/*.png -> public/hinh/ui/ (nút tròn nut-*.png thu về 256, khung và bảng giữ tới 1024)
+    vao = os.path.join(GOC, 'ui')
+    if os.path.isdir(vao):
+        os.makedirs(os.path.join(RA, 'ui'), exist_ok=True)
+        for ten in sorted(os.listdir(vao)):
+            if not ten.lower().endswith('.png'):
+                continue
+            canh = 256 if ten.startswith('nut-') else 1024
+            im = thu_nho(cat_sat(tach_nen(Image.open(os.path.join(vao, ten)))), canh)
+            im.save(os.path.join(RA, 'ui', ten), optimize=True)
+            print('ok ui/' + ten, im.size)
+
     sys.exit(1 if loi else 0)
 
 

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { DAN_PHUONG, DUOC_LIEU, LUAT, PHU_LIEU, TEN_PHAM, TEN_TUOI_NGAN, anhDan, anhDuocLieu, type Tuoi } from './game/duLieu.ts';
+import { DAN_PHUONG, DUOC_LIEU, LUAT, PHU_LIEU, TEN_PHAM, TEN_TUOI_NGAN, anhDan, anhDuocLieu, anhNen, type Tuoi } from './game/duLieu.ts';
 import { banDan, canTui, giaMua, giaMuaPhuLieu, giaTriTui, khoMoi, luuKho, muaDuocLieu, muaPhuLieu, napKho, nhanTroCap, tuLuyen, type Kho } from './game/kho.ts';
 import { LoDan } from './manHinh/LoDan.tsx';
 import { ManMoDau, ManThienMenh } from './manHinh/ThienMenh.tsx';
@@ -50,7 +50,7 @@ export function UngDung() {
 
   if (man === 'tu-tien') {
     return (
-      <div className="ung-dung">
+      <div className="ung-dung" style={{ backgroundImage: anhNen('dong-phu', kho.tuVi.canhGioi) }}>
         <TuTien
           kho={kho}
           nhanVat={kho.nhanVat}
@@ -71,7 +71,7 @@ export function UngDung() {
   const tongGiaTri = DAN_PHUONG.reduce((s, p) => s + giaTriTui(kho, p.id), 0);
 
   return (
-    <div className="ung-dung">
+    <div className="ung-dung" style={{ backgroundImage: anhNen('dan-phong', kho.tuVi.canhGioi) }}>
       <header className="thanh-tren">
         <span className="nhom-nut">
           <button className="nut-nho" disabled={dangLuyen} onClick={() => datMan('tu-tien')} title={dangLuyen ? 'Đang luyện dở một mẻ' : 'Về động phủ'}>
