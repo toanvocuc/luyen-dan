@@ -9,6 +9,7 @@
     "preview": "vite preview --host",
     "mo-phong": "node scripts/mo-phong.ts",
     "xu-ly-anh": "python scripts/xu-ly-anh.py",
+    "cat-lop": "python scripts/cat-lop-nhan-vat.py",
     "day-web": "npm run build && node scripts/day-web.mjs"
   },
   "dependencies": {

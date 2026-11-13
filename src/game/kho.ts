@@ -1,9 +1,14 @@
 // Trạng thái lâu dài của người chơi (linh thạch, dược liệu, túi đan…) + lưu vào trình duyệt.
 import { DAN_PHUONG, DUOC_LIEU, LUAT, NANG_CAP_GOC, giaBan, laDanThat, timDanPhuong, timDuocLieu, timPhuLieu, type NangCap, type PhamThat, type Tuoi } from './duLieu.ts';
 import type { KetQua } from './luyenDan.ts';
+import { loiThe, timXuatThan, type NhanVat } from './nhanVat.ts';
 
 export interface Kho {
-  phienBan: 2;
+  phienBan: 3;
+  /** Chưa tạo nhân vật thì null. */
+  nhanVat: NhanVat | null;
+  /** Tu vi: tầng Luyện Khí hiện tại (1–9) và điểm đã tích trong tầng. */
+  tuVi: { tang: number; diem: number };
   linhThach: number;
   /** id dược liệu -> số lượng theo tuổi thuốc [mười, trăm, ngàn năm]. */
   duocLieu: Record<string, [number, number, number]>;
@@ -21,14 +26,17 @@ export interface Kho {
   thongKe: { soMe: number; noLo: number };
 }
 
-const KHOA = 'luyen-dan-kho-v2';
+const KHOA = 'luyen-dan-kho-v3';
 
-export function khoMoi(): Kho {
+/** Kho khởi đầu. Có nhân vật thì xuất thân quyết định vốn liếng ban đầu. */
+export function khoMoi(nv: NhanVat | null = null): Kho {
+  const xt = nv ? timXuatThan(nv.xuatThan) : null;
+  const hs = xt?.heSoDuocLieu ?? 1;
   const duocLieu: Kho['duocLieu'] = {};
   for (const d of DUOC_LIEU) duocLieu[d.id] = [0, 0, 0];
   // vốn ban đầu: đủ luyện ba mẻ Tụ Khí Đan
-  duocLieu['linh-thao'] = [6, 0, 0];
-  duocLieu['chu-qua'] = [3, 0, 0];
+  duocLieu['linh-thao'] = [6 * hs, 0, 0];
+  duocLieu['chu-qua'] = [3 * hs, 0, 0];
   const tuiDan: Kho['tuiDan'] = {};
   const danVan: Kho['danVan'] = {};
   const thongThao: Kho['thongThao'] = {};
@@ -37,15 +45,19 @@ export function khoMoi(): Kho {
     danVan[p.id] = 0;
     thongThao[p.id] = 0;
   }
+  // thế gia luyện đan: coi như đã thạo đan nhập môn nên đan phương thứ hai mở sẵn
+  if (xt?.moSanPhuong) thongThao[DAN_PHUONG[0].id] = 3;
   return {
-    phienBan: 2,
-    linhThach: 120,
+    phienBan: 3,
+    nhanVat: nv,
+    tuVi: { tang: 1, diem: 0 },
+    linhThach: xt?.linhThach ?? 120,
     duocLieu,
     phuLieu: { 'hoa-tinh': 0, 'ngung-than-thao': 0 },
     tuiDan,
     danVan,
     thongThao,
-    nangCap: { ...NANG_CAP_GOC },
+    nangCap: { ...NANG_CAP_GOC, lo: xt?.lo ?? 0 },
     loHu: false,
     thongKe: { soMe: 0, noLo: 0 },
   };
@@ -56,7 +68,7 @@ export function napKho(): Kho {
     const s = localStorage.getItem(KHOA);
     if (s) {
       const k = JSON.parse(s) as Kho;
-      if (k && k.phienBan === 2) {
+      if (k && k.phienBan === 3) {
         // bù các mục mới thêm vào dữ liệu sau khi người chơi đã có bản lưu
         const moi = khoMoi();
         return {
@@ -69,6 +81,7 @@ export function napKho(): Kho {
           thongThao: { ...moi.thongThao, ...k.thongThao },
           nangCap: { ...moi.nangCap, ...k.nangCap },
           thongKe: { ...moi.thongKe, ...k.thongKe },
+          tuVi: { ...moi.tuVi, ...k.tuVi },
         };
       }
     }
@@ -146,8 +159,12 @@ export function nhanKetQua(k: Kho, phuongId: string, kq: KetQua): Kho {
 
 // ---------- phường thị ----------
 
+/** Giá mua một phần dược liệu, đã tính lợi thế của nhân vật (giới diện, xuất thân). */
+export const giaMua = (k: Kho, id: string, tuoi: Tuoi) => Math.max(1, Math.round(timDuocLieu(id).gia[tuoi] * loiThe(k.nhanVat).heSoMua));
+export const giaMuaPhuLieu = (k: Kho, id: string) => Math.max(1, Math.round((timPhuLieu(id)?.gia ?? 0) * loiThe(k.nhanVat).heSoMua));
+
 export function muaDuocLieu(k: Kho, id: string, tuoi: Tuoi): Kho {
-  const gia = timDuocLieu(id).gia[tuoi];
+  const gia = giaMua(k, id, tuoi);
   if (k.linhThach < gia) return k;
   const c = [...k.duocLieu[id]] as [number, number, number];
   c[tuoi] += 1;
@@ -156,16 +173,18 @@ export function muaDuocLieu(k: Kho, id: string, tuoi: Tuoi): Kho {
 
 export function muaPhuLieu(k: Kho, id: string): Kho {
   const p = timPhuLieu(id);
-  if (!p || k.linhThach < p.gia) return k;
-  return { ...k, linhThach: k.linhThach - p.gia, phuLieu: { ...k.phuLieu, [id]: (k.phuLieu[id] ?? 0) + 1 } };
+  const gia = giaMuaPhuLieu(k, id);
+  if (!p || k.linhThach < gia) return k;
+  return { ...k, linhThach: k.linhThach - gia, phuLieu: { ...k.phuLieu, [id]: (k.phuLieu[id] ?? 0) + 1 } };
 }
 
 /** Giá trị toàn bộ đan của một đan phương nếu bán ở phường thị. */
 export function giaTriTui(k: Kho, phuongId: string): number {
   const p = timDanPhuong(phuongId);
   const t = k.tuiDan[phuongId];
-  let tong = (k.danVan[phuongId] ?? 0) * giaBan(p, 3, true);
-  for (let i = 0; i < 4; i++) tong += t[i] * giaBan(p, i as PhamThat);
+  const hs = loiThe(k.nhanVat).heSoBan;
+  let tong = (k.danVan[phuongId] ?? 0) * giaBan(p, 3, true, hs);
+  for (let i = 0; i < 4; i++) tong += t[i] * giaBan(p, i as PhamThat, false, hs);
   return tong;
 }
 
@@ -193,4 +212,24 @@ export function canTui(k: Kho): boolean {
 
 export function nhanTroCap(k: Kho): Kho {
   return canTui(k) ? { ...k, linhThach: k.linhThach + LUAT.troCap } : k;
+}
+
+// ---------- tu luyện ----------
+
+/** Điểm tu vi cần để vượt tầng hiện tại. */
+export const tuViCan = (tang: number) => tang * LUAT.tuViMoiTang;
+/** Đã viên mãn tầng cuối chưa (chờ đan đột phá — sẽ làm sau). */
+export const vienMan = (k: Kho) => k.tuVi.tang >= LUAT.soTang && k.tuVi.diem >= tuViCan(k.tuVi.tang);
+
+/** Cộng tu vi theo số giây đã trôi qua, tự lên tầng khi đủ điểm, dừng ở viên mãn tầng cuối. */
+export function tuLuyen(k: Kho, giay: number): Kho {
+  if (!k.nhanVat || vienMan(k)) return k;
+  let { tang, diem } = k.tuVi;
+  diem += giay * LUAT.tuViMoiGiay * loiThe(k.nhanVat).tocDoTuLuyen;
+  while (tang < LUAT.soTang && diem >= tuViCan(tang)) {
+    diem -= tuViCan(tang);
+    tang += 1;
+  }
+  if (tang >= LUAT.soTang) diem = Math.min(diem, tuViCan(tang));
+  return { ...k, tuVi: { tang, diem } };
 }

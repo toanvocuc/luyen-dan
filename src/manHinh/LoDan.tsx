@@ -18,6 +18,7 @@ import {
   type DanPhuong,
   type Tuoi,
 } from '../game/duLieu.ts';
+import { loiThe } from '../game/nhanVat.ts';
 import { duLieu, nhanKetQua, suaLo, thieuGi, truNguyenLieu, type Kho } from '../game/kho.ts';
 import {
   batDauMe,
@@ -78,7 +79,16 @@ const CHU_TOI: Record<KetQuaToi, string> = {
   'dai-thanh': 'Đại thành! +2',
 };
 
-export function LoDan({ kho, doiKho }: { kho: Kho; doiKho: (ham: (k: Kho) => Kho) => void }) {
+export function LoDan({
+  kho,
+  doiKho,
+  onDangLuyen,
+}: {
+  kho: Kho;
+  doiKho: (ham: (k: Kho) => Kho) => void;
+  /** Báo cho màn cha biết đang luyện dở một mẻ (để khoá nút rời đan phòng). */
+  onDangLuyen?: (dang: boolean) => void;
+}) {
   const [phuongId, datPhuongId] = useState(DAN_PHUONG[0].id);
   const phuong = timDanPhuong(phuongId);
   const [tuoi, datTuoi] = useState<[Tuoi, Tuoi, Tuoi]>([0, 0, 0]);
@@ -112,7 +122,8 @@ export function LoDan({ kho, doiKho }: { kho: Kho; doiKho: (ham: (k: Kho) => Kho
   const khoaBamRef = useRef(0);
   const conLacRef = useRef<HTMLDivElement>(null);
 
-  const nangCap = kho.nangCap;
+  // lợi thế bẩm sinh của nhân vật đi kèm nâng cấp, để lõi luyện đan tính chung một chỗ
+  const nangCap = { ...kho.nangCap, loiThe: loiThe(kho.nhanVat) };
   const phuLieu = timPhuLieu(phuLieuId);
   const meXem = pha === 'phoi' || !me ? batDauMe(tuoi, phuLieu, nangCap) : me;
   const duNguyenLieu = duLieu(kho, phuong.lieu, tuoi, phuLieuId);
@@ -132,7 +143,7 @@ export function LoDan({ kho, doiKho }: { kho: Kho; doiKho: (ham: (k: Kho) => Kho
 
   /** Đặt bố cục thanh tôi đan cho lần bấm kế tiếp. */
   const datVungToi = (m: Me) => {
-    const v = vungToi(phuong, m, Math.random());
+    const v = vungToi(phuong, m, Math.random(), nangCap);
     vtRef.current = v;
     datVt(v);
   };
@@ -147,6 +158,11 @@ export function LoDan({ kho, doiKho }: { kho: Kho; doiKho: (ham: (k: Kho) => Kho
     khoaBamRef.current = performance.now() + 500;
     datPha('toi');
   };
+
+  useEffect(() => {
+    onDangLuyen?.(pha === 'lua' || pha === 'toi');
+    return () => onDangLuyen?.(false);
+  }, [pha, onDangLuyen]);
 
   // ---- vòng lặp khống hỏa ----
   useEffect(() => {
@@ -338,7 +354,7 @@ export function LoDan({ kho, doiKho }: { kho: Kho; doiKho: (ham: (k: Kho) => Kho
 
   const thuDan = () => {
     if (!meRef.current || nghiRef.current) return;
-    ketThuc(moLo(phuong, meRef.current));
+    ketThuc(moLo(phuong, meRef.current, Math.random, nangCap));
   };
 
   const meMoi = () => {
@@ -495,7 +511,7 @@ export function LoDan({ kho, doiKho }: { kho: Kho; doiKho: (ham: (k: Kho) => Kho
                   >
                     <img src={anhDan(p.id)} alt="" />
                     <b>{p.ten}</b>
-                    <small>{mo ? `Bán từ ${giaBan(p, 0)} linh thạch` : `Cần ${ME_DE_MO_KHOA} mẻ ${DAN_PHUONG[i - 1].ten}`}</small>
+                    <small>{mo ? `Bán từ ${giaBan(p, 0, false, nangCap.loiThe.heSoBan)} linh thạch` : `Cần ${ME_DE_MO_KHOA} mẻ ${DAN_PHUONG[i - 1].ten}`}</small>
                   </button>
                 );
               })}
@@ -512,7 +528,7 @@ export function LoDan({ kho, doiKho }: { kho: Kho; doiKho: (ham: (k: Kho) => Kho
       <section className="bang day">
         {pha === 'phoi' && (
           <>
-            <ThanhTiLe doan={doanPham(tiLeVien(phuong, meXem))} />
+            <ThanhTiLe doan={doanPham(tiLeVien(phuong, meXem, nangCap))} />
             <button className="phuong-dang-chon" onClick={() => datMoChon(true)}>
               <img src={anhDan(phuong.id)} alt="" />
               <span className="than">
@@ -586,7 +602,7 @@ export function LoDan({ kho, doiKho }: { kho: Kho; doiKho: (ham: (k: Kho) => Kho
 
         {pha === 'lua' && me && (
           <>
-            <ThanhTiLe doan={doanPham(tiLeVien(phuong, me))} />
+            <ThanhTiLe doan={doanPham(tiLeVien(phuong, me, nangCap))} />
             <div className="ten-doan">{tenDoan}</div>
             <div className="tien-do">
               <div ref={tienDoRef} />
@@ -631,7 +647,7 @@ export function LoDan({ kho, doiKho }: { kho: Kho; doiKho: (ham: (k: Kho) => Kho
             <p className="chu-nho an-khi-thap">Bấm Tôi đan (hoặc chạm vào lò) đúng lúc con lắc trắng nằm trong khoảng xanh. Mỗi cấp con lắc chạy nhanh hơn và khoảng xanh hẹp lại.</p>
             <div className="neu-thu">
               <span>Nếu thu bây giờ:</span>
-              <ThanhTiLe doan={doanPham(tiLeVien(phuong, me))} gon />
+              <ThanhTiLe doan={doanPham(tiLeVien(phuong, me, nangCap))} gon />
             </div>
             <div className="hang-nut">
               <button

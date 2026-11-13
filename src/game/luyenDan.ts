@@ -1,5 +1,5 @@
 // Lõi luyện đan: thuần tính toán, không dính giao diện — để chạy mô phỏng cân bằng được bằng Node.
-import { CHAT_LUONG_THEO_TUOI, LUAT, type DanPhuong, type NangCap, type Pham, type PhuLieu, type Tuoi } from './duLieu.ts';
+import { CHAT_LUONG_THEO_TUOI, LOI_THE_GOC, LUAT, NANG_CAP_GOC, type DanPhuong, type NangCap, type Pham, type PhuLieu, type Tuoi } from './duLieu.ts';
 
 /** Trạng thái của một mẻ đang luyện. */
 export interface Me {
@@ -27,13 +27,14 @@ export interface KetQua {
 
 const kep = (x: number, a: number, b: number) => Math.min(b, Math.max(a, x));
 /** Lò tốt hơn thì áp tăng chậm hơn. */
-const heSoAp = (nangCap: NangCap) => Math.max(0.3, 1 - 0.1 * nangCap.lo);
+const lt = (nangCap: NangCap) => nangCap.loiThe ?? LOI_THE_GOC;
+const heSoAp = (nangCap: NangCap) => Math.max(0.3, 1 - 0.1 * nangCap.lo) * lt(nangCap).heSoAp;
 
 export function batDauMe(tuoi: readonly [Tuoi, Tuoi, Tuoi], phuLieu: PhuLieu | null, nangCap: NangCap): Me {
   const tb = (CHAT_LUONG_THEO_TUOI[tuoi[0]] + CHAT_LUONG_THEO_TUOI[tuoi[1]] + CHAT_LUONG_THEO_TUOI[tuoi[2]]) / 3;
   const themVien = Math.floor(nangCap.tayNghe / 2);
   return {
-    chatLuong: tb + (phuLieu?.chatLuong ?? 0),
+    chatLuong: tb + (phuLieu?.chatLuong ?? 0) + lt(nangCap).chatLuong,
     // áp lò được phép âm: phụ liệu ổn định cho một khoản "đệm" trừ dần về sau
     apLo: phuLieu?.apLo ?? 0,
     soVien: Math.max(1, LUAT.soVienGoc + themVien + (phuLieu?.soVien ?? 0)),
@@ -43,7 +44,7 @@ export function batDauMe(tuoi: readonly [Tuoi, Tuoi, Tuoi], phuLieu: PhuLieu | n
 
 /** Bề rộng vùng hỏa hầu (rộng ra theo cấp linh hỏa). */
 export function rongVung(phuong: DanPhuong, nangCap: NangCap): number {
-  return phuong.rongVung + nangCap.lua * 2;
+  return phuong.rongVung + nangCap.lua * 2 + lt(nangCap).rongVung;
 }
 
 /**
@@ -61,9 +62,9 @@ export function giuLua(me: Me, vung: Vung, dt: number, nangCap: NangCap, giayNon
 export const quaAp = (me: Me) => me.apLo >= LUAT.apNoLo;
 
 /** Phân bố phẩm cấp của từng viên nếu thu đan ngay: [phế, hạ, trung, thượng, cực], cộng lại bằng 1. */
-export function tiLeVien(phuong: DanPhuong, me: Me): number[] {
+export function tiLeVien(phuong: DanPhuong, me: Me, nangCap: NangCap = NANG_CAP_GOC): number[] {
   const q = kep(me.chatLuong, 0, 100);
-  const tam = LUAT.phamGoc + (LUAT.phamDoc * q) / 100 - phuong.doKho + LUAT.toi.phamMoiCap * me.cap;
+  const tam = LUAT.phamGoc + (LUAT.phamDoc * q) / 100 - phuong.doKho + LUAT.toi.phamMoiCap * me.cap + lt(nangCap).phamCong;
   const w: number[] = [];
   let tong = 0;
   for (let i = 0; i < 5; i++) {
@@ -96,10 +97,10 @@ export interface VungToi {
 export const coTheToi = (me: Me) => me.cap < LUAT.toi.capToiDa && me.soVien > 0;
 
 /** Bố cục thanh ở cấp hiện tại. `r` trong [0,1) quyết định vị trí khoảng xanh, để không bấm theo nhịp thuộc lòng được. */
-export function vungToi(phuong: DanPhuong, me: Me, r: number): VungToi {
+export function vungToi(phuong: DanPhuong, me: Me, r: number, nangCap: NangCap = NANG_CAP_GOC): VungToi {
   const t = LUAT.toi;
   const q = kep(me.chatLuong, 0, 100);
-  const xanh = Math.max(t.xanhToiThieu, t.xanhGoc - t.xanhMoiCap * me.cap - t.xanhDoKho * phuong.doKho + t.xanhMoiChatLuong * (q - 50));
+  const xanh = Math.max(t.xanhToiThieu, t.xanhGoc - t.xanhMoiCap * me.cap - t.xanhDoKho * phuong.doKho + t.xanhMoiChatLuong * (q - 50) + lt(nangCap).xanh);
   const vang = Math.min(xanh * 0.6, Math.max(t.vangToiThieu, t.vangGoc - t.vangMoiCap * me.cap));
   const nua = xanh / 2 + t.gan;
   return {
@@ -107,7 +108,7 @@ export function vungToi(phuong: DanPhuong, me: Me, r: number): VungToi {
     xanh,
     vang,
     gan: t.gan,
-    giayQuet: Math.max(t.quetToiThieu, t.quetGoc - t.quetMoiCap * me.cap),
+    giayQuet: Math.max(t.quetToiThieu, t.quetGoc - t.quetMoiCap * me.cap) * lt(nangCap).heSoQuet,
   };
 }
 
@@ -134,8 +135,8 @@ export function toiDan(me: Me, vung: VungToi, x: number, nangCap: NangCap): { lo
 }
 
 /** Mở lò: quay phẩm cấp riêng cho từng viên; viên cực phẩm phải qua đan kiếp. */
-export function moLo(phuong: DanPhuong, me: Me, rng: () => number = Math.random): KetQua {
-  const tl = tiLeVien(phuong, me);
+export function moLo(phuong: DanPhuong, me: Me, rng: () => number = Math.random, nangCap: NangCap = NANG_CAP_GOC): KetQua {
+  const tl = tiLeVien(phuong, me, nangCap);
   const vien: Vien[] = [];
   for (let n = 0; n < me.soVien; n++) {
     let r = rng();
@@ -146,7 +147,7 @@ export function moLo(phuong: DanPhuong, me: Me, rng: () => number = Math.random)
     }
     const pham = (i - 1) as Pham;
     if (pham === 3) {
-      const qua = rng() < LUAT.vuotKiep;
+      const qua = rng() < lt(nangCap).vuotKiep;
       vien.push(qua ? { pham: 3, danVan: true, vuotKiep: true } : { pham: 2, danVan: false, vuotKiep: false });
     } else {
       vien.push({ pham, danVan: false });

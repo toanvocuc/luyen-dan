@@ -244,8 +244,6 @@ export const LUAT = {
   phamDoc: 2.6,
   phamDoRong: 0.85,
 
-  /** Đan kiếp: xác suất một viên cực phẩm vượt kiếp (thành đan văn); không qua thì tụt xuống thượng phẩm. */
-  vuotKiep: 0.5,
 
   /** Luyện thành bấy nhiêu mẻ thì mở "luyện nhanh". */
   thongThao: 5,
@@ -258,7 +256,39 @@ export const LUAT = {
   heSoBan: 0.7,
   /** Trợ cấp tông môn khi cạn túi. */
   troCap: 40,
+
+  /** Tu luyện: Luyện Khí có bấy nhiêu tầng; lên tầng n cần n × tuViMoiTang điểm; mỗi giây được tuViMoiGiay điểm (nhân với linh căn). */
+  soTang: 9,
+  tuViMoiTang: 60,
+  tuViMoiGiay: 1,
 } as const;
+
+/**
+ * Lợi thế bẩm sinh của nhân vật (từ thiên mệnh: xuất thân, thể chất, tư chất, khí vận, giới diện…),
+ * đã quy ra các hệ số mà phần luyện đan dùng trực tiếp. Xem hàm loiThe trong nhanVat.ts.
+ */
+export interface LoiThe {
+  /** Cộng vào chất lượng khởi điểm của mẻ. */
+  chatLuong: number;
+  /** Cộng vào bề rộng vùng hỏa hầu. */
+  rongVung: number;
+  /** Nhân vào lượng áp lò tăng lên. */
+  heSoAp: number;
+  /** Cộng vào bề rộng khoảng xanh khi tôi đan. */
+  xanh: number;
+  /** Nhân vào thời gian quét của con lắc (lớn hơn 1 = chậm hơn = dễ hơn). */
+  heSoQuet: number;
+  /** Xác suất vượt đan kiếp. */
+  vuotKiep: number;
+  /** Cộng vào tâm phẩm cấp khi mở lò. */
+  phamCong: number;
+  /** Nhân vào giá mua dược liệu / giá bán đan. */
+  heSoMua: number;
+  heSoBan: number;
+  /** Nhân vào tốc độ tăng tu vi. */
+  tocDoTuLuyen: number;
+}
+export const LOI_THE_GOC: LoiThe = { chatLuong: 0, rongVung: 0, heSoAp: 1, xanh: 0, heSoQuet: 1, vuotKiep: 0.5, phamCong: 0, heSoMua: 1, heSoBan: 1, tocDoTuLuyen: 1 };
 
 /** Nâng cấp đan phòng — cấp 0 là chưa nâng. */
 export interface NangCap {
@@ -268,6 +298,8 @@ export interface NangCap {
   lua: number;
   /** Tay nghề: thêm viên mỗi mẻ. */
   tayNghe: number;
+  /** Lợi thế bẩm sinh của nhân vật; bỏ trống = không có lợi thế gì. */
+  loiThe?: LoiThe;
 }
 export const NANG_CAP_GOC: NangCap = { lo: 0, lua: 0, tayNghe: 0 };
 
@@ -276,6 +308,6 @@ export const timDanPhuong = (id: string) => DAN_PHUONG.find((d) => d.id === id)!
 export const timPhuLieu = (id: string | null) => (id ? PHU_LIEU.find((d) => d.id === id) ?? null : null);
 
 /** Giá bán một viên ở phường thị. */
-export function giaBan(phuong: DanPhuong, pham: PhamThat, danVan = false): number {
-  return Math.round(phuong.giaGoc * HE_SO_GIA[pham] * (danVan ? HE_SO_DAN_VAN : 1) * LUAT.heSoBan);
+export function giaBan(phuong: DanPhuong, pham: PhamThat, danVan = false, heSo = 1): number {
+  return Math.round(phuong.giaGoc * HE_SO_GIA[pham] * (danVan ? HE_SO_DAN_VAN : 1) * LUAT.heSoBan * heSo);
 }
