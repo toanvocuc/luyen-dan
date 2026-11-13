@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { DAN_PHUONG, anhNen } from './game/duLieu.ts';
-import { khoMoi, luuKho, napKho, tuLuyen, type Kho } from './game/kho.ts';
+import { khoMoi, lamMoiDon, luuKho, napKho, tuLuyen, type Kho } from './game/kho.ts';
 import { LoDan } from './manHinh/LoDan.tsx';
 import { PhuongThi } from './manHinh/PhuongThi.tsx';
 import { ManMoDau, ManThienMenh } from './manHinh/ThienMenh.tsx';
@@ -22,11 +22,13 @@ export function UngDung() {
 
   const doiKho = useCallback((ham: (k: Kho) => Kho) => datKho(ham), []);
 
-  // tu vi tăng đều mỗi giây chừng nào game còn mở, dù đang ở động phủ, đan phòng hay vườn dược
+  // tu vi tăng đều mỗi giây chừng nào game còn mở, dù đang ở động phủ, đan phòng hay vườn dược;
+  // cùng nhịp đó, chỗ đơn hàng nào hết thời gian chờ thì có đơn mới
   const coNhanVat = !!kho.nhanVat;
   useEffect(() => {
     if (!coNhanVat || man === 'mo-dau' || man === 'thien-menh') return;
-    const id = setInterval(() => datKho((k) => tuLuyen(k, 1)), 1000);
+    datKho((k) => lamMoiDon(k));
+    const id = setInterval(() => datKho((k) => lamMoiDon(tuLuyen(k, 1))), 1000);
     return () => clearInterval(id);
   }, [coNhanVat, man]);
 
@@ -60,11 +62,13 @@ export function UngDung() {
           doiKho={doiKho}
           onLuyenDan={() => datMan('lo-dan')}
           onVuon={() => datMan('vuon')}
+          onMonPhai={() => datBang('tui')}
           onChoiLai={() => {
             datKho(khoMoi());
             datMan('mo-dau');
           }}
         />
+        {bang === 'tui' && <TuiDan kho={kho} doiKho={doiKho} onDong={() => datBang(null)} />}
       </div>
     );
   }

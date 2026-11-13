@@ -31,6 +31,7 @@ export function TuTien({
   doiKho,
   onLuyenDan,
   onVuon,
+  onMonPhai,
   onChoiLai,
 }: {
   kho: Kho;
@@ -38,6 +39,8 @@ export function TuTien({
   doiKho: (ham: (k: Kho) => Kho) => void;
   onLuyenDan: () => void;
   onVuon: () => void;
+  /** Mở bảng đơn hàng của các tông môn. */
+  onMonPhai: () => void;
   onChoiLai: () => void;
 }) {
   const [bang, datBang] = useState<Bang>(null);
@@ -109,7 +112,7 @@ export function TuTien({
         <nav className="day-nut-tron">
           <NutTron id="tui-do" ten="Túi đồ" chu="囊" onClick={() => datBang('hanh-trang')} />
           <NutTron id="luyen-dan" ten="Luyện đan" chu="丹" noiBat onClick={onLuyenDan} />
-          <NutTron id="mon-phai" ten="Môn phái" chu="門" />
+          <NutTron id="mon-phai" ten="Đơn hàng" chu="門" onClick={onMonPhai} />
           <NutTron id="vuon-duoc" ten="Vườn dược" chu="草" onClick={onVuon} />
           <NutTron id="thien-menh" ten="Thiên mệnh" chu="命" onClick={() => datBang('thien-menh')} />
         </nav>

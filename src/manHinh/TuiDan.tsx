@@ -1,15 +1,28 @@
-// Túi đan: mỗi loại đan ở mỗi phẩm là một dòng riêng, bán lẻ theo số lượng tự chọn.
+// Túi đan: giao đan theo đơn hàng của tông môn (trả đủ giá) hoặc bán lẻ ở phường thị (mất nửa giá).
 import { useState } from 'react';
-import { DAN_PHUONG, LUAT, TEN_PHAM, anhDan, giaBan, type PhamThat } from '../game/duLieu.ts';
-import { banDan, banLe, giaTriTui, loiTheKho, type Kho } from '../game/kho.ts';
+import { DAN_PHUONG, LUAT, TEN_PHAM, TONG_MON, anhDan, giaBan, timDanPhuong, timTongMon, type PhamThat } from '../game/duLieu.ts';
+import { banDan, banLe, giaTriTui, giaoDon, loiTheKho, soVienHopDon, tuChoiDon, type Kho } from '../game/kho.ts';
+import { dongHo, useBayGio } from './PhuongThi.tsx';
 
 type Loai = PhamThat | 'dv';
+type Trang = 'don' | 'ban-le';
+
+/** Huy hiệu tông môn: có ảnh public/hinh/ui/tong-<id>.png thì dùng, chưa có thì hiện một chữ. */
+function HuyHieu({ id }: { id: string }) {
+  const [coAnh, datCoAnh] = useState(true);
+  return (
+    <span className="huy-hieu">{coAnh ? <img src={`./hinh/ui/tong-${id}.png`} alt="" onError={() => datCoAnh(false)} /> : <b>{timTongMon(id).chu}</b>}</span>
+  );
+}
 
 export function TuiDan({ kho, doiKho, onDong }: { kho: Kho; doiKho: (ham: (k: Kho) => Kho) => void; onDong: () => void }) {
+  const [trang, datTrang] = useState<Trang>('don');
   /** Số lượng muốn bán của từng dòng (khoá = id đan | phẩm); chưa chỉnh thì là 1. */
   const [soBan, datSoBan] = useState<Record<string, number>>({});
+  const luc = useBayGio();
   const heSo = loiTheKho(kho).heSoBan;
   const tongGiaTri = DAN_PHUONG.reduce((s, p) => s + giaTriTui(kho, p.id), 0);
+  const tongDanhVong = TONG_MON.reduce((s, t) => s + (kho.danhVong[t.id] ?? 0), 0);
 
   const dong: { khoa: string; id: string; ten: string; loai: Loai; co: number; gia: number }[] = [];
   for (const p of DAN_PHUONG) {
@@ -26,44 +39,108 @@ export function TuiDan({ kho, doiKho, onDong }: { kho: Kho; doiKho: (ham: (k: Kh
     <div className="lop-phu" onClick={onDong}>
       <div className="bang tam" onClick={(e) => e.stopPropagation()}>
         <h2>Túi đan</h2>
-        <p className="chu-nho">
-          Bán lẻ ở phường thị chỉ được {Math.round(LUAT.heSoBan * 100)}% giá trị. Đã luyện {kho.thongKe.soMe} mẻ, nổ lò {kho.thongKe.noLo} lần.
-        </p>
-        {dong.length === 0 && <p className="chu-nho">Chưa có viên đan nào. Hãy khai lò luyện một mẻ.</p>}
-        {dong.map((d) => {
-          const n = Math.min(d.co, Math.max(1, soBan[d.khoa] ?? 1));
-          const dat = (x: number) => datSoBan((c) => ({ ...c, [d.khoa]: Math.min(d.co, Math.max(1, x)) }));
-          return (
-            <div key={d.khoa} className="dong-tui dong-ban">
-              <img src={anhDan(d.id)} alt="" />
-              <div className="than-dong">
-                <b>{d.ten}</b>
-                <div className="hang-pham">
-                  <span className={d.loai === 'dv' ? 'pham-dv' : `pham-${d.loai}`}>
-                    {d.loai === 'dv' ? 'Đan văn' : TEN_PHAM[d.loai]} ×{d.co}
+        <div className="hang-chon">
+          <button className={`the nho ${trang === 'don' ? 'chon' : ''}`} onClick={() => datTrang('don')}>
+            Đơn hàng tông môn
+          </button>
+          <button className={`the nho ${trang === 'ban-le' ? 'chon' : ''}`} onClick={() => datTrang('ban-le')}>
+            Bán lẻ ({dong.reduce((s, d) => s + d.co, 0)})
+          </button>
+        </div>
+
+        {trang === 'don' && (
+          <>
+            <p className="chu-nho">
+              Tông môn trả đủ giá, gấp đôi bán lẻ. Viên phẩm cao hơn yêu cầu vẫn giao được. Danh vọng đã tích: {tongDanhVong}.
+            </p>
+            {Array.from({ length: LUAT.don.soDon }, (_, i) => {
+              const d = kho.donHang.ds[i] ?? null;
+              if (!d) {
+                const con = Math.max(0, Math.ceil(((kho.donHang.luc[i] ?? 0) - luc) / 1000));
+                return (
+                  <div key={i} className="the-don cho">
+                    Đơn mới sau {dongHo(con)}
+                  </div>
+                );
+              }
+              const p = timDanPhuong(d.phuongId);
+              const co = soVienHopDon(kho, d);
+              const du = co >= d.soLuong;
+              return (
+                <div key={i} className={`the-don ${du ? 'du' : ''}`}>
+                  <HuyHieu id={d.tongMon} />
+                  <div className="than-dong">
+                    <small>{timTongMon(d.tongMon).ten}</small>
+                    <div className="yeu-cau">
+                      <img src={anhDan(p.id)} alt="" />
+                      <span>
+                        <b>
+                          {d.soLuong} {p.ten}
+                        </b>{' '}
+                        <span className={`pham-${d.pham}`}>{d.pham === 3 ? TEN_PHAM[3] : `${TEN_PHAM[d.pham]} trở lên`}</span>
+                      </span>
+                    </div>
+                    <div className="thuong">
+                      Thưởng {d.thuong} linh thạch · +{d.danhVong} danh vọng · đang có {Math.min(co, d.soLuong)}/{d.soLuong}
+                    </div>
+                  </div>
+                  <span className="cot-nut-don">
+                    <button className="nut-nho giao" disabled={!du} onClick={() => doiKho((k) => giaoDon(k, i))}>
+                      Giao
+                    </button>
+                    <button className="nut-nho bo" onClick={() => doiKho((k) => tuChoiDon(k, i))}>
+                      Từ chối
+                    </button>
                   </span>
-                  <span>{d.gia}/viên</span>
                 </div>
-              </div>
-              <span className="chinh-so">
-                <button className="nut-nho" disabled={n <= 1} onClick={() => dat(n - 1)} aria-label="Bớt">
-                  −
-                </button>
-                <button className="so" onClick={() => dat(n >= d.co ? 1 : d.co)} title="Chạm để chọn tất cả">
-                  {n}
-                </button>
-                <button className="nut-nho" disabled={n >= d.co} onClick={() => dat(n + 1)} aria-label="Thêm">
-                  +
-                </button>
-              </span>
-              <button className="nut-nho nut-ban" onClick={() => doiKho((k) => banLe(k, d.id, d.loai, n))}>
-                Bán {d.gia * n}
-              </button>
-            </div>
-          );
-        })}
+              );
+            })}
+          </>
+        )}
+
+        {trang === 'ban-le' && (
+          <>
+            <p className="chu-nho">
+              Bán lẻ ở phường thị chỉ được {Math.round(LUAT.heSoBan * 100)}% giá trị. Đã luyện {kho.thongKe.soMe} mẻ, nổ lò {kho.thongKe.noLo} lần.
+            </p>
+            {dong.length === 0 && <p className="chu-nho">Chưa có viên đan nào. Hãy khai lò luyện một mẻ.</p>}
+            {dong.map((d) => {
+              const n = Math.min(d.co, Math.max(1, soBan[d.khoa] ?? 1));
+              const dat = (x: number) => datSoBan((c) => ({ ...c, [d.khoa]: Math.min(d.co, Math.max(1, x)) }));
+              return (
+                <div key={d.khoa} className="dong-tui dong-ban">
+                  <img src={anhDan(d.id)} alt="" />
+                  <div className="than-dong">
+                    <b>{d.ten}</b>
+                    <div className="hang-pham">
+                      <span className={d.loai === 'dv' ? 'pham-dv' : `pham-${d.loai}`}>
+                        {d.loai === 'dv' ? 'Đan văn' : TEN_PHAM[d.loai]} ×{d.co}
+                      </span>
+                      <span>{d.gia}/viên</span>
+                    </div>
+                  </div>
+                  <span className="chinh-so">
+                    <button className="nut-nho" disabled={n <= 1} onClick={() => dat(n - 1)} aria-label="Bớt">
+                      −
+                    </button>
+                    <button className="so" onClick={() => dat(n >= d.co ? 1 : d.co)} title="Chạm để chọn tất cả">
+                      {n}
+                    </button>
+                    <button className="nut-nho" disabled={n >= d.co} onClick={() => dat(n + 1)} aria-label="Thêm">
+                      +
+                    </button>
+                  </span>
+                  <button className="nut-nho nut-ban" onClick={() => doiKho((k) => banLe(k, d.id, d.loai, n))}>
+                    Bán {d.gia * n}
+                  </button>
+                </div>
+              );
+            })}
+          </>
+        )}
+
         <div className="hang-nut">
-          {tongGiaTri > 0 && (
+          {trang === 'ban-le' && tongGiaTri > 0 && (
             <button
               className="nut-nho nguy-hiem"
               onClick={() => {

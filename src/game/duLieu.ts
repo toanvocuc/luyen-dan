@@ -385,6 +385,19 @@ export const LUAT = {
   vuon: { giay: [180, 1200, 7200], sanLuong: 2, themTiLe: 0.3, themKhiVan: 0.004, soODau: 3, soOToiDa: 9, giaO: 200, giaONhan: 2, heSoGiaHat: 3 },
 
   /**
+   * Đơn hàng tông môn: luôn có soDon chỗ. Mỗi đơn đòi một loại đan từ một phẩm trở lên (phamTiLe là xác suất của từng phẩm),
+   * số viên trong khoảng soLuong[phẩm], và trả heSo lần giá trị gốc — tức gấp đôi trở lên so với bán lẻ.
+   * Giao xong hoặc từ chối thì chỗ đó trống choMoi giây (đồng hồ thật) rồi mới có đơn khác.
+   */
+  don: {
+    soDon: 3,
+    choMoi: 600,
+    heSo: [1, 1.3],
+    phamTiLe: [0.55, 0.33, 0.1, 0.02],
+    soLuong: [[2, 6], [1, 4], [1, 2], [1, 1]],
+  },
+
+  /**
    * Phường thị đổi hàng mỗi gioDoiHang giờ. Mỗi kỳ, từng vị thuốc có tiLe[tuổi] cơ hội được bày bán
    * với số lượng trong khoảng soLuong[tuổi]; hạt giống tương tự. Các vị trong luonCo thì thuốc 10 năm và hạt giống kỳ nào cũng có,
    * để người mới không bao giờ kẹt nguyên liệu của đan nhập môn.
@@ -441,6 +454,16 @@ export interface NangCap {
   loiThe?: LoiThe;
 }
 export const NANG_CAP_GOC: NangCap = { lo: 0, lua: 0, tayNghe: 0 };
+
+/** Các tông môn đặt đan. Ảnh huy hiệu: public/hinh/ui/tong-<id>.png, chưa có thì hiện một chữ. */
+export const TONG_MON = [
+  { id: 'thanh-van', ten: 'Thanh Vân Tông', chu: '雲' },
+  { id: 'duoc-vuong', ten: 'Dược Vương Cốc', chu: '藥' },
+  { id: 'thien-kiem', ten: 'Thiên Kiếm Môn', chu: '劍' },
+  { id: 'van-bao', ten: 'Vạn Bảo Lâu', chu: '寶' },
+  { id: 'huyen-am', ten: 'Huyền Âm Giáo', chu: '陰' },
+] as const;
+export const timTongMon = (id: string) => TONG_MON.find((t) => t.id === id) ?? TONG_MON[0];
 
 /** Một chiếc lò đan mua được ở phường thị. Mỗi lò đổi tính chất của mọi mẻ luyện bằng nó. */
 export interface LoDan {

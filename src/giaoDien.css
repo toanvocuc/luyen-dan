@@ -2390,3 +2390,93 @@ button {
     min-width: 58px;
   }
 }
+
+/* ---------- đơn hàng tông môn ---------- */
+.the-don {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 8px;
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid var(--dong-toi);
+  background: rgba(9, 17, 19, 0.6);
+}
+.the-don.du {
+  border-color: var(--mau-pham-1);
+  box-shadow: 0 0 10px rgba(76, 195, 138, 0.25);
+}
+.the-don.cho {
+  justify-content: center;
+  min-height: 62px;
+  border-style: dashed;
+  color: var(--chu-mo);
+  font-size: 13px;
+}
+.huy-hieu {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1.5px solid var(--dong);
+  background: radial-gradient(circle at 50% 35%, #26383a, #0c1517 75%);
+  overflow: hidden;
+}
+.huy-hieu b {
+  font-size: 20px;
+  line-height: 1;
+  color: #e9dcc0;
+}
+.huy-hieu img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.huy-hieu:has(img) {
+  border: 0;
+  background: none;
+  border-radius: 0;
+  overflow: visible;
+}
+.the-don .than-dong small {
+  display: block;
+  font-size: 11.5px;
+  color: var(--chu-mo);
+}
+.the-don .yeu-cau {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  line-height: 1.35;
+}
+.the-don .yeu-cau img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+.the-don .thuong {
+  font-size: 12px;
+  color: #ffe2a0;
+}
+.cot-nut-don {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cot-nut-don .nut-nho {
+  min-width: 66px;
+  padding: 4px 6px;
+}
+.cot-nut-don .nut-nho.giao:not(:disabled) {
+  border-color: var(--mau-pham-1);
+  color: var(--mau-pham-1);
+}
+.cot-nut-don .nut-nho.bo {
+  min-height: 26px;
+  font-size: 11.5px;
+  color: var(--chu-mo);
+}

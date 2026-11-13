@@ -162,6 +162,9 @@ def main():
     for goc, (ten, canh) in VAT_THE.items():
         p = os.path.join(GOC, goc)
         if not os.path.exists(p):
+            # ảnh lò gốc có thể đã được dời vào thư mục lo/
+            p = os.path.join(GOC, 'lo', goc)
+        if not os.path.exists(p):
             print('THIEU', goc); loi += 1; continue
         im = thu_nho(cat_sat(tach_nen(Image.open(p))), canh)
         im.save(os.path.join(RA, ten), optimize=True)
@@ -248,6 +251,8 @@ def main():
             if not ten.lower().endswith('.png'):
                 continue
             im = thu_nho(cat_sat(tach_nen(Image.open(os.path.join(vao, ten)))), 720)
+            # ảnh lò gốc chính là Thanh Đồng Lô
+            ten = 'thanh-dong-lo.png' if ten in VAT_THE else ten
             im.save(os.path.join(RA, 'lo', ten), optimize=True)
             print('ok lo/' + ten, im.size)
 

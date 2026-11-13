@@ -1,5 +1,5 @@
 // Trạng thái lâu dài của người chơi (linh thạch, dược liệu, túi đan…) + lưu vào trình duyệt.
-import { CANH_GIOI, DAN_PHUONG, DUOC_LIEU, LUAT, NANG_CAP_GOC, giaBan, giaHatGiong, laDanThat, timDanPhuong, timDuocLieu, timLoDan, timPhuLieu, type DanPhuong, type LoiThe, type NangCap, type PhamThat, type Tuoi } from './duLieu.ts';
+import { CANH_GIOI, DAN_PHUONG, DUOC_LIEU, HE_SO_GIA, LUAT, NANG_CAP_GOC, TONG_MON, bacSo, giaBan, giaHatGiong, laDanThat, timDanPhuong, timDuocLieu, timLoDan, timPhuLieu, type DanPhuong, type LoiThe, type NangCap, type PhamThat, type Tuoi } from './duLieu.ts';
 import type { KetQua } from './luyenDan.ts';
 import { loiThe, timXuatThan, type NhanVat } from './nhanVat.ts';
 
@@ -32,6 +32,22 @@ export interface Kho {
   cho: { ky: number; daMua: Record<string, number> };
   /** Lò đan: chiếc đang dùng và những chiếc đã mua. */
   loDan: { dung: string; co: string[] };
+  /** Đơn hàng tông môn: đơn ở từng chỗ (null = chỗ trống), và thời điểm (ms) chỗ trống đó có đơn mới. */
+  donHang: { ds: (Don | null)[]; luc: number[] };
+  /** id tông môn -> danh vọng đã tích. */
+  danhVong: Record<string, number>;
+}
+
+/** Một đơn đặt đan của tông môn. */
+export interface Don {
+  tongMon: string;
+  phuongId: string;
+  /** Phẩm thấp nhất tông môn chịu nhận; viên phẩm cao hơn vẫn giao được. */
+  pham: PhamThat;
+  soLuong: number;
+  /** Linh thạch và danh vọng nhận được khi giao đủ. */
+  thuong: number;
+  danhVong: number;
 }
 
 /** Một cây trong vườn: vị thuốc gì, gieo lúc nào (mili giây theo đồng hồ thật). */
@@ -79,6 +95,8 @@ export function khoMoi(nv: NhanVat | null = null): Kho {
     vuon: { soO: LUAT.vuon.soODau, o: [] },
     cho: { ky: 0, daMua: {} },
     loDan: { dung: 'thanh-dong-lo', co: ['thanh-dong-lo'] },
+    donHang: { ds: [], luc: [] },
+    danhVong: {},
   };
 }
 
@@ -105,6 +123,8 @@ export function napKho(): Kho {
           vuon: { ...moi.vuon, ...k.vuon },
           cho: { ...moi.cho, ...k.cho },
           loDan: { ...moi.loDan, ...k.loDan },
+          donHang: { ...moi.donHang, ...k.donHang },
+          danhVong: { ...k.danhVong },
         };
       }
     }
@@ -305,6 +325,93 @@ export function banLe(k: Kho, phuongId: string, loai: PhamThat | 'dv', soLuong: 
   if (n < 1) return k;
   tui[loai] -= n;
   return { ...k, linhThach: k.linhThach + n * giaBan(p, loai, false, hs), tuiDan: { ...k.tuiDan, [phuongId]: tui } };
+}
+
+// ---------- đơn hàng tông môn ----------
+
+/** Quay một đơn mới hợp với cảnh giới hiện tại: chỉ đặt đan của bậc đang đứng và bậc ngay dưới. */
+function taoDon(k: Kho, rng: () => number, daCo: readonly string[]): Don {
+  const cg = k.tuVi.canhGioi;
+  const hop = DAN_PHUONG.filter((p) => bacSo(p) <= cg && bacSo(p) >= cg - 1);
+  // tránh ba đơn cùng đòi một loại đan, trừ khi cảnh giới này chỉ có đúng loại đó
+  const chuaCo = hop.filter((p) => !daCo.includes(p.id));
+  const nguon = chuaCo.length ? chuaCo : hop;
+  const p = nguon[Math.floor(rng() * nguon.length)] ?? DAN_PHUONG[0];
+  const c = LUAT.don;
+  let r = rng();
+  let pham = 0;
+  while (pham < 3 && r >= c.phamTiLe[pham]) {
+    r -= c.phamTiLe[pham];
+    pham += 1;
+  }
+  const [a, b] = c.soLuong[pham];
+  // đan đột phá là của hiếm: tông môn chỉ đặt một hai viên
+  const soLuong = Math.min(p.dotPha && p.dotPha > 1 ? 2 : 99, a + Math.floor(rng() * (b - a + 1)));
+  const heSo = c.heSo[0] + rng() * (c.heSo[1] - c.heSo[0]);
+  return {
+    tongMon: TONG_MON[Math.floor(rng() * TONG_MON.length)].id,
+    phuongId: p.id,
+    pham: pham as PhamThat,
+    soLuong,
+    thuong: Math.max(1, Math.round(p.giaGoc * HE_SO_GIA[pham] * soLuong * heSo * loiThe(k.nhanVat).heSoBan)),
+    danhVong: soLuong * (pham + 1) * (bacSo(p) + 1),
+  };
+}
+
+/** Lấp đơn mới vào những chỗ trống đã hết thời gian chờ. Không có gì đổi thì trả lại đúng kho cũ. */
+export function lamMoiDon(k: Kho, rng: () => number = Math.random, luc = Date.now()): Kho {
+  if (!k.nhanVat) return k;
+  let ds: (Don | null)[] | null = null;
+  for (let i = 0; i < LUAT.don.soDon; i++) {
+    if (k.donHang.ds[i] || (k.donHang.luc[i] ?? 0) > luc) continue;
+    ds ??= Array.from({ length: LUAT.don.soDon }, (_, j) => k.donHang.ds[j] ?? null);
+    ds[i] = taoDon(k, rng, ds.flatMap((d) => (d ? [d.phuongId] : [])));
+  }
+  return ds ? { ...k, donHang: { ...k.donHang, ds } } : k;
+}
+
+/** Số viên trong túi đủ phẩm để giao cho một đơn (đan văn tính là cực phẩm). */
+export function soVienHopDon(k: Kho, d: Don): number {
+  const t = k.tuiDan[d.phuongId];
+  let n = k.danVan[d.phuongId] ?? 0;
+  for (let ph = d.pham; ph <= 3; ph++) n += t[ph];
+  return n;
+}
+
+function dongDon(k: Kho, viTri: number, luc: number): Kho['donHang'] {
+  const ds = Array.from({ length: LUAT.don.soDon }, (_, j) => k.donHang.ds[j] ?? null);
+  const lucMoi = Array.from({ length: LUAT.don.soDon }, (_, j) => k.donHang.luc[j] ?? 0);
+  ds[viTri] = null;
+  lucMoi[viTri] = luc + LUAT.don.choMoi * 1000;
+  return { ds, luc: lucMoi };
+}
+
+/** Giao một đơn: lấy viên phẩm thấp nhất còn đủ điều kiện trước, để giữ lại viên quý. */
+export function giaoDon(k: Kho, viTri: number, luc = Date.now()): Kho {
+  const d = k.donHang.ds[viTri];
+  if (!d || soVienHopDon(k, d) < d.soLuong) return k;
+  const tui = [...k.tuiDan[d.phuongId]] as [number, number, number, number];
+  let dv = k.danVan[d.phuongId] ?? 0;
+  let con = d.soLuong;
+  for (let ph = d.pham; ph <= 3 && con > 0; ph++) {
+    const lay = Math.min(con, tui[ph]);
+    tui[ph] -= lay;
+    con -= lay;
+  }
+  dv -= con;
+  return {
+    ...k,
+    linhThach: k.linhThach + d.thuong,
+    tuiDan: { ...k.tuiDan, [d.phuongId]: tui },
+    danVan: { ...k.danVan, [d.phuongId]: dv },
+    danhVong: { ...k.danhVong, [d.tongMon]: (k.danhVong[d.tongMon] ?? 0) + d.danhVong },
+    donHang: dongDon(k, viTri, luc),
+  };
+}
+
+/** Từ chối một đơn: chỗ đó trống một lúc rồi mới có đơn khác. */
+export function tuChoiDon(k: Kho, viTri: number, luc = Date.now()): Kho {
+  return k.donHang.ds[viTri] ? { ...k, donHang: dongDon(k, viTri, luc) } : k;
 }
 
 // ---------- lò đan ----------
