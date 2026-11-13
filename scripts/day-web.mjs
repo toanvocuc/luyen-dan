@@ -19,8 +19,10 @@ try {
   cpSync('dist', tam, { recursive: true });
   // .nojekyll: bảo GitHub Pages phục vụ nguyên trạng, không chạy Jekyll
   writeFileSync(join(tam, '.nojekyll'), '');
-  // Khi đã trỏ tên miền riêng thì đặt biến TEN_MIEN để ghi file CNAME, nếu không GitHub sẽ quên tên miền sau mỗi lần đẩy
-  if (process.env.TEN_MIEN) writeFileSync(join(tam, 'CNAME'), process.env.TEN_MIEN + '\n');
+  // Game chạy ở tên miền riêng: lần đẩy nào cũng phải ghi file CNAME, nếu không GitHub quên tên miền và trang thành 404.
+  // Vì vậy mặc định luôn kèm omorasoul.org; muốn đẩy không kèm tên miền (về lại địa chỉ github.io) thì đặt TEN_MIEN rỗng.
+  const tenMien = process.env.TEN_MIEN ?? 'omorasoul.org';
+  if (tenMien) writeFileSync(join(tam, 'CNAME'), tenMien + '\n');
 
   git(tam, 'init', '-q', '-b', 'gh-pages');
   git(tam, 'add', '-A');
