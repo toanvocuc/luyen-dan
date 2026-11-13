@@ -207,6 +207,31 @@ def main():
             im = thu_nho(cat_sat(tach_nen(Image.open(os.path.join(vao, ten)))), canh)
             im.save(os.path.join(RA, 'ui', ten), optimize=True)
             print('ok ui/' + ten, im.size)
+            if ten == 'khung-bang.png':
+                # bản lòng tối: chỉ hạ sáng phần lòng màu ngọc (lục và lam trội hơn đỏ), viền đồng giữ nguyên
+                a = np.asarray(im).astype(np.float32)
+                long_ = (a[..., 1] > a[..., 0] + 15) & (a[..., 2] > a[..., 0] + 15)
+                a[long_, :3] *= 0.42
+                Image.fromarray(a.round().astype(np.uint8), 'RGBA').save(os.path.join(RA, 'ui', 'khung-bang-toi.png'), optimize=True)
+                print('ok ui/khung-bang-toi.png')
+
+    # mảnh hiệu ứng: Hinh_anh/hieu-ung/*.png vẽ trên NỀN ĐEN -> PNG trắng có độ đục bằng độ sáng.
+    # Game dùng chúng làm mặt nạ rồi tô màu theo phẩm đan, nên chỉ cần hình dạng, không cần màu gốc.
+    vao = os.path.join(GOC, 'hieu-ung')
+    if os.path.isdir(vao):
+        os.makedirs(os.path.join(RA, 'hieu-ung'), exist_ok=True)
+        for ten in sorted(os.listdir(vao)):
+            if not ten.lower().endswith('.png'):
+                continue
+            a = np.asarray(Image.open(os.path.join(vao, ten)).convert('RGB')).astype(np.float32) / 255.0
+            sang = a.max(axis=2)
+            # nền đen của Gemini thường là xám rất tối chứ không phải 0: cắt đáy rồi kéo giãn lại
+            sang = np.clip((sang - 0.07) / 0.86, 0, 1)
+            ra = np.dstack([np.ones_like(a), sang[..., None]])
+            im = Image.fromarray((ra * 255).round().astype(np.uint8), 'RGBA')
+            im = thu_nho(im, 96 if ten.startswith('hat') else 640)
+            im.save(os.path.join(RA, 'hieu-ung', ten), optimize=True)
+            print('ok hieu-ung/' + ten, im.size)
 
     sys.exit(1 if loi else 0)
 

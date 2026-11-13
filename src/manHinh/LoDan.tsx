@@ -1,5 +1,5 @@
 // Màn hình lò đan: phối liệu -> khống hỏa -> tôi đan (dừng con lắc đúng khoảng xanh) -> mở lò.
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import {
   CAC_BAC,
   DAN_PHUONG,
@@ -50,6 +50,36 @@ const TEN_TUOI_SO = ['10', '100', '1000'] as const;
 /** Con lắc đứng yên bấy nhiêu mili giây sau mỗi lần bấm để người chơi kịp thấy mình dừng ở đâu. */
 const NGHI_SAU_BAM = 750;
 
+/** Thời gian "nín thở" trước khi lò bung (ms), theo bậc hiệu ứng của mẻ: mẻ càng quý chờ càng lâu. */
+const CHO_MO = [700, 1300, 1600, 2100] as const;
+/** Hạt sáng bắn ra khi lò bung: hướng bay, độ trễ và cỡ cố định sẵn để mỗi lần vẽ lại không nhảy chỗ. */
+const HAT = Array.from({ length: 22 }, (_, i) => {
+  const goc = ((i * 137.5) % 360) * (Math.PI / 180);
+  const xa = 70 + ((i * 53) % 90);
+  return { x: Math.round(Math.cos(goc) * xa), y: Math.round(Math.sin(goc) * xa * 0.8 - 50), tre: ((i * 37) % 100) / 100, co: 0.6 + ((i * 29) % 10) / 12 };
+});
+/** Mảnh hiệu ứng vẽ tay (public/hinh/hieu-ung/<tên>.png). Chưa có ảnh thì hiệu ứng dùng hình vẽ bằng CSS. */
+const MANH = ['tia', 'vong', 'hat', 'set'] as const;
+type Manh = (typeof MANH)[number];
+const duongManh = (ten: Manh) => `./hinh/hieu-ung/${ten}.png`;
+function useManh(): Record<Manh, boolean> {
+  const [co, datCo] = useState<Record<Manh, boolean>>({ tia: false, vong: false, hat: false, set: false });
+  useEffect(() => {
+    for (const ten of MANH) {
+      const im = new Image();
+      im.onload = () => datCo((c) => ({ ...c, [ten]: true }));
+      im.src = duongManh(ten);
+    }
+  }, []);
+  return co;
+}
+/** style cho một mảnh: có ảnh thì dùng ảnh làm mặt nạ (màu do CSS tô theo phẩm), chưa có thì để CSS tự vẽ. */
+function kieuManh(co: Record<Manh, boolean>, ten: Manh): CSSProperties | undefined {
+  if (!co[ten]) return undefined;
+  const u = `url(${duongManh(ten)})`;
+  return { maskImage: u, WebkitMaskImage: u };
+}
+
 const kep = (x: number, a: number, b: number) => Math.min(b, Math.max(a, x));
 const muot = (x: number) => {
   const t = kep(x, 0, 1);
@@ -69,6 +99,13 @@ function tamVong(phuong: DanPhuong, t: number): { tam: number; doan: number } {
     dau += d.giay;
   }
   return { tam: 50, doan: 0 };
+}
+
+/** Bậc hiệu ứng của một mẻ = phẩm của viên quý nhất: 0 phế/hạ, 1 trung, 2 thượng, 3 cực phẩm (đan văn). */
+function bacCuaMe(kq: KetQua): 0 | 1 | 2 | 3 {
+  let b = 0;
+  for (const v of kq.vien) b = Math.max(b, v.danVan ? 3 : v.pham);
+  return Math.max(0, b) as 0 | 1 | 2 | 3;
 }
 
 const CHU_TOI: Record<KetQuaToi, string> = {
@@ -103,6 +140,8 @@ export function LoDan({
   const [xungDot, datXungDot] = useState(0);
   const [ketQua, datKetQua] = useState<KetQua | null>(null);
   const [soHien, datSoHien] = useState(0);
+  const [daBung, datDaBung] = useState(false);
+  const coManh = useManh();
   const [vt, datVt] = useState<VungToi | null>(null);
   const [dangNghi, datDangNghi] = useState(false);
   const [baoToi, datBaoToi] = useState<{ loai: KetQuaToi; luot: number } | null>(null);
@@ -326,12 +365,21 @@ export function LoDan({
     };
   }, [pha]);
 
-  // ---- mở lò: hiện từng viên một ----
+  // ---- mở lò: nín thở một nhịp, rồi bung sáng và hiện từng viên một ----
   useEffect(() => {
     if (pha !== 'mo' || !ketQua || ketQua.noLo) return;
     datSoHien(0);
-    const id = setInterval(() => datSoHien((n) => (n >= ketQua.vien.length ? n : n + 1)), 480);
-    return () => clearInterval(id);
+    datDaBung(false);
+    let id: ReturnType<typeof setInterval> | undefined;
+    // nín thở: lò rung, ánh sáng rò qua khe nắp mang màu của viên quý nhất, rồi mới bung
+    const cho = setTimeout(() => {
+      datDaBung(true);
+      id = setInterval(() => datSoHien((n) => (n >= ketQua.vien.length ? n : n + 1)), 480);
+    }, ketQua.vien.length ? CHO_MO[bacCuaMe(ketQua)] : 0);
+    return () => {
+      clearTimeout(cho);
+      clearInterval(id);
+    };
   }, [pha, ketQua]);
 
   const khaiLo = (nhanh: boolean) => {
@@ -408,7 +456,10 @@ export function LoDan({
     }
   };
 
-  const moXong = !!ketQua && (ketQua.noLo || soHien >= ketQua.vien.length);
+  const moXong = !!ketQua && (ketQua.noLo || (daBung && soHien >= ketQua.vien.length));
+  const coHieuUng = pha === 'mo' && !!ketQua && !ketQua.noLo && ketQua.vien.length > 0;
+  const bacMe = coHieuUng ? bacCuaMe(ketQua) : 0;
+  const coKiep = coHieuUng && ketQua.vien.some((v) => v.vuotKiep !== undefined);
   const soDanThat = ketQua ? ketQua.vien.filter((v) => v.pham >= 0).length : 0;
   const phanAp = me ? kep(me.apLo / LUAT.apNoLo, 0, 1) : 0;
 
@@ -416,7 +467,7 @@ export function LoDan({
     <main className="lo-dan">
       <div
         ref={canhRef}
-        className={`canh pha-${pha} ${pha === 'mo' && ketQua?.noLo ? 'lo-no' : ''}`}
+        className={`canh pha-${pha} ${pha === 'mo' && ketQua?.noLo ? 'lo-no' : ''} ${coHieuUng ? (daBung ? `da-bung bung-${bacMe}` : 'cho-mo') : ''}`}
         onPointerDown={giu(true)}
         onPointerUp={giu(false)}
         onPointerCancel={giu(false)}
@@ -456,6 +507,26 @@ export function LoDan({
         {pha === 'toi' && baoToi && (
           <div key={baoToi.luot} className={`bao-toi toi-${baoToi.loai}`}>
             {CHU_TOI[baoToi.loai]}
+          </div>
+        )}
+
+        {coHieuUng && (
+          <div className={`hieu-ung-mo bac-${bacMe}`} style={{ '--cho': `${CHO_MO[bacMe]}ms` } as CSSProperties}>
+            <i className="he-nap" />
+            {!daBung && coKiep && <i className={`set ${coManh.set ? 'anh' : ''}`} style={kieuManh(coManh, 'set')} />}
+            {daBung && bacMe >= 1 && <i className="quang" />}
+            {daBung && bacMe >= 2 && <i className={`tia ${coManh.tia ? 'anh' : ''}`} style={kieuManh(coManh, 'tia')} />}
+            {daBung && bacMe >= 1 && <i className={`vong ${coManh.vong ? 'anh' : ''}`} style={kieuManh(coManh, 'vong')} />}
+            {daBung &&
+              bacMe >= 1 &&
+              HAT.slice(0, bacMe === 1 ? 8 : bacMe === 2 ? 14 : 22).map((h, i) => (
+                <i
+                  key={i}
+                  className={`hat ${coManh.hat ? 'anh' : ''}`}
+                  style={{ ...kieuManh(coManh, 'hat'), '--x': `${h.x}px`, '--y': `${h.y}px`, '--tre': `${h.tre}s`, '--co': h.co } as CSSProperties}
+                />
+              ))}
+            {daBung && bacMe >= 3 && <i className="loe" />}
           </div>
         )}
 

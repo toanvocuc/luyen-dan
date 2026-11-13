@@ -38,7 +38,7 @@ export function TuTien({ kho, nhanVat, onLuyenDan, onChoiLai }: { kho: Kho; nhan
     <main className="tu-tien">
       <header className="dau-tu-tien">
         <div>
-          <b>{nhanVat.ten}</b>
+          <b className="bien-ten">{nhanVat.ten}</b>
           <small>
             {CANH_GIOI[kho.tuVi.canhGioi]} tầng {kho.tuVi.tang}
           </small>

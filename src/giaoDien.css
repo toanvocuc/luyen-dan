@@ -1561,10 +1561,10 @@ button {
 /* hàng nút cuối của bảng nổi luôn ghim ở đáy, để bảng dài (phường thị trên màn thấp) vẫn thấy nút Đóng */
 .bang.tam > .hang-nut:last-child {
   position: sticky;
-  bottom: -14px;
-  margin: 10px -14px -14px;
-  padding: 8px 14px 14px;
-  background: linear-gradient(rgba(9, 17, 19, 0), rgb(9, 17, 19) 30%);
+  bottom: -4px;
+  margin: 10px -3px -4px;
+  padding: 8px 3px 4px;
+  background: linear-gradient(rgb(var(--long-bang) / 0), rgb(var(--long-bang)) 30%);
 }
 
 /* ---------- hàng nút tròn ở đáy động phủ ---------- */
@@ -1656,4 +1656,375 @@ button {
 }
 .nut-tron:not(:disabled):active {
   transform: scale(0.94);
+}
+
+/* ---------- khung vẽ tay (Hinh_anh/ui/khung-*.png), cắt 9 mảnh bằng border-image ---------- */
+:root {
+  --khung-bang: url('/hinh/ui/khung-bang-toi.png');
+  /* màu lòng của khung trên, để hàng nút dính đáy phủ nền cho khớp */
+  --long-bang: 17 31 32;
+}
+.bang.tam,
+.bang.day {
+  /* viền thật 11px (trong suốt) để nội dung và hàng nút dính đáy không đè lên nét khung; hoạ tiết góc vẽ rộng hơn, lấn vào phần đệm */
+  border: 11px solid transparent;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  border-image: var(--khung-bang) 84 108 fill / 22px 28px stretch;
+}
+.bang.tam {
+  padding: 8px 3px 4px;
+  scrollbar-width: none;
+  filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.7));
+}
+.bang.day {
+  padding: 4px 2px max(4px, calc(env(safe-area-inset-bottom) - 11px));
+}
+.nut.chinh {
+  border: 0 solid transparent;
+  border-radius: 0;
+  background: none;
+  border-image: url('/hinh/ui/khung-nut.png') 121 120 fill / 23px 23px stretch;
+  text-shadow: 0 1px 0 rgba(255, 236, 180, 0.5);
+}
+.dau-tu-tien .bien-ten {
+  min-width: 190px;
+  height: 44px;
+  padding: 0 46px;
+  display: grid;
+  place-items: center;
+  border-image: url('/hinh/ui/khung-ten.png') 110 222 fill / 22px 44px stretch;
+  border-style: solid;
+  border-width: 0;
+  white-space: nowrap;
+  font-size: 16px;
+}
+.dau-tu-tien small {
+  padding-left: 46px;
+  text-shadow: 0 1px 3px #000;
+}
+/* thanh trên của đan phòng: màn hẹp 360 thì thu đệm chứ không cho chữ nút xuống dòng */
+.thanh-tren .nut-nho {
+  white-space: nowrap;
+}
+@media (max-width: 380px) {
+  .thanh-tren .nut-nho {
+    padding-inline: 7px;
+  }
+}
+
+/* ---------- hiệu ứng mở lò: nín thở (lò rung, khe nắp rò sáng) rồi bung sáng theo phẩm ---------- */
+.hieu-ung-mo {
+  /* màu theo viên quý nhất trong mẻ */
+  --mau: #b9bec2;
+  /* tâm bung sáng: ngang tầm nắp lò */
+  --tam-y: calc(100% - 4% - min(62%, 300px) * 0.86);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.hieu-ung-mo.bac-1 {
+  --mau: var(--mau-pham-1);
+}
+.hieu-ung-mo.bac-2 {
+  --mau: var(--mau-pham-2);
+}
+.hieu-ung-mo.bac-3 {
+  --mau: var(--mau-pham-3);
+}
+.hieu-ung-mo > i {
+  position: absolute;
+  left: 50%;
+  top: var(--tam-y);
+  display: block;
+  translate: -50% -50%;
+}
+/* có ảnh vẽ tay: ảnh làm mặt nạ, màu do nền tô */
+.hieu-ung-mo > i.anh {
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+
+/* lúc chờ: lò rung dồn dập dần, khe nắp sáng dần lên */
+.canh.cho-mo .lo {
+  animation: rung-nhe 0.14s linear infinite;
+}
+.he-nap {
+  width: min(62%, 270px);
+  height: 70px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, color-mix(in srgb, var(--mau) 60%, #fff) 0, var(--mau) 30%, transparent 68%);
+  filter: blur(6px);
+  mix-blend-mode: screen;
+  opacity: 0;
+}
+.cho-mo .he-nap {
+  animation: he-sang var(--cho) ease-in forwards;
+}
+@keyframes he-sang {
+  0% {
+    opacity: 0;
+    scale: 0.4 0.5;
+  }
+  55% {
+    opacity: 0.55;
+    scale: 0.8 0.8;
+  }
+  70% {
+    opacity: 0.35;
+    scale: 0.75 0.7;
+  }
+  100% {
+    opacity: 1;
+    scale: 1.25 1.5;
+  }
+}
+/* đan kiếp: sét giáng xuống lò trong lúc chờ */
+.set {
+  top: 0 !important;
+  translate: -50% 0 !important;
+  width: 100%;
+  height: var(--tam-y);
+  background: #fff;
+  opacity: 0;
+  animation: set-giang var(--cho) linear forwards;
+}
+.set.anh {
+  width: min(70%, 300px);
+  background: linear-gradient(#fff, #cfe2ff);
+  filter: drop-shadow(0 0 10px #9cc4ff);
+  -webkit-mask-size: 100% 100% !important;
+  mask-size: 100% 100% !important;
+}
+@keyframes set-giang {
+  0%,
+  48% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.85;
+  }
+  55% {
+    opacity: 0.1;
+  }
+  58% {
+    opacity: 0.7;
+  }
+  66%,
+  82% {
+    opacity: 0;
+  }
+  84% {
+    opacity: 0.95;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.set:not(.anh) {
+  filter: blur(30px);
+}
+
+/* lúc bung */
+.quang {
+  width: min(120%, 520px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--mau) 75%, #fff) 0, color-mix(in srgb, var(--mau) 55%, transparent) 22%, transparent 62%);
+  mix-blend-mode: screen;
+  animation: quang-bung 0.5s ease-out both, quang-tho 2.4s ease-in-out 0.5s infinite;
+}
+.bac-1 .quang {
+  width: min(80%, 340px);
+}
+@keyframes quang-bung {
+  from {
+    scale: 0.1;
+    opacity: 0;
+  }
+  60% {
+    opacity: 1;
+  }
+  to {
+    scale: 1;
+    opacity: 0.7;
+  }
+}
+@keyframes quang-tho {
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+.tia {
+  width: min(190%, 760px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: repeating-conic-gradient(from 0deg, transparent 0deg 9deg, color-mix(in srgb, var(--mau) 80%, #fff) 13deg, transparent 17deg 30deg);
+  -webkit-mask: radial-gradient(circle, #000 0, rgba(0, 0, 0, 0.6) 25%, transparent 62%);
+  mask: radial-gradient(circle, #000 0, rgba(0, 0, 0, 0.6) 25%, transparent 62%);
+  mix-blend-mode: screen;
+  animation: tia-bung 0.55s cubic-bezier(0.2, 1.4, 0.4, 1) both, tia-xoay 18s linear infinite;
+}
+.tia.anh {
+  border-radius: 0;
+  background: radial-gradient(circle, #fff 0, color-mix(in srgb, var(--mau) 85%, #fff) 30%, var(--mau) 60%);
+}
+/* cực phẩm: tia ngũ sắc */
+.bac-3 .tia.anh,
+.bac-3 .tia:not(.anh) {
+  background: conic-gradient(from 0deg, #ffd76a, #ff9f6a, #ff7ac8, #8f9bff, #6ae0ff, #8dffb0, #ffd76a);
+}
+.bac-3 .tia:not(.anh) {
+  -webkit-mask: repeating-conic-gradient(from 0deg, transparent 0deg 9deg, #000 13deg, transparent 17deg 30deg), radial-gradient(circle, #000 0, rgba(0, 0, 0, 0.6) 25%, transparent 62%);
+  mask: repeating-conic-gradient(from 0deg, transparent 0deg 9deg, #000 13deg, transparent 17deg 30deg), radial-gradient(circle, #000 0, rgba(0, 0, 0, 0.6) 25%, transparent 62%);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+}
+@keyframes tia-bung {
+  from {
+    scale: 0.15;
+    opacity: 0;
+  }
+  to {
+    scale: 1;
+    opacity: 0.85;
+  }
+}
+@keyframes tia-xoay {
+  to {
+    rotate: 360deg;
+  }
+}
+.vong {
+  width: min(70%, 300px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 3px solid color-mix(in srgb, var(--mau) 70%, #fff);
+  box-shadow: 0 0 16px var(--mau), inset 0 0 16px var(--mau);
+  animation: vong-lan 0.9s ease-out forwards;
+}
+.vong.anh {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: color-mix(in srgb, var(--mau) 70%, #fff);
+}
+@keyframes vong-lan {
+  from {
+    scale: 0.1;
+    opacity: 1;
+  }
+  to {
+    scale: 2.2;
+    opacity: 0;
+  }
+}
+.hat {
+  width: calc(6px * var(--co));
+  height: calc(6px * var(--co));
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 6px 2px var(--mau);
+  opacity: 0;
+  animation: hat-bay calc(1.3s + var(--tre) * 0.9s) ease-out calc(var(--tre) * 0.5s) 1 both;
+}
+.bac-2 .hat,
+.bac-3 .hat {
+  animation-iteration-count: infinite;
+}
+.hat.anh {
+  width: calc(18px * var(--co));
+  height: calc(18px * var(--co));
+  border-radius: 0;
+  box-shadow: none;
+  background: color-mix(in srgb, var(--mau) 45%, #fff);
+  filter: drop-shadow(0 0 4px var(--mau));
+}
+@keyframes hat-bay {
+  0% {
+    translate: -50% -50%;
+    opacity: 0;
+    scale: 0.3;
+  }
+  15% {
+    opacity: 1;
+    scale: 1;
+  }
+  100% {
+    translate: calc(-50% + var(--x)) calc(-50% + var(--y));
+    opacity: 0;
+    scale: 0.5;
+  }
+}
+/* cực phẩm: cả màn loé trắng rồi rung */
+.loe {
+  position: fixed !important;
+  inset: 0;
+  left: 0 !important;
+  top: 0 !important;
+  translate: none !important;
+  z-index: 30;
+  background: radial-gradient(circle at 50% 40%, #fff, #fff3c4);
+  animation: loe-trang 0.75s ease-out forwards;
+}
+@keyframes loe-trang {
+  0% {
+    opacity: 0.95;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.canh.bung-3 {
+  animation: rung-man 0.45s linear;
+}
+.canh.bung-2 .lo,
+.canh.bung-3 .lo {
+  filter: drop-shadow(0 14px 14px rgba(0, 0, 0, 0.6)) brightness(1.15);
+}
+@keyframes rung-man {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  15% {
+    translate: -5px 3px;
+  }
+  30% {
+    translate: 5px -4px;
+  }
+  45% {
+    translate: -4px -2px;
+  }
+  60% {
+    translate: 3px 3px;
+  }
+  80% {
+    translate: -2px 1px;
+  }
+}
+/* kết quả nằm trên lớp hiệu ứng */
+.ket-qua {
+  z-index: 2;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tia,
+  .hat,
+  .canh.bung-3,
+  .canh.cho-mo .lo {
+    animation: none;
+  }
+  .hat {
+    display: none;
+  }
 }
