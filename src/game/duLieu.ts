@@ -36,6 +36,16 @@ export const anhDuocLieu = (id: string) => `./hinh/duoc-lieu/${id}.png`;
 /** Giá một hạt giống ở phường thị (chưa tính lợi thế mua bán của nhân vật). */
 export const giaHatGiong = (d: DuocLieu) => d.gia[0] * LUAT.vuon.heSoGiaHat;
 
+/** Năm chỉ số của nhân vật. Kỳ ngộ sau này sẽ so các chỉ số này để định thành bại. */
+export const CHI_SO = [
+  { id: 'khiHuyet', ten: 'Khí huyết', moTa: 'Lượng máu tối đa. Máu tự hồi dần, đan chữa thương hồi nhanh hơn.' },
+  { id: 'luc', ten: 'Lực', moTa: 'Sức công phá khi phải ra tay.' },
+  { id: 'phongNgu', ten: 'Phòng ngự', moTa: 'Sức chịu đòn, giảm thương tổn phải nhận.' },
+  { id: 'thanPhap', ten: 'Thân pháp', moTa: 'Độ nhanh nhẹn: né tránh, chạy thoát, ra tay trước.' },
+  { id: 'thanThuc', ten: 'Thần thức', moTa: 'Trí lực và pháp lực: nhìn thấu cạm bẫy, điều khiển pháp thuật.' },
+] as const;
+export type ChiSo = (typeof CHI_SO)[number]['id'];
+
 /** Một đoạn hỏa hầu: tâm vùng nhiệt (0–100) và thời lượng. */
 export interface DoanHoa {
   ten: string;
@@ -77,6 +87,8 @@ export interface DanPhuong {
   anh?: string;
   /** Tác dụng khi người chơi tự uống. Không có = đan này không uống được (đan đột phá dùng ở nút Đột phá). */
   uong?: TacDung;
+  /** Chỉ số được cộng vĩnh viễn khi uống một viên hạ phẩm (phẩm cao nhân thêm LUAT.chiSo.heSoPham; uống nhiều thì nhờn thuốc). */
+  chiSo?: Partial<Record<ChiSo, number>>;
 }
 
 /**
@@ -84,11 +96,12 @@ export interface DanPhuong {
  * - 'tang-toc': tu vi mỗi giây được cộng thêm bấy nhiêu lần tốc độ gốc, kéo dài `giay` giây mỗi viên (uống nhiều viên thì nối dài thời gian);
  * - 'tu-vi': lập tức được bấy nhiêu phần tu vi của tầng đang đứng;
  * - 'tu-chat': tư chất tăng vĩnh viễn bấy nhiêu điểm;
- * - 'dot-pha': lần đột phá kế tiếp được cộng bấy nhiêu vào tỉ lệ thành công (cộng dồn tới LUAT.dotPha.congToiDa).
+ * - 'dot-pha': lần đột phá kế tiếp được cộng bấy nhiêu vào tỉ lệ thành công (cộng dồn tới LUAT.dotPha.congToiDa);
+ * - 'hoi-mau': hồi ngay bấy nhiêu phần máu tối đa.
  * `doc` nhân vào lượng độc tố của viên đan (đan càng mạnh càng độc).
  */
 export interface TacDung {
-  loai: 'tang-toc' | 'tu-vi' | 'tu-chat' | 'dot-pha';
+  loai: 'tang-toc' | 'tu-vi' | 'tu-chat' | 'dot-pha' | 'hoi-mau';
   giaTri: readonly [number, number, number, number, number];
   giay?: number;
   doc?: number;
@@ -101,6 +114,7 @@ const DAN_GOC: readonly DanPhuong[] = [
     moTa: 'Đan nhập môn, giúp tu sĩ Luyện Khí tụ linh khí.',
     bac: 'Luyện Khí',
     uong: { loai: 'tang-toc', giaTri: [1, 1.5, 2.5, 4, 6], giay: 120 },
+    chiSo: { luc: 0.4 },
     lieu: ['linh-thao', 'linh-thao', 'chu-qua'],
     doKho: 0,
     rongVung: 20,
@@ -117,6 +131,8 @@ const DAN_GOC: readonly DanPhuong[] = [
     ten: 'Hồi Xuân Đan',
     moTa: 'Chữa thương, hồi phục khí huyết sau khi giao đấu.',
     bac: 'Luyện Khí',
+    uong: { loai: 'hoi-mau', giaTri: [0.25, 0.4, 0.6, 0.85, 1] },
+    chiSo: { khiHuyet: 0.4 },
     lieu: ['chu-qua', 'han-bang-hoa', 'linh-thao'],
     doKho: 0.3,
     rongVung: 18,
@@ -135,6 +151,7 @@ const DAN_GOC: readonly DanPhuong[] = [
     moTa: 'Gột tạp chất trong kinh mạch, chuẩn bị cho Trúc Cơ.',
     bac: 'Luyện Khí',
     uong: { loai: 'tu-chat', giaTri: [1, 2, 3, 5, 8], doc: 2 },
+    chiSo: { phongNgu: 0.4, khiHuyet: 0.2 },
     lieu: ['dia-tam-sam', 'han-bang-hoa', 'tu-van-chi'],
     doKho: 0.6,
     rongVung: 16,
@@ -153,6 +170,7 @@ const DAN_GOC: readonly DanPhuong[] = [
     moTa: 'Tĩnh tâm ngưng thần, giúp tu sĩ chống lại tâm ma.',
     bac: 'Trúc Cơ',
     uong: { loai: 'dot-pha', giaTri: [0.04, 0.07, 0.11, 0.16, 0.22] },
+    chiSo: { thanThuc: 0.4 },
     lieu: ['han-bang-hoa', 'long-tu-thao', 'tu-van-chi'],
     doKho: 0.85,
     rongVung: 15,
@@ -190,6 +208,7 @@ const DAN_GOC: readonly DanPhuong[] = [
     moTa: 'Phá vỡ bình cảnh. Đan khó luyện nhất, cũng quý nhất.',
     bac: 'Trúc Cơ',
     uong: { loai: 'tu-vi', giaTri: [0.2, 0.35, 0.6, 1, 1], doc: 1.5 },
+    chiSo: { luc: 0.3, thanPhap: 0.3 },
     lieu: ['huyet-lien', 'long-tu-thao', 'kim-diep-truc'],
     doKho: 1.4,
     rongVung: 13,
@@ -252,6 +271,7 @@ function taoDanDotPha([dich, id, ten, lieu, anh]: (typeof BANG_DOT_PHA)[number])
     doan,
     giaGoc: dau ? 8 : Math.round((200 * 1.8 ** (dich - 2)) / 10) * 10,
     dotPha: dich,
+    ...(dau ? { uong: { loai: 'hoi-mau', giaTri: [0.1, 0.15, 0.25, 0.4, 0.5] } as TacDung, chiSo: { thanPhap: 0.4 } } : {}),
     tuoiToiThieu: dich >= 10 ? 2 : dich >= 5 ? 1 : 0,
     anh,
   };
@@ -401,6 +421,13 @@ export const LUAT = {
    * Độc tự tan giayMoiDiem giây một điểm theo đồng hồ thật, kể cả lúc tắt game.
    */
   doc: { day: 100, moiVien: [12, 8, 4, 2, 1], giayMoiDiem: 30 },
+  /**
+   * Chỉ số nhân vật. Phần gốc = goc × moiCanhGioi^cảnh giới × (1 + moiTang × (tầng − 1)), nhân hệ số bẩm sinh;
+   * Khí huyết nhân thêm heSoMau. Đan cộng thêm một ít: mỗi viên cho lượng ghi ở đan phương × heSoPham[phẩm],
+   * và nhờn thuốc dần — viên thứ n của cùng một loại chỉ còn 1 / (1 + n / khangDuoc).
+   * Máu tự hồi hoiMau phần của máu tối đa mỗi giây (đồng hồ thật).
+   */
+  chiSo: { goc: 10, moiCanhGioi: 1.5, moiTang: 0.04, heSoMau: 10, heSoPham: [1, 1.5, 2.5, 4, 6], khangDuoc: 20, hoiMau: 0.002 },
   /** Lợi thế luyện đan theo cảnh giới (thần thức mạnh dần): mỗi cảnh giới trên Luyện Khí cộng bấy nhiêu. */
   canhGioi: { pham: 0.18, rongVung: 0.4 },
 

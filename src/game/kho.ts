@@ -1,5 +1,5 @@
 // Trạng thái lâu dài của người chơi (linh thạch, dược liệu, túi đan…) + lưu vào trình duyệt.
-import { CANH_GIOI, DAN_PHUONG, DUOC_LIEU, HE_SO_GIA, LUAT, NANG_CAP_GOC, TONG_MON, bacSo, giaBan, giaHatGiong, laDanThat, timDanPhuong, timDuocLieu, timLoDan, timPhuLieu, type DanPhuong, type LoiThe, type NangCap, type PhamThat, type Tuoi } from './duLieu.ts';
+import { CANH_GIOI, CHI_SO, DAN_PHUONG, DUOC_LIEU, HE_SO_GIA, LUAT, NANG_CAP_GOC, TONG_MON, bacSo, giaBan, giaHatGiong, laDanThat, timDanPhuong, timDuocLieu, timLoDan, timPhuLieu, type ChiSo, type DanPhuong, type LoiThe, type NangCap, type PhamThat, type Tuoi } from './duLieu.ts';
 import type { KetQua } from './luyenDan.ts';
 import { loiThe, timXuatThan, type NhanVat } from './nhanVat.ts';
 
@@ -42,6 +42,12 @@ export interface Kho {
   tangToc: { nhan: number; giay: number };
   /** Phần cộng vào tỉ lệ thành công của lần đột phá kế tiếp (từ Băng Tâm Đan); dùng xong thì về 0. */
   congDotPha: number;
+  /** Chỉ số được cộng vĩnh viễn nhờ uống đan (số lẻ; lúc hiển thị mới làm tròn). */
+  chiSoCong: Partial<Record<ChiSo, number>>;
+  /** id đan phương -> số viên đã uống từ trước tới giờ (để tính nhờn thuốc). */
+  daUong: Record<string, number>;
+  /** Máu: lượng đang thiếu tại thời điểm `luc` (ms); từ đó tới giờ đã tự hồi bớt, xem mauHienTai. */
+  mau: { thieu: number; luc: number };
 }
 
 /** Một đơn đặt đan của tông môn. */
@@ -106,6 +112,9 @@ export function khoMoi(nv: NhanVat | null = null): Kho {
     doc: { diem: 0, luc: 0 },
     tangToc: { nhan: 0, giay: 0 },
     congDotPha: 0,
+    chiSoCong: {},
+    daUong: {},
+    mau: { thieu: 0, luc: 0 },
   };
 }
 
@@ -136,6 +145,9 @@ export function napKho(): Kho {
           danhVong: { ...k.danhVong },
           doc: { ...moi.doc, ...k.doc },
           tangToc: { ...moi.tangToc, ...k.tangToc },
+          chiSoCong: { ...k.chiSoCong },
+          daUong: { ...k.daUong },
+          mau: { ...moi.mau, ...k.mau },
         };
       }
     }
@@ -545,6 +557,53 @@ export function loiTheKho(k: Kho): LoiThe {
   };
 }
 
+// ---------- chỉ số nhân vật ----------
+
+/** Hệ số bẩm sinh của từng chỉ số: thể chất cho điểm mạnh riêng, tư chất nâng thần thức, còn lại là căn cốt mỗi người một khác. */
+function heSoBamSinh(k: Kho, cs: ChiSo): number {
+  const nv = k.nhanVat;
+  if (!nv) return 1;
+  // căn cốt: lệch ±12% cố định theo tên nhân vật và chỉ số
+  let hs = 0.88 + (bam(`${nv.ten}|${cs}`) % 2401) / 10000;
+  if (cs === 'khiHuyet' && nv.theChat === 'thanh-moc') hs *= 1.25;
+  if (cs === 'luc' && nv.theChat === 'hoa-linh') hs *= 1.25;
+  if (cs === 'thanThuc' && nv.theChat === 'bang-tam') hs *= 1.25;
+  if (nv.theChat === 'dan-the') hs *= cs === 'thanThuc' ? 1.2 : cs === 'khiHuyet' ? 1.1 : 1;
+  if (cs === 'thanThuc') hs *= 0.9 + nv.tuChat / 500;
+  return hs;
+}
+/** Phần gốc của một chỉ số, do cảnh giới, tầng và bẩm sinh quyết định. */
+export function chiSoGoc(k: Kho, cs: ChiSo): number {
+  const c = LUAT.chiSo;
+  const goc = c.goc * c.moiCanhGioi ** k.tuVi.canhGioi * (1 + c.moiTang * (k.tuVi.tang - 1)) * heSoBamSinh(k, cs);
+  return goc * (cs === 'khiHuyet' ? c.heSoMau : 1);
+}
+/** Phần được cộng nhờ uống đan. */
+export const chiSoDan = (k: Kho, cs: ChiSo) => (k.chiSoCong[cs] ?? 0) * (cs === 'khiHuyet' ? LUAT.chiSo.heSoMau : 1);
+/** Giá trị một chỉ số (làm tròn xuống). */
+export const chiSo = (k: Kho, cs: ChiSo) => Math.floor(chiSoGoc(k, cs) + chiSoDan(k, cs));
+
+/** Uống `soLuong` viên thì mỗi chỉ số được cộng bao nhiêu (đơn vị thô, chưa nhân heSoMau), đã tính nhờn thuốc. */
+function chiSoKhiUong(k: Kho, p: DanPhuong, loai: PhamThat | 'dv', soLuong: number): Partial<Record<ChiSo, number>> {
+  if (!p.chiSo) return {};
+  const c = LUAT.chiSo;
+  const da = k.daUong[p.id] ?? 0;
+  let heSo = 0;
+  for (let i = 0; i < soLuong; i++) heSo += 1 / (1 + (da + i) / c.khangDuoc);
+  heSo *= c.heSoPham[loai === 'dv' ? 4 : loai];
+  const ra: Partial<Record<ChiSo, number>> = {};
+  for (const cs of CHI_SO) if (p.chiSo[cs.id]) ra[cs.id] = p.chiSo[cs.id]! * heSo;
+  return ra;
+}
+
+export const mauToiDa = (k: Kho) => chiSo(k, 'khiHuyet');
+/** Máu lúc này (đã cộng phần tự hồi theo thời gian). */
+export function mauHienTai(k: Kho, luc = Date.now()): number {
+  const toiDa = mauToiDa(k);
+  const thieu = Math.max(0, k.mau.thieu - (Math.max(0, luc - k.mau.luc) / 1000) * LUAT.chiSo.hoiMau * toiDa);
+  return Math.max(0, Math.round(toiDa - thieu));
+}
+
 // ---------- uống đan ----------
 
 /** Lượng đan độc đang có trong người lúc này (đã trừ phần tự tan theo thời gian). */
@@ -590,11 +649,21 @@ export function xemUong(k: Kho, phuongId: string, loai: PhamThat | 'dv', soLuong
     const tc = k.nhanVat?.tuChat ?? 0;
     moTa = `Tư chất +${Math.min(100 - tc, v * soLuong)} vĩnh viễn (đang ${tc}/100)`;
     if (tc >= 100) lyDo = 'Tư chất đã tới đỉnh';
+  } else if (td.loai === 'hoi-mau') {
+    const toiDa = mauToiDa(k);
+    const thieu = toiDa - mauHienTai(k, luc);
+    moTa = thieu > 0 ? `Hồi ${Math.min(thieu, Math.round(toiDa * Math.min(1, v * soLuong)))} máu` : 'Máu đang đầy';
   } else {
     const con = LUAT.dotPha.congToiDa - k.congDotPha;
     moTa = `Lần đột phá tới +${Math.round(Math.min(con, v * soLuong) * 100)}% thành công (đang +${Math.round(k.congDotPha * 100)}%, tối đa +${Math.round(LUAT.dotPha.congToiDa * 100)}%)`;
     if (con <= 0.0001) lyDo = 'Tâm đã tĩnh hết mức, uống thêm vô ích';
   }
+  // phần chỉ số được cộng thêm, ghi nối vào sau tác dụng chính
+  const them = chiSoKhiUong(k, p, loai, soLuong);
+  const chuChiSo = CHI_SO.filter((cs) => them[cs.id])
+    .map((cs) => `${cs.ten} +${(them[cs.id]! * (cs.id === 'khiHuyet' ? LUAT.chiSo.heSoMau : 1)).toFixed(1)}`)
+    .join(', ');
+  if (chuChiSo) moTa += ` · ${chuChiSo}`;
   if (co < soLuong) lyDo = 'Không đủ viên';
   else if (docSau > LUAT.doc.day + 0.0001) lyDo = 'Đan độc sẽ vượt ngưỡng chịu đựng';
   return { duoc: !lyDo, lyDo, docThem, docSau, moTa };
@@ -607,7 +676,18 @@ export function uongDan(k: Kho, phuongId: string, loai: PhamThat | 'dv', soLuong
   const td = p.uong;
   if (!xem.duoc || !td || !k.nhanVat) return k;
   const v = td.giaTri[mucPham(loai)];
-  let moi: Kho = { ...k, doc: { diem: xem.docSau, luc } };
+  const them = chiSoKhiUong(k, p, loai, soLuong);
+  const chiSoCong = { ...k.chiSoCong };
+  for (const cs of CHI_SO) if (them[cs.id]) chiSoCong[cs.id] = (chiSoCong[cs.id] ?? 0) + them[cs.id]!;
+  // máu tối đa có thể vừa tăng: chốt lượng máu đang thiếu theo mốc hiện tại trước khi đổi
+  const thieuNay = mauToiDa(k) - mauHienTai(k, luc);
+  let moi: Kho = {
+    ...k,
+    doc: { diem: xem.docSau, luc },
+    chiSoCong,
+    daUong: { ...k.daUong, [phuongId]: (k.daUong[phuongId] ?? 0) + soLuong },
+    mau: { thieu: thieuNay, luc },
+  };
   if (loai === 'dv') moi.danVan = { ...k.danVan, [phuongId]: (k.danVan[phuongId] ?? 0) - soLuong };
   else {
     const tui = [...k.tuiDan[phuongId]] as [number, number, number, number];
@@ -624,6 +704,8 @@ export function uongDan(k: Kho, phuongId: string, loai: PhamThat | 'dv', soLuong
     moi = tuLuyen({ ...moi, tuVi: { ...moi.tuVi, diem: moi.tuVi.diem + them } }, 0);
   } else if (td.loai === 'tu-chat') {
     moi.nhanVat = { ...k.nhanVat, tuChat: Math.min(100, k.nhanVat.tuChat + v * soLuong) };
+  } else if (td.loai === 'hoi-mau') {
+    moi.mau = { thieu: Math.max(0, thieuNay - mauToiDa(k) * Math.min(1, v * soLuong)), luc };
   } else {
     moi.congDotPha = Math.min(LUAT.dotPha.congToiDa, k.congDotPha + v * soLuong);
   }

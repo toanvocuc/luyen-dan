@@ -1,13 +1,13 @@
 // Động phủ: nhân vật ngồi tu luyện, tu vi tự tăng; từ đây mở hành trang, xem thiên mệnh, sang đan phòng.
 import { useState } from 'react';
-import { CANH_GIOI, DAN_PHUONG, DUOC_LIEU, LUAT, PHU_LIEU, TEN_PHAM, TEN_TUOI_NGAN, anhDan, anhDuocLieu, type PhamThat } from '../game/duLieu.ts';
-import { danDotPha, docHienTai, dotPha, soTang, tiLeDotPha, tocDoTuVi, tuViCan, uongDan, vienMan, xemUong, type Kho } from '../game/kho.ts';
+import { CANH_GIOI, CHI_SO, DAN_PHUONG, DUOC_LIEU, LUAT, PHU_LIEU, TEN_PHAM, TEN_TUOI_NGAN, anhDan, anhDuocLieu, type PhamThat } from '../game/duLieu.ts';
+import { chiSo, chiSoDan, danDotPha, docHienTai, dotPha, mauHienTai, mauToiDa, soTang, tiLeDotPha, tocDoTuVi, tuViCan, uongDan, vienMan, xemUong, type Kho } from '../game/kho.ts';
 import type { NhanVat } from '../game/nhanVat.ts';
 import { dongHo, useBayGio } from './PhuongThi.tsx';
 import { BupBe } from './BupBe.tsx';
 import { dongThienMenh } from './ThienMenh.tsx';
 
-type Bang = null | 'hanh-trang' | 'thien-menh' | 'dot-pha';
+type Bang = null | 'hanh-trang' | 'thien-menh' | 'dot-pha' | 'chi-so';
 
 /**
  * Nút tròn ở đáy động phủ. Nếu có ảnh public/hinh/ui/nut-<id>.png thì dùng ảnh đó,
@@ -83,7 +83,9 @@ export function TuTien({
     <main className="tu-tien">
       <header className="dau-tu-tien">
         <div>
-          <b className="bien-ten">{nhanVat.ten}</b>
+          <button className="bien-ten" onClick={() => datBang('chi-so')} title="Xem chỉ số">
+            {nhanVat.ten}
+          </button>
           <small>
             {CANH_GIOI[kho.tuVi.canhGioi]} tầng {kho.tuVi.tang}/{soTang(kho.tuVi.canhGioi)}
           </small>
@@ -214,6 +216,50 @@ export function TuTien({
             <small>{ketQuaDotPha.thanh ? 'Đột phá thành công' : 'Đột phá thất bại'}</small>
             <b>{ketQuaDotPha.thanh ? ketQuaDotPha.ten : 'Linh khí tán loạn'}</b>
             <span>{ketQuaDotPha.thanh ? 'Chạm để tiếp tục' : `Viên đan đã tan, tu vi hao ${Math.round(LUAT.dotPha.matTuVi * 100)}%. Chạm để tiếp tục.`}</span>
+          </div>
+        </div>
+      )}
+
+      {bang === 'chi-so' && (
+        <div className="lop-phu" onClick={() => datBang(null)}>
+          <div className="bang tam" onClick={(e) => e.stopPropagation()}>
+            <h2>{nhanVat.ten}</h2>
+            <p className="chu-nho">
+              {CANH_GIOI[kho.tuVi.canhGioi]} tầng {kho.tuVi.tang}/{soTang(kho.tuVi.canhGioi)} · Tư chất {nhanVat.tuChat} · Khí vận {nhanVat.khiVan}
+            </p>
+            <div className="dong-mau">
+              <span>Máu</span>
+              <div className="tien-do mau">
+                <div style={{ width: `${Math.min(100, (mauHienTai(kho, luc) / Math.max(1, mauToiDa(kho))) * 100)}%` }} />
+              </div>
+              <b>
+                {mauHienTai(kho, luc)}/{mauToiDa(kho)}
+              </b>
+            </div>
+            {CHI_SO.map((cs) => {
+              const tuDan = chiSoDan(kho, cs.id);
+              return (
+                <div key={cs.id} className="dong-chi-so">
+                  <div className="than-dong">
+                    <b>{cs.ten}</b>
+                    <small>{cs.moTa}</small>
+                  </div>
+                  <span className="so-chi-so">
+                    <b>{chiSo(kho, cs.id)}</b>
+                    {tuDan >= 0.05 && <em>+{tuDan.toFixed(1)} nhờ đan</em>}
+                  </span>
+                </div>
+              );
+            })}
+            <p className="chu-nho">Chỉ số lớn dần theo cảnh giới. Uống đan cộng thêm một ít, nhưng càng uống nhiều một loại càng nhờn thuốc.</p>
+            <div className="hang-nut">
+              <button className="nut-nho" onClick={() => datBang('thien-menh')}>
+                Thiên mệnh
+              </button>
+              <button className="nut-nho" onClick={() => datBang(null)}>
+                Đóng
+              </button>
+            </div>
           </div>
         </div>
       )}
