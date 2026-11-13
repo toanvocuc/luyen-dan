@@ -2037,3 +2037,105 @@ button {
     display: none;
   }
 }
+
+/* ---------- đột phá cảnh giới ---------- */
+.nut-dot-pha {
+  flex: 0 0 auto;
+  width: 100%;
+  animation: tho-nut 1.6s ease-in-out infinite;
+}
+@keyframes tho-nut {
+  50% {
+    filter: brightness(1.25) drop-shadow(0 0 8px rgba(240, 185, 58, 0.8));
+  }
+}
+.hang-loc {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.canh-dot-pha {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 42%, rgba(20, 40, 44, 0.75), rgba(0, 0, 0, 0.92) 70%);
+  animation: dp-hien 0.3s ease-out;
+}
+.canh-dot-pha.thanh::before {
+  /* loé trắng lúc vừa phá cảnh */
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  animation: loe-trang 0.9s ease-out forwards;
+}
+.canh-dot-pha > i {
+  position: absolute;
+  left: 50%;
+  top: 42%;
+  translate: -50% -50%;
+  aspect-ratio: 1;
+  pointer-events: none;
+}
+.dp-tia {
+  width: min(170%, 700px);
+  background: radial-gradient(circle, #fff 0, #ffe9a8 25%, #f0b93a 60%);
+  -webkit-mask: url('/hinh/hieu-ung/tia.png') center / contain no-repeat;
+  mask: url('/hinh/hieu-ung/tia.png') center / contain no-repeat;
+  mix-blend-mode: screen;
+  opacity: 0.55;
+  animation: tia-bung 0.9s ease-out both, tia-xoay 24s linear infinite;
+  --mo-tia: 0.55;
+}
+.dp-vong {
+  width: min(80%, 340px);
+  background: #ffe9a8;
+  -webkit-mask: url('/hinh/hieu-ung/vong.png') center / contain no-repeat;
+  mask: url('/hinh/hieu-ung/vong.png') center / contain no-repeat;
+  animation: vong-lan 1.6s ease-out infinite;
+}
+.dp-vong.tre {
+  animation-delay: 0.8s;
+}
+.dp-chu {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 0 24px;
+  text-align: center;
+  animation: bat-ra 0.5s ease-out 0.25s both;
+}
+.dp-chu small {
+  font-size: 15px;
+  letter-spacing: 0.2em;
+  color: #ffe9a8;
+  text-shadow: 0 1px 4px #000;
+}
+.dp-chu b {
+  font-size: 44px;
+  line-height: 1.5;
+  color: #fff3d0;
+  text-shadow: 0 0 22px #f0b93a, 0 2px 6px #000;
+}
+.dp-chu span {
+  font-size: 13px;
+  color: var(--chu-mo);
+  text-shadow: 0 1px 3px #000;
+}
+.canh-dot-pha.bai .dp-chu small,
+.canh-dot-pha.bai .dp-chu b {
+  color: #ff9a80;
+  text-shadow: 0 0 16px #d1483b, 0 2px 6px #000;
+}
+.canh-dot-pha.bai .dp-chu b {
+  font-size: 30px;
+}
+@keyframes dp-hien {
+  from {
+    opacity: 0;
+  }
+}

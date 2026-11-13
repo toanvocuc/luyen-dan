@@ -184,6 +184,13 @@ def main():
             im = thu_nho(cat_sat(tach_nen(Image.open(os.path.join(vao, ten)), tron)), canh)
             im.save(os.path.join(RA, thu_muc, ten), optimize=True)
             print('ok', thu_muc + '/' + ten, im.size)
+    # ghi danh sách đan đã có ảnh riêng, để game biết đan nào còn phải mượn ảnh
+    co = sorted(os.path.splitext(t)[0] for t in os.listdir(os.path.join(RA, 'dan')) if t.endswith('.png'))
+    with open(os.path.join(os.path.dirname(__file__), '..', 'src', 'game', 'anhDanCoSan.ts'), 'w', encoding='utf-8', newline='') as f:
+        f.write('// File này do scripts/xu-ly-anh.py ghi lại mỗi lần xử lý ảnh — đừng sửa tay.\n')
+        f.write('/** Những đan phương đã có ảnh riêng trong public/hinh/dan/. */\n')
+        f.write('export const ANH_DAN_CO_SAN: ReadonlySet<string> = new Set([' + ', '.join("'" + t + "'" for t in co) + ']);\n')
+
     # ảnh nền theo bậc cảnh giới: Hinh_anh/nen/dong-phu-1.png … dan-phong-5.png -> public/hinh/nen/*.jpg (chưa có thì bỏ qua)
     vao = os.path.join(GOC, 'nen')
     if os.path.isdir(vao):

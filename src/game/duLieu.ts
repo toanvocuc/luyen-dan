@@ -1,4 +1,5 @@
 // Toàn bộ số liệu của game nằm ở đây — chỉnh cân bằng thì chỉ sửa file này.
+import { ANH_DAN_CO_SAN } from './anhDanCoSan.ts';
 
 /** Phẩm cấp một viên đan. -1 là phế đan. */
 export type Pham = -1 | 0 | 1 | 2 | 3;
@@ -40,9 +41,14 @@ export interface DoanHoa {
   giay: number;
 }
 
-/** Các bậc đan, xếp từ thấp lên cao. Thêm bậc mới thì thêm vào đây. */
-export const CAC_BAC = ['Luyện Khí', 'Trúc Cơ'] as const;
-export type Bac = (typeof CAC_BAC)[number];
+/** Mười bốn cảnh giới tu tiên, từ thấp lên cao. */
+export const CANH_GIOI = [
+  'Phàm Nhân', 'Luyện Khí', 'Trúc Cơ', 'Kim Đan', 'Nguyên Anh', 'Hóa Thần', 'Luyện Hư',
+  'Hợp Thể', 'Đại Thừa', 'Chân Tiên', 'Kim Tiên', 'Huyền Tiên', 'Tiên Vương', 'Tiên Đế',
+] as const;
+
+/** Bậc của một đan phương = cảnh giới của tu sĩ luyện và dùng nó. */
+export type Bac = (typeof CANH_GIOI)[number];
 
 export interface DanPhuong {
   id: string;
@@ -61,9 +67,15 @@ export interface DanPhuong {
   doan: readonly DoanHoa[];
   /** Giá bán một viên hạ phẩm. */
   giaGoc: number;
+  /** Đan đột phá: uống khi viên mãn để bước lên cảnh giới có chỉ số này (trong CANH_GIOI). */
+  dotPha?: number;
+  /** Tuổi thuốc thấp nhất mà đan phương chịu nhận (đan bậc cao không luyện được bằng thuốc non). */
+  tuoiToiThieu?: Tuoi;
+  /** Chưa có ảnh riêng thì mượn ảnh của đan phương này. */
+  anh?: string;
 }
 
-export const DAN_PHUONG: readonly DanPhuong[] = [
+const DAN_GOC: readonly DanPhuong[] = [
   {
     id: 'tu-khi-dan',
     ten: 'Tụ Khí Đan',
@@ -135,7 +147,8 @@ export const DAN_PHUONG: readonly DanPhuong[] = [
     id: 'truc-co-dan',
     ten: 'Trúc Cơ Đan',
     moTa: 'Đan đột phá: giúp tu sĩ Luyện Khí viên mãn bước lên Trúc Cơ.',
-    bac: 'Trúc Cơ',
+    bac: 'Luyện Khí',
+    dotPha: 2,
     lieu: ['dia-tam-sam', 'kim-diep-truc', 'huyet-lien'],
     doKho: 1.1,
     rongVung: 14,
@@ -168,7 +181,71 @@ export const DAN_PHUONG: readonly DanPhuong[] = [
     giaGoc: 380,
   },
 ];
-export const anhDan = (id: string) => `./hinh/dan/${id}.png`;
+
+/**
+ * Đan đột phá cho từng lần lên cảnh giới (trừ Trúc Cơ Đan đã viết tay ở trên).
+ * [cảnh giới đích, id, tên, ba vị dược liệu, ảnh mượn tạm]
+ */
+const BANG_DOT_PHA: readonly [number, string, string, readonly [string, string, string], string][] = [
+  [1, 'dan-khi-dan', 'Dẫn Khí Đan', ['linh-thao', 'linh-thao', 'chu-qua'], 'tu-khi-dan'],
+  [3, 'ket-kim-dan', 'Kết Kim Đan', ['kim-diep-truc', 'dia-tam-sam', 'long-tu-thao'], 'pha-chuong-dan'],
+  [4, 'hoa-anh-dan', 'Hóa Anh Đan', ['huyet-lien', 'tu-van-chi', 'dia-tam-sam'], 'bang-tam-dan'],
+  [5, 'hoa-than-dan', 'Hóa Thần Đan', ['tu-van-chi', 'long-tu-thao', 'han-bang-hoa'], 'tay-tuy-dan'],
+  [6, 'pha-hu-dan', 'Phá Hư Đan', ['han-bang-hoa', 'kim-diep-truc', 'tu-van-chi'], 'hoi-xuan-dan'],
+  [7, 'dung-the-dan', 'Dung Thể Đan', ['huyet-lien', 'dia-tam-sam', 'long-tu-thao'], 'truc-co-dan'],
+  [8, 'dai-thua-dan', 'Đại Thừa Đan', ['kim-diep-truc', 'huyet-lien', 'tu-van-chi'], 'pha-chuong-dan'],
+  [9, 'do-kiep-dan', 'Độ Kiếp Đan', ['long-tu-thao', 'kim-diep-truc', 'han-bang-hoa'], 'bang-tam-dan'],
+  [10, 'cuu-chuyen-kim-dan', 'Cửu Chuyển Kim Đan', ['kim-diep-truc', 'kim-diep-truc', 'huyet-lien'], 'truc-co-dan'],
+  [11, 'huyen-nguyen-dan', 'Huyền Nguyên Đan', ['tu-van-chi', 'tu-van-chi', 'long-tu-thao'], 'tay-tuy-dan'],
+  [12, 'vuong-dao-dan', 'Vương Đạo Đan', ['long-tu-thao', 'huyet-lien', 'kim-diep-truc'], 'pha-chuong-dan'],
+  [13, 'de-menh-dan', 'Đế Mệnh Đan', ['huyet-lien', 'kim-diep-truc', 'long-tu-thao'], 'truc-co-dan'],
+];
+/** Các mức nhiệt xen kẽ thấp – cao, dùng để dựng chuỗi hỏa hầu cho đan đột phá. */
+const NHIET_MAU = [34, 78, 26, 84, 44, 72, 20, 60] as const;
+
+/**
+ * Dựng một đan đột phá theo công thức: cảnh giới đích càng cao thì đan càng khó (phẩm bị kéo xuống,
+ * vùng hỏa hầu hẹp lại, dược tính xung đột nhiều hơn, chuỗi hỏa hầu dài hơn) và đòi thuốc lâu năm hơn.
+ * Bù lại, tu sĩ cảnh giới cao được cộng lợi thế luyện đan (xem LUAT.canhGioi), nên độ khó thực tế chỉ nhích dần.
+ */
+function taoDanDotPha([dich, id, ten, lieu, anh]: (typeof BANG_DOT_PHA)[number]): DanPhuong {
+  const dau = dich === 1;
+  const soDoan = dau ? 2 : Math.min(7, 5 + Math.floor((dich - 2) / 4));
+  const doan: DoanHoa[] = [];
+  for (let j = 0; j < soDoan; j++) {
+    const cuoi = j === soDoan - 1;
+    const tam = dau ? [38, 60][j] : cuoi ? 46 + ((dich * 3) % 12) : NHIET_MAU[(j + dich) % NHIET_MAU.length];
+    doan.push({ ten: cuoi ? 'Thu hỏa' : tam < 28 ? 'Hàn hỏa' : tam < 50 ? 'Văn hỏa' : 'Vũ hỏa', tam, giay: dau ? 6 : soDoan >= 6 && j % 2 ? 4 : 5 });
+  }
+  return {
+    id,
+    ten,
+    moTa: `Đan đột phá: giúp tu sĩ ${CANH_GIOI[dich - 1]} viên mãn bước lên ${CANH_GIOI[dich]}.`,
+    bac: CANH_GIOI[dich - 1],
+    lieu,
+    doKho: dau ? -0.2 : +(1.1 + 0.2 * (dich - 2)).toFixed(2),
+    rongVung: dau ? 22 : Math.max(9, 14 - 0.5 * (dich - 2)),
+    xungDot: dau ? 1 : Math.min(8, 4 + Math.floor((dich - 2) / 2)),
+    doan,
+    giaGoc: dau ? 8 : Math.round((200 * 1.8 ** (dich - 2)) / 10) * 10,
+    dotPha: dich,
+    tuoiToiThieu: dich >= 10 ? 2 : dich >= 5 ? 1 : 0,
+    anh,
+  };
+}
+
+/** Mọi đan phương, xếp theo bậc từ thấp lên cao; trong một bậc, đan đột phá đứng cuối. */
+export const DAN_PHUONG: readonly DanPhuong[] = [...DAN_GOC, ...BANG_DOT_PHA.map(taoDanDotPha)]
+  .map((p, i) => ({ p, i }))
+  .sort((a, b) => CANH_GIOI.indexOf(a.p.bac) - CANH_GIOI.indexOf(b.p.bac) || (a.p.dotPha ? 1 : 0) - (b.p.dotPha ? 1 : 0) || a.i - b.i)
+  .map((x) => x.p);
+/** Các bậc có đan phương, từ thấp lên cao. */
+export const CAC_BAC: readonly Bac[] = CANH_GIOI.filter((b) => DAN_PHUONG.some((p) => p.bac === b));
+/** Chỉ số cảnh giới của bậc một đan phương. */
+export const bacSo = (p: DanPhuong) => CANH_GIOI.indexOf(p.bac);
+
+/** Ảnh viên đan: có ảnh riêng (xem anhDanCoSan.ts, do scripts/xu-ly-anh.py ghi) thì dùng, chưa có thì mượn ảnh ghi ở trường anh. */
+export const anhDan = (id: string) => `./hinh/dan/${ANH_DAN_CO_SAN.has(id) ? id : (DAN_PHUONG.find((d) => d.id === id)?.anh ?? id)}.png`;
 
 export interface PhuLieu {
   id: string;
@@ -192,12 +269,6 @@ export const PHU_LIEU: readonly PhuLieu[] = [
 export const HE_SO_GIA = [1, 2.5, 7, 20] as const;
 /** Viên có đan văn bán gấp bấy nhiêu lần. */
 export const HE_SO_DAN_VAN = 3;
-
-/** Mười bốn cảnh giới tu tiên, từ thấp lên cao. */
-export const CANH_GIOI = [
-  'Phàm Nhân', 'Luyện Khí', 'Trúc Cơ', 'Kim Đan', 'Nguyên Anh', 'Hóa Thần', 'Luyện Hư',
-  'Hợp Thể', 'Đại Thừa', 'Chân Tiên', 'Kim Tiên', 'Huyền Tiên', 'Tiên Vương', 'Tiên Đế',
-] as const;
 
 /**
  * Ảnh nền có 5 bậc, cảnh giới càng cao nền càng tiên khí:
@@ -290,6 +361,19 @@ export const LUAT = {
   soTang: 9,
   tuViMoiTang: 60,
   tuViMoiGiay: 1,
+  /** Phàm Nhân chỉ có bấy nhiêu tầng và cần ít tu vi hơn — đoạn mở đầu, để người chơi sớm nếm lần đột phá đầu tiên. */
+  soTangPhamNhan: 3,
+  heSoTuViPhamNhan: 0.5,
+  /** Từ Trúc Cơ trở lên, mỗi cảnh giới cần gấp bấy nhiêu lần tu vi của cảnh giới trước. */
+  heSoTuViMoiCanhGioi: 1.5,
+
+  /**
+   * Đột phá: tỉ lệ thành công theo phẩm viên đan [hạ, trung, thượng, cực]; đan văn chắc chắn thành.
+   * Mỗi điểm khí vận lệch khỏi 50 cộng/trừ khiVan. Thất bại mất viên đan và hao matTuVi phần tu vi của tầng hiện tại.
+   */
+  dotPha: { tiLe: [0.5, 0.7, 0.85, 0.95], khiVan: 0.002, matTuVi: 0.3 },
+  /** Lợi thế luyện đan theo cảnh giới (thần thức mạnh dần): mỗi cảnh giới trên Luyện Khí cộng bấy nhiêu. */
+  canhGioi: { pham: 0.18, rongVung: 0.4 },
 } as const;
 
 /**

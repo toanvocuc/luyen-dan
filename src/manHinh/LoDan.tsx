@@ -2,6 +2,8 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import {
   CAC_BAC,
+  CANH_GIOI,
+  bacSo,
   DAN_PHUONG,
   LUAT,
   PHU_LIEU,
@@ -18,8 +20,7 @@ import {
   type DanPhuong,
   type Tuoi,
 } from '../game/duLieu.ts';
-import { loiThe } from '../game/nhanVat.ts';
-import { duLieu, nhanKetQua, suaLo, thieuGi, truNguyenLieu, type Kho } from '../game/kho.ts';
+import { loiTheKho, duLieu, nhanKetQua, suaLo, thieuGi, truNguyenLieu, type Kho } from '../game/kho.ts';
 import {
   batDauMe,
   coTheToi,
@@ -126,7 +127,8 @@ export function LoDan({
   /** Báo cho màn cha biết đang luyện dở một mẻ (để khoá nút rời đan phòng). */
   onDangLuyen?: (dang: boolean) => void;
 }) {
-  const [phuongId, datPhuongId] = useState(DAN_PHUONG[0].id);
+  // mở đan phòng thì chọn sẵn đan phương đầu tiên của cảnh giới hiện tại
+  const [phuongId, datPhuongId] = useState(() => (DAN_PHUONG.find((p) => bacSo(p) === kho.tuVi.canhGioi) ?? DAN_PHUONG[0]).id);
   const phuong = timDanPhuong(phuongId);
   const [tuoi, datTuoi] = useState<[Tuoi, Tuoi, Tuoi]>([0, 0, 0]);
   const [phuLieuId, datPhuLieuId] = useState<string | null>(null);
@@ -161,18 +163,31 @@ export function LoDan({
   const khoaBamRef = useRef(0);
   const conLacRef = useRef<HTMLDivElement>(null);
 
-  // lợi thế bẩm sinh của nhân vật đi kèm nâng cấp, để lõi luyện đan tính chung một chỗ
-  const nangCap = { ...kho.nangCap, loiThe: loiThe(kho.nhanVat) };
+  // lợi thế của nhân vật (bẩm sinh + cảnh giới) đi kèm nâng cấp, để lõi luyện đan tính chung một chỗ
+  const nangCap = { ...kho.nangCap, loiThe: loiTheKho(kho) };
   const phuLieu = timPhuLieu(phuLieuId);
   const meXem = pha === 'phoi' || !me ? batDauMe(tuoi, phuLieu, nangCap) : me;
-  const duNguyenLieu = duLieu(kho, phuong.lieu, tuoi, phuLieuId);
+  const tuoiMin = phuong.tuoiToiThieu ?? 0;
+  const duNguyenLieu = duLieu(kho, phuong.lieu, tuoi, phuLieuId) && tuoi.every((t) => t >= tuoiMin);
   const thieu = thieuGi(kho, phuong.lieu, tuoi);
   const chuThieu = thieu.length
     ? `Thiếu ${thieu.map((t) => `${timDuocLieu(t.id).ten} ${TEN_TUOI_NGAN[t.tuoi]}`).join(', ')}`
     : 'Thiếu phụ liệu';
   const daThongThao = (kho.thongThao[phuong.id] ?? 0) >= LUAT.thongThao;
 
-  const daMo = (i: number) => i === 0 || (kho.thongThao[DAN_PHUONG[i - 1].id] ?? 0) >= ME_DE_MO_KHOA;
+  /**
+   * Vì sao một đan phương còn khoá (null = đã mở): phải đạt cảnh giới của bậc đó,
+   * và trong cùng một bậc thì phải luyện thành vài mẻ đan đứng trước.
+   */
+  const lyDoKhoa = (i: number): string | null => {
+    const p = DAN_PHUONG[i];
+    if (kho.tuVi.canhGioi < bacSo(p)) return `Cần đạt ${p.bac}`;
+    const truoc = DAN_PHUONG[i - 1];
+    if (truoc && truoc.bac === p.bac && (kho.thongThao[truoc.id] ?? 0) < ME_DE_MO_KHOA) return `Cần ${ME_DE_MO_KHOA} mẻ ${truoc.ten}`;
+    return null;
+  };
+  // bảng chọn chỉ bày các bậc đã tới và bậc kế tiếp (để thấy trước mục tiêu), không bày cả 13 bậc
+  const bacThay = CAC_BAC.filter((b) => CANH_GIOI.indexOf(b) <= kho.tuVi.canhGioi + 1);
 
   const ketThuc = (kq: KetQua) => {
     datKetQua(kq);
@@ -428,8 +443,8 @@ export function LoDan({
     const con: Record<string, number[]> = {};
     const chon = phuong.lieu.map((id, i) => {
       con[id] ??= [...(kho.duocLieu[id] ?? [0, 0, 0])];
-      const uuTien = [tuoi[i], 0, 1, 2] as Tuoi[];
-      const t = uuTien.find((x) => con[id][x] > 0) ?? tuoi[i];
+      const uuTien = ([tuoi[i], 0, 1, 2] as Tuoi[]).filter((x) => x >= tuoiMin);
+      const t = uuTien.find((x) => con[id][x] > 0) ?? (Math.max(tuoi[i], tuoiMin) as Tuoi);
       con[id][t] -= 1;
       return t;
     }) as [Tuoi, Tuoi, Tuoi];
@@ -558,9 +573,9 @@ export function LoDan({
             <h2>Chọn đan phương</h2>
             <div className="hang-loc">
               <button className={`the nho ${locBac === null ? 'chon' : ''}`} onClick={() => datLocBac(null)}>
-                Tất cả ({DAN_PHUONG.length})
+                Tất cả
               </button>
-              {CAC_BAC.map((b) => (
+              {bacThay.map((b) => (
                 <button key={b} className={`the nho ${locBac === b ? 'chon' : ''}`} onClick={() => datLocBac(b)}>
                   {b} ({DAN_PHUONG.filter((p) => p.bac === b).length})
                 </button>
@@ -568,8 +583,9 @@ export function LoDan({
             </div>
             <div className="luoi-phuong">
               {DAN_PHUONG.map((p, i) => {
-                if (locBac && p.bac !== locBac) return null;
-                const mo = daMo(i);
+                if (!bacThay.includes(p.bac) || (locBac && p.bac !== locBac)) return null;
+                const khoa = lyDoKhoa(i);
+                const mo = khoa === null;
                 return (
                   <button
                     key={p.id}
@@ -582,7 +598,7 @@ export function LoDan({
                   >
                     <img src={anhDan(p.id)} alt="" />
                     <b>{p.ten}</b>
-                    <small>{mo ? `Bán từ ${giaBan(p, 0, false, nangCap.loiThe.heSoBan)} linh thạch` : `Cần ${ME_DE_MO_KHOA} mẻ ${DAN_PHUONG[i - 1].ten}`}</small>
+                    <small>{khoa ?? (p.dotPha ? `Đột phá lên ${CANH_GIOI[p.dotPha]}` : `Bán từ ${giaBan(p, 0, false, nangCap.loiThe.heSoBan)} linh thạch`)}</small>
                   </button>
                 );
               })}
@@ -621,7 +637,7 @@ export function LoDan({
                     <b>{d.ten}</b>
                     <span className="chon-tuoi">
                       {([0, 1, 2] as Tuoi[]).map((t) => (
-                        <button key={t} className={`nut-tuoi tuoi-${t} ${tuoi[i] === t ? 'chon' : ''}`} disabled={co[t] < 1} onClick={() => datTuoiO(i, t)}>
+                        <button key={t} className={`nut-tuoi tuoi-${t} ${tuoi[i] === t ? 'chon' : ''}`} disabled={co[t] < 1 || t < tuoiMin} onClick={() => datTuoiO(i, t)}>
                           <em>{TEN_TUOI_SO[t]}</em>
                           <small>×{co[t]}</small>
                         </button>
@@ -648,7 +664,7 @@ export function LoDan({
               ))}
             </div>
             <p className="chu-nho an-khi-thap">
-              {phuLieu ? phuLieu.moTa + '.' : phuong.moTa + ' Chọn tuổi thuốc (năm) cho từng vị: thuốc càng lâu năm, phẩm đan càng cao.'}
+              {phuLieu ? phuLieu.moTa + '.' : phuong.moTa + (tuoiMin > 0 ? ` Đan này chỉ nhận thuốc từ ${TEN_TUOI_NGAN[tuoiMin]} trở lên.` : ' Chọn tuổi thuốc (năm) cho từng vị: thuốc càng lâu năm, phẩm đan càng cao.')}
             </p>
             <div className="hang-nut">
               {kho.loHu ? (

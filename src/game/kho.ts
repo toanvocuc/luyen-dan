@@ -1,5 +1,5 @@
 // Trạng thái lâu dài của người chơi (linh thạch, dược liệu, túi đan…) + lưu vào trình duyệt.
-import { DAN_PHUONG, DUOC_LIEU, LUAT, NANG_CAP_GOC, giaBan, laDanThat, timDanPhuong, timDuocLieu, timPhuLieu, type NangCap, type PhamThat, type Tuoi } from './duLieu.ts';
+import { CANH_GIOI, DAN_PHUONG, DUOC_LIEU, LUAT, NANG_CAP_GOC, giaBan, laDanThat, timDanPhuong, timDuocLieu, timPhuLieu, type DanPhuong, type LoiThe, type NangCap, type PhamThat, type Tuoi } from './duLieu.ts';
 import type { KetQua } from './luyenDan.ts';
 import { loiThe, timXuatThan, type NhanVat } from './nhanVat.ts';
 
@@ -46,12 +46,12 @@ export function khoMoi(nv: NhanVat | null = null): Kho {
     thongThao[p.id] = 0;
   }
   // thế gia luyện đan: coi như đã thạo đan nhập môn nên đan phương thứ hai mở sẵn
-  if (xt?.moSanPhuong) thongThao[DAN_PHUONG[0].id] = 3;
+  if (xt?.moSanPhuong) thongThao['tu-khi-dan'] = 3;
   return {
     phienBan: 3,
     nhanVat: nv,
-    // bắt đầu ở Luyện Khí tầng 1 (chỉ số 1); Phàm Nhân (0) để dành cho phần mở đầu sau này
-    tuVi: { canhGioi: 1, tang: 1, diem: 0 },
+    // bắt đầu là Phàm Nhân: lần đột phá đầu tiên (Dẫn Khí Đan) chính là bài nhập môn
+    tuVi: { canhGioi: 0, tang: 1, diem: 0 },
     linhThach: xt?.linhThach ?? 120,
     duocLieu,
     phuLieu: { 'hoa-tinh': 0, 'ngung-than-thao': 0 },
@@ -217,20 +217,70 @@ export function nhanTroCap(k: Kho): Kho {
 
 // ---------- tu luyện ----------
 
-/** Điểm tu vi cần để vượt tầng hiện tại. */
-export const tuViCan = (tang: number) => tang * LUAT.tuViMoiTang;
-/** Đã viên mãn tầng cuối chưa (chờ đan đột phá — sẽ làm sau). */
-export const vienMan = (k: Kho) => k.tuVi.tang >= LUAT.soTang && k.tuVi.diem >= tuViCan(k.tuVi.tang);
+/** Số tầng của một cảnh giới. */
+export const soTang = (canhGioi: number) => (canhGioi === 0 ? LUAT.soTangPhamNhan : LUAT.soTang);
+/** Điểm tu vi cần để vượt một tầng ở một cảnh giới. */
+export function tuViCan(tang: number, canhGioi: number): number {
+  const heSo = canhGioi === 0 ? LUAT.heSoTuViPhamNhan : LUAT.heSoTuViMoiCanhGioi ** Math.max(0, canhGioi - 1);
+  return Math.round(tang * LUAT.tuViMoiTang * heSo);
+}
+/** Đã viên mãn tầng cuối chưa (phải dùng đan đột phá mới lên tiếp được). */
+export const vienMan = (k: Kho) => k.tuVi.tang >= soTang(k.tuVi.canhGioi) && k.tuVi.diem >= tuViCan(k.tuVi.tang, k.tuVi.canhGioi);
 
 /** Cộng tu vi theo số giây đã trôi qua, tự lên tầng khi đủ điểm, dừng ở viên mãn tầng cuối. */
 export function tuLuyen(k: Kho, giay: number): Kho {
   if (!k.nhanVat || vienMan(k)) return k;
+  const cg = k.tuVi.canhGioi;
   let { tang, diem } = k.tuVi;
   diem += giay * LUAT.tuViMoiGiay * loiThe(k.nhanVat).tocDoTuLuyen;
-  while (tang < LUAT.soTang && diem >= tuViCan(tang)) {
-    diem -= tuViCan(tang);
+  while (tang < soTang(cg) && diem >= tuViCan(tang, cg)) {
+    diem -= tuViCan(tang, cg);
     tang += 1;
   }
-  if (tang >= LUAT.soTang) diem = Math.min(diem, tuViCan(tang));
+  if (tang >= soTang(cg)) diem = Math.min(diem, tuViCan(tang, cg));
   return { ...k, tuVi: { ...k.tuVi, tang, diem } };
+}
+
+/** Lợi thế luyện đan của người chơi: bẩm sinh (thiên mệnh) cộng phần do cảnh giới mang lại. */
+export function loiTheKho(k: Kho): LoiThe {
+  const goc = loiThe(k.nhanVat);
+  const bac = Math.max(0, k.tuVi.canhGioi - 1);
+  return { ...goc, phamCong: goc.phamCong + bac * LUAT.canhGioi.pham, rongVung: goc.rongVung + bac * LUAT.canhGioi.rongVung };
+}
+
+// ---------- đột phá ----------
+
+/** Đan đột phá mà cảnh giới hiện tại cần; đã ở đỉnh (Tiên Đế) thì không có. */
+export const danDotPha = (k: Kho): DanPhuong | null =>
+  k.tuVi.canhGioi + 1 < CANH_GIOI.length ? DAN_PHUONG.find((p) => p.dotPha === k.tuVi.canhGioi + 1) ?? null : null;
+
+/** Tỉ lệ đột phá thành công nếu dùng một viên phẩm này. */
+export function tiLeDotPha(k: Kho, pham: PhamThat, danVan: boolean): number {
+  if (danVan) return 1;
+  const kv = ((k.nhanVat?.khiVan ?? 50) - 50) * LUAT.dotPha.khiVan;
+  return Math.min(0.99, Math.max(0.05, LUAT.dotPha.tiLe[pham] + kv));
+}
+
+/**
+ * Dùng một viên đan đột phá. r là số ngẫu nhiên 0–1 do nơi gọi quay sẵn (để giao diện biết trước kết quả mà dựng hiệu ứng).
+ * Thành công: lên cảnh giới mới, tầng 1. Thất bại: mất viên đan, hao một phần tu vi của tầng hiện tại.
+ * Không đủ điều kiện (chưa viên mãn, không có viên đó) thì trả về null.
+ */
+export function dotPha(k: Kho, pham: PhamThat, danVan: boolean, r: number): { kho: Kho; thanh: boolean } | null {
+  const p = danDotPha(k);
+  if (!p || !vienMan(k)) return null;
+  const tui = [...k.tuiDan[p.id]] as [number, number, number, number];
+  let dv = k.danVan[p.id] ?? 0;
+  if (danVan) {
+    if (dv < 1) return null;
+    dv -= 1;
+  } else {
+    if (tui[pham] < 1) return null;
+    tui[pham] -= 1;
+  }
+  const thanh = r < tiLeDotPha(k, pham, danVan);
+  const tuVi = thanh
+    ? { canhGioi: k.tuVi.canhGioi + 1, tang: 1, diem: 0 }
+    : { ...k.tuVi, diem: Math.floor(k.tuVi.diem * (1 - LUAT.dotPha.matTuVi)) };
+  return { thanh, kho: { ...k, tuVi, tuiDan: { ...k.tuiDan, [p.id]: tui }, danVan: { ...k.danVan, [p.id]: dv } } };
 }

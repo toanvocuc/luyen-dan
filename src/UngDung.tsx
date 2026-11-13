@@ -54,6 +54,7 @@ export function UngDung() {
         <TuTien
           kho={kho}
           nhanVat={kho.nhanVat}
+          doiKho={doiKho}
           onLuyenDan={() => datMan('lo-dan')}
           onChoiLai={() => {
             datKho(khoMoi());
