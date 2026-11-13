@@ -222,6 +222,35 @@ def main():
                 Image.fromarray(a.round().astype(np.uint8), 'RGBA').save(os.path.join(RA, 'ui', 'khung-bang-toi.png'), optimize=True)
                 print('ok ui/khung-bang-toi.png')
 
+    # vườn dược: nen-vuon.* là ảnh nền, còn lại là ô đất và các giai đoạn cây (tách nền)
+    vao = os.path.join(GOC, 'vuon')
+    if os.path.isdir(vao):
+        os.makedirs(os.path.join(RA, 'vuon'), exist_ok=True)
+        os.makedirs(os.path.join(RA, 'nen'), exist_ok=True)
+        for ten in sorted(os.listdir(vao)):
+            goc_ten, duoi = os.path.splitext(ten)
+            if duoi.lower() not in ('.png', '.jpg', '.jpeg', '.webp'):
+                continue
+            im = Image.open(os.path.join(vao, ten))
+            if goc_ten.startswith('nen'):
+                thu_nho(im.convert('RGB'), 1920).save(os.path.join(RA, 'nen', 'vuon.jpg'), quality=86)
+                print('ok vuon/' + ten, '-> nen/vuon.jpg')
+                continue
+            im = thu_nho(cat_sat(tach_nen(im)), 384 if goc_ten.startswith('o-') else 256)
+            im.save(os.path.join(RA, 'vuon', goc_ten + '.png'), optimize=True)
+            print('ok vuon/' + ten, im.size)
+
+    # lò đan mua ở phường thị: Hinh_anh/lo/<id>.png -> public/hinh/lo/ (cùng cỡ với lò mặc định)
+    vao = os.path.join(GOC, 'lo')
+    if os.path.isdir(vao):
+        os.makedirs(os.path.join(RA, 'lo'), exist_ok=True)
+        for ten in sorted(os.listdir(vao)):
+            if not ten.lower().endswith('.png'):
+                continue
+            im = thu_nho(cat_sat(tach_nen(Image.open(os.path.join(vao, ten)))), 720)
+            im.save(os.path.join(RA, 'lo', ten), optimize=True)
+            print('ok lo/' + ten, im.size)
+
     # mảnh hiệu ứng: Hinh_anh/hieu-ung/*.png vẽ trên NỀN ĐEN -> PNG trắng có độ đục bằng độ sáng.
     # Game dùng chúng làm mặt nạ rồi tô màu theo phẩm đan, nên chỉ cần hình dạng, không cần màu gốc.
     vao = os.path.join(GOC, 'hieu-ung')

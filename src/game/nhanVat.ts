@@ -159,5 +159,6 @@ export function loiThe(nv: NhanVat | null): LoiThe {
     heSoMua: gd.heSoMua * xt.heSoMua,
     heSoBan: gd.heSoBan,
     tocDoTuLuyen: timLinhCan(nv.linhCan).tocDo,
+    soVien: 0,
   };
 }

@@ -11,6 +11,8 @@ import {
   TEN_TUOI_NGAN,
   anhDan,
   anhDuocLieu,
+  anhLoDan,
+  timLoDan,
   giaBan,
   laDanThat,
   timDanPhuong,
@@ -489,7 +491,17 @@ export function LoDan({
         onContextMenu={(e) => e.preventDefault()}
       >
         <div className="lua-tam" />
-        <img className="lo" src="./hinh/lo-dan.png" alt="Lò đan" draggable={false} />
+        <img
+          className="lo"
+          key={kho.loDan.dung}
+          src={anhLoDan(kho.loDan.dung)}
+          alt={timLoDan(kho.loDan.dung).ten}
+          draggable={false}
+          onError={(e) => {
+            // lò chưa có ảnh riêng thì dùng ảnh lò mặc định
+            if (!e.currentTarget.src.endsWith('/lo-dan.png')) e.currentTarget.src = './hinh/lo-dan.png';
+          }}
+        />
 
         {pha === 'lua' && (
           <>

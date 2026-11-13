@@ -37,7 +37,7 @@ export function batDauMe(tuoi: readonly [Tuoi, Tuoi, Tuoi], phuLieu: PhuLieu | n
     chatLuong: tb + (phuLieu?.chatLuong ?? 0) + lt(nangCap).chatLuong,
     // áp lò được phép âm: phụ liệu ổn định cho một khoản "đệm" trừ dần về sau
     apLo: phuLieu?.apLo ?? 0,
-    soVien: Math.max(1, LUAT.soVienGoc + themVien + (phuLieu?.soVien ?? 0)),
+    soVien: Math.max(1, LUAT.soVienGoc + themVien + (phuLieu?.soVien ?? 0) + lt(nangCap).soVien),
     cap: 0,
   };
 }

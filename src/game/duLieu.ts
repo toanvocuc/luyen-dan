@@ -33,6 +33,8 @@ export const DUOC_LIEU: readonly DuocLieu[] = [
   { id: 'kim-diep-truc', ten: 'Kim Diệp Trúc', gia: [22, 95, 480] },
 ];
 export const anhDuocLieu = (id: string) => `./hinh/duoc-lieu/${id}.png`;
+/** Giá một hạt giống ở phường thị (chưa tính lợi thế mua bán của nhân vật). */
+export const giaHatGiong = (d: DuocLieu) => d.gia[0] * LUAT.vuon.heSoGiaHat;
 
 /** Một đoạn hỏa hầu: tâm vùng nhiệt (0–100) và thời lượng. */
 export interface DoanHoa {
@@ -336,13 +338,13 @@ export const LUAT = {
     apTruot: 18,
     apLech: 40,
     /** Mỗi cấp tôi đan đẩy tâm phẩm cấp lên bấy nhiêu. */
-    phamMoiCap: 0.28,
+    phamMoiCap: 0.12,
   },
 
   /** Đường cong phẩm cấp: tâm = goc + doc * chatLuong/100 - doKho + cấp tôi, trên thang 0 (phế) … 4 (cực phẩm). */
-  phamGoc: 0.4,
-  phamDoc: 2.6,
-  phamDoRong: 0.85,
+  phamGoc: 0.3,
+  phamDoc: 2.2,
+  phamDoRong: 0.7,
 
 
   /** Luyện thành bấy nhiêu mẻ thì mở "luyện nhanh". */
@@ -352,8 +354,8 @@ export const LUAT = {
 
   /** Sửa lò sau khi nổ. */
   giaSuaLo: 30,
-  /** Bán đan ở phường thị được bấy nhiêu phần giá trị (đơn hàng sẽ trả cao hơn). */
-  heSoBan: 0.7,
+  /** Bán lẻ hay bán cả lô ở phường thị chỉ được bấy nhiêu phần giá trị (đơn hàng sẽ trả đủ giá). */
+  heSoBan: 0.5,
   /** Trợ cấp tông môn khi cạn túi. */
   troCap: 40,
 
@@ -374,6 +376,28 @@ export const LUAT = {
   dotPha: { tiLe: [0.5, 0.7, 0.85, 0.95], khiVan: 0.002, matTuVi: 0.3 },
   /** Lợi thế luyện đan theo cảnh giới (thần thức mạnh dần): mỗi cảnh giới trên Luyện Khí cộng bấy nhiêu. */
   canhGioi: { pham: 0.18, rongVung: 0.4 },
+
+  /**
+   * Vườn dược: gieo một hạt giống, sau giay[0] giây thành thuốc 10 năm, giay[1] thành 100 năm, giay[2] thành 1000 năm
+   * (tính theo đồng hồ thật, kể cả lúc tắt game). Hái lúc nào được thuốc tuổi lúc đó, mỗi ô sanLuong phần,
+   * có themTiLe cơ hội được thêm một phần (khí vận lệch khỏi 50 thì cộng/trừ themKhiVan mỗi điểm).
+   */
+  vuon: { giay: [180, 1200, 7200], sanLuong: 2, themTiLe: 0.3, themKhiVan: 0.004, soODau: 3, soOToiDa: 9, giaO: 200, giaONhan: 2, heSoGiaHat: 3 },
+
+  /**
+   * Phường thị đổi hàng mỗi gioDoiHang giờ. Mỗi kỳ, từng vị thuốc có tiLe[tuổi] cơ hội được bày bán
+   * với số lượng trong khoảng soLuong[tuổi]; hạt giống tương tự. Các vị trong luonCo thì thuốc 10 năm và hạt giống kỳ nào cũng có,
+   * để người mới không bao giờ kẹt nguyên liệu của đan nhập môn.
+   */
+  cho: {
+    gioDoiHang: 3,
+    tiLe: [0.8, 0.4, 0.12],
+    soLuong: [[4, 10], [1, 3], [1, 1]],
+    hatTiLe: 0.55,
+    hatSoLuong: [1, 3],
+    luonCo: ['linh-thao', 'chu-qua'],
+    luonCoSoLuong: 12,
+  },
 } as const;
 
 /**
@@ -400,8 +424,10 @@ export interface LoiThe {
   heSoBan: number;
   /** Nhân vào tốc độ tăng tu vi. */
   tocDoTuLuyen: number;
+  /** Cộng vào số viên mỗi mẻ. */
+  soVien: number;
 }
-export const LOI_THE_GOC: LoiThe = { chatLuong: 0, rongVung: 0, heSoAp: 1, xanh: 0, heSoQuet: 1, vuotKiep: 0.5, phamCong: 0, heSoMua: 1, heSoBan: 1, tocDoTuLuyen: 1 };
+export const LOI_THE_GOC: LoiThe = { chatLuong: 0, rongVung: 0, heSoAp: 1, xanh: 0, heSoQuet: 1, vuotKiep: 0.5, phamCong: 0, heSoMua: 1, heSoBan: 1, tocDoTuLuyen: 1, soVien: 0 };
 
 /** Nâng cấp đan phòng — cấp 0 là chưa nâng. */
 export interface NangCap {
@@ -415,6 +441,39 @@ export interface NangCap {
   loiThe?: LoiThe;
 }
 export const NANG_CAP_GOC: NangCap = { lo: 0, lua: 0, tayNghe: 0 };
+
+/** Một chiếc lò đan mua được ở phường thị. Mỗi lò đổi tính chất của mọi mẻ luyện bằng nó. */
+export interface LoDan {
+  id: string;
+  ten: string;
+  moTa: string;
+  gia: number;
+  /** Cộng vào tâm phẩm cấp. */
+  phamCong?: number;
+  /** Nhân vào lượng áp lò tăng lên (lớn hơn 1 = lò dễ nổ hơn). */
+  heSoAp?: number;
+  /** Cộng vào bề rộng vùng hỏa hầu (âm = hẹp đi). */
+  rongVung?: number;
+  /** Cộng vào bề rộng khoảng xanh khi tôi đan. */
+  xanh?: number;
+  /** Nhân vào thời gian quét của con lắc (nhỏ hơn 1 = con lắc nhanh hơn). */
+  heSoQuet?: number;
+  /** Cộng vào xác suất vượt đan kiếp. */
+  vuotKiep?: number;
+  /** Cộng vào số viên mỗi mẻ. */
+  soVien?: number;
+}
+/** Lò đầu tiên là lò ai cũng có. Ảnh: public/hinh/lo/<id>.png, chưa có thì dùng ảnh lò mặc định. */
+export const LO_DAN: readonly LoDan[] = [
+  { id: 'thanh-dong-lo', ten: 'Thanh Đồng Lô', moTa: 'Lò đồng xanh của người mới học. Không có gì đặc biệt.', gia: 0 },
+  { id: 'han-ngoc-lo', ten: 'Hàn Ngọc Lô', moTa: 'Ngọc lạnh trấn hỏa: áp lò dâng chậm đi bốn phần mười, nhưng mỗi mẻ ít hơn một viên.', gia: 2500, heSoAp: 0.6, soVien: -1 },
+  { id: 'hoa-long-lo', ten: 'Hỏa Long Lô', moTa: 'Long hỏa mãnh liệt: phẩm đan cao hơn hẳn, nhưng áp lò dâng nhanh gấp rưỡi và vùng hỏa hầu hẹp lại.', gia: 4000, phamCong: 0.35, heSoAp: 1.5, rongVung: -3 },
+  { id: 'bat-quai-lo', ten: 'Bát Quái Lô', moTa: 'Trận văn ổn định: vùng hỏa hầu và khoảng xanh đều rộng ra, nhưng phẩm đan kém đi một chút.', gia: 5000, rongVung: 4, xanh: 0.03, phamCong: -0.15 },
+  { id: 'tu-kim-lo', ten: 'Tử Kim Lô', moTa: 'Lò lớn bằng tử kim: mỗi mẻ thêm hai viên, nhưng con lắc tôi đan chạy nhanh hơn.', gia: 8000, soVien: 2, heSoQuet: 0.85 },
+  { id: 'cuu-long-than-lo', ten: 'Cửu Long Thần Lô', moTa: 'Thần lô thượng cổ: phẩm đan cao, dễ vượt đan kiếp, thêm một viên mỗi mẻ; áp lò dâng nhanh hơn hai phần mười.', gia: 30000, phamCong: 0.5, vuotKiep: 0.2, soVien: 1, heSoAp: 1.2 },
+];
+export const timLoDan = (id: string) => LO_DAN.find((l) => l.id === id) ?? LO_DAN[0];
+export const anhLoDan = (id: string) => `./hinh/lo/${id}.png`;
 
 export const timDuocLieu = (id: string) => DUOC_LIEU.find((d) => d.id === id)!;
 export const timDanPhuong = (id: string) => DAN_PHUONG.find((d) => d.id === id)!;

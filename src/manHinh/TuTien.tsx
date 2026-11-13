@@ -30,12 +30,14 @@ export function TuTien({
   nhanVat,
   doiKho,
   onLuyenDan,
+  onVuon,
   onChoiLai,
 }: {
   kho: Kho;
   nhanVat: NhanVat;
   doiKho: (ham: (k: Kho) => Kho) => void;
   onLuyenDan: () => void;
+  onVuon: () => void;
   onChoiLai: () => void;
 }) {
   const [bang, datBang] = useState<Bang>(null);
@@ -58,6 +60,7 @@ export function TuTien({
   const coDan = DAN_PHUONG.filter((p) => kho.tuiDan[p.id].some((n) => n > 0) || (kho.danVan[p.id] ?? 0) > 0);
   const coLieu = DUOC_LIEU.filter((d) => kho.duocLieu[d.id].some((n) => n > 0));
   const coPhu = PHU_LIEU.filter((p) => (kho.phuLieu[p.id] ?? 0) > 0);
+  const coHat = DUOC_LIEU.filter((d) => (kho.hatGiong[d.id] ?? 0) > 0);
 
   return (
     <main className="tu-tien">
@@ -107,7 +110,7 @@ export function TuTien({
           <NutTron id="tui-do" ten="Túi đồ" chu="囊" onClick={() => datBang('hanh-trang')} />
           <NutTron id="luyen-dan" ten="Luyện đan" chu="丹" noiBat onClick={onLuyenDan} />
           <NutTron id="mon-phai" ten="Môn phái" chu="門" />
-          <NutTron id="vuon-duoc" ten="Vườn dược" chu="草" />
+          <NutTron id="vuon-duoc" ten="Vườn dược" chu="草" onClick={onVuon} />
           <NutTron id="thien-menh" ten="Thiên mệnh" chu="命" onClick={() => datBang('thien-menh')} />
         </nav>
       </section>
@@ -253,6 +256,19 @@ export function TuTien({
                         {ten} ×{kho.duocLieu[d.id][t]}
                       </span>
                     ))}
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {coHat.length > 0 && <h3>Hạt giống</h3>}
+            {coHat.map((d) => (
+              <div key={d.id} className="dong-tui">
+                <img src={anhDuocLieu(d.id)} alt="" />
+                <div className="than-dong">
+                  <b>Hạt {d.ten}</b>
+                  <div className="hang-pham">
+                    <span>×{kho.hatGiong[d.id]} · gieo ở vườn dược</span>
                   </div>
                 </div>
               </div>

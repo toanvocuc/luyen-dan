@@ -2139,3 +2139,254 @@ button {
     opacity: 0;
   }
 }
+
+/* ---------- phường thị: hàng theo kỳ ---------- */
+.phuong-thi > .hang-chon {
+  margin-bottom: 4px;
+}
+.dong-cho {
+  padding: 8px 0;
+  border-top: 1px solid rgba(185, 147, 90, 0.25);
+}
+.dau-dong-cho {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+.dau-dong-cho img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+.dau-dong-cho b {
+  flex: 1;
+}
+.dau-dong-cho small {
+  font-size: 11.5px;
+  color: var(--chu-mo);
+}
+.hang-mua {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+}
+.o-mua {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 2px;
+  border-radius: 8px;
+  border: 1px solid var(--dong-toi);
+  background: rgba(9, 17, 19, 0.75);
+  line-height: 1.25;
+}
+.o-mua em {
+  font-style: normal;
+  font-size: 10.5px;
+  color: var(--chu-mo);
+}
+.o-mua b {
+  font-size: 14px;
+}
+.o-mua small {
+  font-size: 10px;
+  color: var(--chu-mo);
+}
+.o-mua.tuoi-1 {
+  border-color: var(--mau-pham-2);
+}
+.o-mua.tuoi-1 b {
+  color: var(--mau-pham-2);
+}
+.o-mua.tuoi-2 {
+  border-color: var(--mau-pham-3);
+}
+.o-mua.tuoi-2 b {
+  color: var(--mau-pham-3);
+}
+.o-mua.giong {
+  border-color: var(--mau-pham-1);
+}
+.o-mua.giong b {
+  color: var(--mau-pham-1);
+}
+.o-mua:disabled {
+  opacity: 0.38;
+}
+.o-mua:not(:disabled):active {
+  transform: scale(0.95);
+}
+.dong-lo > img {
+  width: 48px;
+  height: 48px;
+}
+.dong-lo.dang-dung {
+  background: linear-gradient(90deg, rgba(185, 147, 90, 0.16), transparent);
+}
+.nhan-dang-dung {
+  flex: 0 0 auto;
+  font-size: 12px;
+  color: var(--mau-pham-1);
+}
+
+/* ---------- túi đan: bán lẻ ---------- */
+.dong-ban {
+  gap: 6px;
+}
+.chinh-so {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.chinh-so .nut-nho {
+  min-width: 30px;
+  padding: 4px 0;
+  font-size: 16px;
+  line-height: 1;
+}
+.chinh-so .so {
+  min-width: 28px;
+  height: 34px;
+  border: 0;
+  background: none;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+.nut-ban {
+  min-width: 68px;
+  padding: 4px 6px;
+  white-space: nowrap;
+}
+
+/* ---------- vườn dược ---------- */
+.vuon {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+}
+.luoi-vuon {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  align-content: center;
+  gap: 4px 6px;
+  padding: 58px 12px 8px;
+}
+.o-vuon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+.o-vuon .dat {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3.6;
+  display: block;
+}
+.o-vuon .nen-o {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  filter: drop-shadow(0 5px 6px rgba(0, 0, 0, 0.55));
+}
+.o-vuon .cay {
+  position: absolute;
+  left: 50%;
+  bottom: 30%;
+  height: 58%;
+  translate: -50% 0;
+  object-fit: contain;
+  transform-origin: 50% 100%;
+  animation: cay-dua 3.4s ease-in-out infinite alternate;
+}
+.o-vuon .cay.gd-0 {
+  height: 36%;
+}
+.o-vuon .cay.gd-3 {
+  height: 78%;
+}
+@keyframes cay-dua {
+  from {
+    rotate: -2deg;
+  }
+  to {
+    rotate: 2deg;
+  }
+}
+.o-vuon .loai {
+  position: absolute;
+  right: 2%;
+  top: 0;
+  width: 30%;
+  aspect-ratio: 1;
+  object-fit: contain;
+  padding: 2px;
+  border-radius: 50%;
+  border: 1px solid var(--dong-toi);
+  background: rgba(9, 17, 19, 0.85);
+}
+.nhan-o {
+  padding: 1px 7px;
+  border-radius: 9px;
+  background: rgba(6, 12, 13, 0.78);
+  font-size: 11.5px;
+  line-height: 1.5;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.o-vuon.chon .nen-o {
+  filter: drop-shadow(0 0 7px #ffe2a0) drop-shadow(0 5px 6px rgba(0, 0, 0, 0.55));
+}
+.o-vuon.chon .nhan-o {
+  color: #ffe2a0;
+}
+.o-vuon.hai-duoc .nhan-o {
+  color: var(--mau-pham-1);
+}
+.o-vuon.khoa .nen-o {
+  filter: grayscale(1) brightness(0.5);
+}
+.o-vuon.khoa:disabled .nhan-o {
+  opacity: 0.6;
+}
+.bang.day.gon {
+  min-height: 132px;
+}
+.hang-hat {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+@media (prefers-reduced-motion: reduce) {
+  .o-vuon .cay {
+    animation: none;
+  }
+}
+@media (max-width: 380px) {
+  .dong-ban > img {
+    width: 30px;
+    height: 30px;
+  }
+  .chinh-so .nut-nho {
+    min-width: 26px;
+  }
+  .chinh-so .so {
+    min-width: 22px;
+  }
+  .nut-ban {
+    min-width: 58px;
+  }
+}

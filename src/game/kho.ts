@@ -1,5 +1,5 @@
 // Trạng thái lâu dài của người chơi (linh thạch, dược liệu, túi đan…) + lưu vào trình duyệt.
-import { CANH_GIOI, DAN_PHUONG, DUOC_LIEU, LUAT, NANG_CAP_GOC, giaBan, laDanThat, timDanPhuong, timDuocLieu, timPhuLieu, type DanPhuong, type LoiThe, type NangCap, type PhamThat, type Tuoi } from './duLieu.ts';
+import { CANH_GIOI, DAN_PHUONG, DUOC_LIEU, LUAT, NANG_CAP_GOC, giaBan, giaHatGiong, laDanThat, timDanPhuong, timDuocLieu, timLoDan, timPhuLieu, type DanPhuong, type LoiThe, type NangCap, type PhamThat, type Tuoi } from './duLieu.ts';
 import type { KetQua } from './luyenDan.ts';
 import { loiThe, timXuatThan, type NhanVat } from './nhanVat.ts';
 
@@ -24,6 +24,20 @@ export interface Kho {
   /** Lò vừa nổ, phải sửa mới luyện tiếp được. */
   loHu: boolean;
   thongKe: { soMe: number; noLo: number };
+  /** id dược liệu -> số hạt giống đang có. */
+  hatGiong: Record<string, number>;
+  /** Vườn dược: số ô đã mở và cây trong từng ô (null = ô trống). */
+  vuon: { soO: number; o: (OVuon | null)[] };
+  /** Phường thị: kỳ hàng gần nhất mà người chơi đã mua, và số đã mua của từng mặt hàng trong kỳ đó. */
+  cho: { ky: number; daMua: Record<string, number> };
+  /** Lò đan: chiếc đang dùng và những chiếc đã mua. */
+  loDan: { dung: string; co: string[] };
+}
+
+/** Một cây trong vườn: vị thuốc gì, gieo lúc nào (mili giây theo đồng hồ thật). */
+export interface OVuon {
+  id: string;
+  luc: number;
 }
 
 const KHOA = 'luyen-dan-kho-v3';
@@ -61,6 +75,10 @@ export function khoMoi(nv: NhanVat | null = null): Kho {
     nangCap: { ...NANG_CAP_GOC, lo: xt?.lo ?? 0 },
     loHu: false,
     thongKe: { soMe: 0, noLo: 0 },
+    hatGiong: {},
+    vuon: { soO: LUAT.vuon.soODau, o: [] },
+    cho: { ky: 0, daMua: {} },
+    loDan: { dung: 'thanh-dong-lo', co: ['thanh-dong-lo'] },
   };
 }
 
@@ -83,6 +101,10 @@ export function napKho(): Kho {
           nangCap: { ...moi.nangCap, ...k.nangCap },
           thongKe: { ...moi.thongKe, ...k.thongKe },
           tuVi: { ...moi.tuVi, ...k.tuVi },
+          hatGiong: { ...k.hatGiong },
+          vuon: { ...moi.vuon, ...k.vuon },
+          cho: { ...moi.cho, ...k.cho },
+          loDan: { ...moi.loDan, ...k.loDan },
         };
       }
     }
@@ -164,12 +186,81 @@ export function nhanKetQua(k: Kho, phuongId: string, kq: KetQua): Kho {
 export const giaMua = (k: Kho, id: string, tuoi: Tuoi) => Math.max(1, Math.round(timDuocLieu(id).gia[tuoi] * loiThe(k.nhanVat).heSoMua));
 export const giaMuaPhuLieu = (k: Kho, id: string) => Math.max(1, Math.round((timPhuLieu(id)?.gia ?? 0) * loiThe(k.nhanVat).heSoMua));
 
-export function muaDuocLieu(k: Kho, id: string, tuoi: Tuoi): Kho {
+// Hàng của phường thị đổi theo kỳ (LUAT.cho.gioDoiHang giờ một lần). Hàng mỗi kỳ được quay từ số kỳ và tên nhân vật,
+// nên trong một kỳ nó không đổi dù nạp lại trang, và mỗi nhân vật gặp một chợ khác nhau.
+
+const MS_MOI_KY = LUAT.cho.gioDoiHang * 3600_000;
+export const kyCho = (luc = Date.now()) => Math.floor(luc / MS_MOI_KY);
+/** Còn bao nhiêu giây nữa thì phường thị đổi hàng. */
+export const giayToiKySau = (luc = Date.now()) => Math.ceil(((kyCho(luc) + 1) * MS_MOI_KY - luc) / 1000);
+/** Khoá của một mặt hàng: thuốc theo tuổi, hoặc hạt giống. */
+export const khoaThuoc = (id: string, tuoi: Tuoi) => `${id}|${tuoi}`;
+export const khoaHat = (id: string) => `${id}|hat`;
+
+function bam(chu: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < chu.length; i++) h = Math.imul(h ^ chu.charCodeAt(i), 16777619);
+  return h >>> 0;
+}
+const boNhoCho = new Map<string, Record<string, number>>();
+/** Số lượng từng mặt hàng mà phường thị bày bán trong một kỳ (chưa trừ phần người chơi đã mua). */
+export function hangCho(k: Kho, ky: number): Record<string, number> {
+  const khoa = `${k.nhanVat?.ten ?? ''}|${ky}`;
+  const co = boNhoCho.get(khoa);
+  if (co) return co;
+  let hat = bam(khoa);
+  const rng = () => {
+    hat = (hat + 0x6d2b79f5) >>> 0;
+    let t = hat;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  const trong = ([a, b]: readonly number[]) => a + Math.floor(rng() * (b - a + 1));
+  const c = LUAT.cho;
+  const hang: Record<string, number> = {};
+  for (const d of DUOC_LIEU) {
+    const luonCo = (c.luonCo as readonly string[]).includes(d.id);
+    for (const t of [0, 1, 2] as Tuoi[]) {
+      // luôn quay đủ số lần cho mỗi vị, để thêm bớt luật không làm xô lệch hàng của các vị khác
+      const coHang = rng() < c.tiLe[t];
+      const n = trong(c.soLuong[t]);
+      hang[khoaThuoc(d.id, t)] = t === 0 && luonCo ? c.luonCoSoLuong : coHang ? n : 0;
+    }
+    const coHat = rng() < c.hatTiLe;
+    const n = trong(c.hatSoLuong);
+    hang[khoaHat(d.id)] = luonCo ? Math.max(2, n) : coHat ? n : 0;
+  }
+  boNhoCho.set(khoa, hang);
+  return hang;
+}
+/** Một mặt hàng còn lại bao nhiêu trong kỳ hiện tại. */
+export function conHang(k: Kho, khoa: string, luc = Date.now()): number {
+  const ky = kyCho(luc);
+  return (hangCho(k, ky)[khoa] ?? 0) - (k.cho.ky === ky ? k.cho.daMua[khoa] ?? 0 : 0);
+}
+function ghiDaMua(k: Kho, khoa: string, luc: number): Kho['cho'] {
+  const ky = kyCho(luc);
+  const daMua = k.cho.ky === ky ? { ...k.cho.daMua } : {};
+  daMua[khoa] = (daMua[khoa] ?? 0) + 1;
+  return { ky, daMua };
+}
+
+export function muaDuocLieu(k: Kho, id: string, tuoi: Tuoi, luc = Date.now()): Kho {
   const gia = giaMua(k, id, tuoi);
-  if (k.linhThach < gia) return k;
+  const khoa = khoaThuoc(id, tuoi);
+  if (k.linhThach < gia || conHang(k, khoa, luc) < 1) return k;
   const c = [...k.duocLieu[id]] as [number, number, number];
   c[tuoi] += 1;
-  return { ...k, linhThach: k.linhThach - gia, duocLieu: { ...k.duocLieu, [id]: c } };
+  return { ...k, linhThach: k.linhThach - gia, duocLieu: { ...k.duocLieu, [id]: c }, cho: ghiDaMua(k, khoa, luc) };
+}
+
+export const giaMuaHat = (k: Kho, id: string) => Math.max(1, Math.round(giaHatGiong(timDuocLieu(id)) * loiThe(k.nhanVat).heSoMua));
+export function muaHatGiong(k: Kho, id: string, luc = Date.now()): Kho {
+  const gia = giaMuaHat(k, id);
+  const khoa = khoaHat(id);
+  if (k.linhThach < gia || conHang(k, khoa, luc) < 1) return k;
+  return { ...k, linhThach: k.linhThach - gia, hatGiong: { ...k.hatGiong, [id]: (k.hatGiong[id] ?? 0) + 1 }, cho: ghiDaMua(k, khoa, luc) };
 }
 
 export function muaPhuLieu(k: Kho, id: string): Kho {
@@ -198,6 +289,75 @@ export function banDan(k: Kho, phuongId: string): Kho {
     tuiDan: { ...k.tuiDan, [phuongId]: [0, 0, 0, 0] },
     danVan: { ...k.danVan, [phuongId]: 0 },
   };
+}
+
+/** Bán lẻ: một số viên của một loại đan ở đúng một phẩm ('dv' = đan văn). */
+export function banLe(k: Kho, phuongId: string, loai: PhamThat | 'dv', soLuong: number): Kho {
+  const p = timDanPhuong(phuongId);
+  const hs = loiThe(k.nhanVat).heSoBan;
+  if (loai === 'dv') {
+    const n = Math.min(soLuong, k.danVan[phuongId] ?? 0);
+    if (n < 1) return k;
+    return { ...k, linhThach: k.linhThach + n * giaBan(p, 3, true, hs), danVan: { ...k.danVan, [phuongId]: (k.danVan[phuongId] ?? 0) - n } };
+  }
+  const tui = [...k.tuiDan[phuongId]] as [number, number, number, number];
+  const n = Math.min(soLuong, tui[loai]);
+  if (n < 1) return k;
+  tui[loai] -= n;
+  return { ...k, linhThach: k.linhThach + n * giaBan(p, loai, false, hs), tuiDan: { ...k.tuiDan, [phuongId]: tui } };
+}
+
+// ---------- lò đan ----------
+
+export function muaLo(k: Kho, id: string): Kho {
+  const lo = timLoDan(id);
+  if (lo.id !== id || k.loDan.co.includes(id) || k.linhThach < lo.gia) return k;
+  return { ...k, linhThach: k.linhThach - lo.gia, loDan: { dung: id, co: [...k.loDan.co, id] } };
+}
+export function dungLo(k: Kho, id: string): Kho {
+  return k.loDan.co.includes(id) ? { ...k, loDan: { ...k.loDan, dung: id } } : k;
+}
+
+// ---------- vườn dược ----------
+
+/** Giai đoạn của một cây: 0 = mầm (chưa hái được), 1 = thuốc 10 năm, 2 = 100 năm, 3 = 1000 năm. */
+export function giaiDoan(o: OVuon, luc = Date.now()): 0 | 1 | 2 | 3 {
+  const giay = (luc - o.luc) / 1000;
+  const m = LUAT.vuon.giay;
+  return giay >= m[2] ? 3 : giay >= m[1] ? 2 : giay >= m[0] ? 1 : 0;
+}
+/** Còn bao nhiêu giây nữa cây lên giai đoạn kế (đã 1000 năm thì 0). */
+export function giayToiGiaiDoanSau(o: OVuon, luc = Date.now()): number {
+  const gd = giaiDoan(o, luc);
+  const m: readonly number[] = LUAT.vuon.giay;
+  return gd >= 3 ? 0 : Math.max(0, Math.ceil(m[gd] - (luc - o.luc) / 1000));
+}
+export function gieoHat(k: Kho, viTri: number, id: string, luc = Date.now()): Kho {
+  if (viTri < 0 || viTri >= k.vuon.soO || k.vuon.o[viTri] || (k.hatGiong[id] ?? 0) < 1) return k;
+  const o = Array.from({ length: k.vuon.soO }, (_, i) => k.vuon.o[i] ?? null);
+  o[viTri] = { id, luc };
+  return { ...k, hatGiong: { ...k.hatGiong, [id]: k.hatGiong[id] - 1 }, vuon: { ...k.vuon, o } };
+}
+/** Hái một ô: được thuốc đúng tuổi cây đang có. r là số ngẫu nhiên 0–1 quyết định có được thêm một phần không. */
+export function thuHoach(k: Kho, viTri: number, r: number, luc = Date.now()): Kho {
+  const cay = k.vuon.o[viTri];
+  if (!cay) return k;
+  const gd = giaiDoan(cay, luc);
+  if (gd < 1) return k;
+  const v = LUAT.vuon;
+  const them = r < v.themTiLe + ((k.nhanVat?.khiVan ?? 50) - 50) * v.themKhiVan ? 1 : 0;
+  const c = [...(k.duocLieu[cay.id] ?? [0, 0, 0])] as [number, number, number];
+  c[gd - 1] += v.sanLuong + them;
+  const o = [...k.vuon.o];
+  o[viTri] = null;
+  return { ...k, duocLieu: { ...k.duocLieu, [cay.id]: c }, vuon: { ...k.vuon, o } };
+}
+/** Giá mở thêm một ô; đã đủ số ô tối đa thì null. */
+export const giaMoO = (k: Kho) => (k.vuon.soO >= LUAT.vuon.soOToiDa ? null : LUAT.vuon.giaO * LUAT.vuon.giaONhan ** (k.vuon.soO - LUAT.vuon.soODau));
+export function moO(k: Kho): Kho {
+  const gia = giaMoO(k);
+  if (gia === null || k.linhThach < gia) return k;
+  return { ...k, linhThach: k.linhThach - gia, vuon: { ...k.vuon, soO: k.vuon.soO + 1 } };
 }
 
 /** Sửa lò: thiếu tiền thì trả hết số đang có, để không bao giờ kẹt cứng. */
@@ -241,11 +401,21 @@ export function tuLuyen(k: Kho, giay: number): Kho {
   return { ...k, tuVi: { ...k.tuVi, tang, diem } };
 }
 
-/** Lợi thế luyện đan của người chơi: bẩm sinh (thiên mệnh) cộng phần do cảnh giới mang lại. */
+/** Lợi thế luyện đan của người chơi: bẩm sinh (thiên mệnh), cộng phần do cảnh giới mang lại, cộng tính chất của lò đang dùng. */
 export function loiTheKho(k: Kho): LoiThe {
   const goc = loiThe(k.nhanVat);
   const bac = Math.max(0, k.tuVi.canhGioi - 1);
-  return { ...goc, phamCong: goc.phamCong + bac * LUAT.canhGioi.pham, rongVung: goc.rongVung + bac * LUAT.canhGioi.rongVung };
+  const lo = timLoDan(k.loDan.dung);
+  return {
+    ...goc,
+    phamCong: goc.phamCong + bac * LUAT.canhGioi.pham + (lo.phamCong ?? 0),
+    rongVung: goc.rongVung + bac * LUAT.canhGioi.rongVung + (lo.rongVung ?? 0),
+    heSoAp: goc.heSoAp * (lo.heSoAp ?? 1),
+    xanh: goc.xanh + (lo.xanh ?? 0),
+    heSoQuet: goc.heSoQuet * (lo.heSoQuet ?? 1),
+    vuotKiep: Math.min(0.95, goc.vuotKiep + (lo.vuotKiep ?? 0)),
+    soVien: goc.soVien + (lo.soVien ?? 0),
+  };
 }
 
 // ---------- đột phá ----------
