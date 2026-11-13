@@ -16,16 +16,21 @@ import {
 } from '../game/nhanVat.ts';
 import { BupBe } from './BupBe.tsx';
 
-export function ManMoDau({ daCoNhanVat, onVao }: { daCoNhanVat: boolean; onVao: () => void }) {
+export function ManMoDau({ daCoNhanVat, onVao, onSaoLuu }: { daCoNhanVat: boolean; onVao: () => void; onSaoLuu: () => void }) {
   return (
-    <button className="man-mo-dau" onClick={onVao}>
-      <span className="an-tu-tien">
-        <i />
-        <b>丹</b>
-      </span>
-      <h1>Luyện Đan</h1>
-      <p>{daCoNhanVat ? 'Chạm để trở về động phủ' : 'Chạm để khai mở thiên mệnh'}</p>
-    </button>
+    <>
+      <button className="man-mo-dau" onClick={onVao}>
+        <span className="an-tu-tien">
+          <i />
+          <b>丹</b>
+        </span>
+        <h1>Luyện Đan</h1>
+        <p>{daCoNhanVat ? 'Chạm để trở về động phủ' : 'Chạm để khai mở thiên mệnh'}</p>
+      </button>
+      <button className="nut-nho nut-sao-luu" onClick={onSaoLuu}>
+        Sao lưu · Nạp bản lưu
+      </button>
+    </>
   );
 }
 

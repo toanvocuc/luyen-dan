@@ -3,6 +3,7 @@ import { DAN_PHUONG, anhNen } from './game/duLieu.ts';
 import { khoMoi, lamMoiDon, luuKho, napKho, tuLuyen, type Kho } from './game/kho.ts';
 import { LoDan } from './manHinh/LoDan.tsx';
 import { PhuongThi } from './manHinh/PhuongThi.tsx';
+import { SaoLuu } from './manHinh/SaoLuu.tsx';
 import { ManMoDau, ManThienMenh } from './manHinh/ThienMenh.tsx';
 import { TuiDan } from './manHinh/TuiDan.tsx';
 import { TuTien } from './manHinh/TuTien.tsx';
@@ -10,7 +11,7 @@ import { VuonDuoc } from './manHinh/VuonDuoc.tsx';
 
 /** Luồng màn hình: mở đầu -> (lần đầu) thiên mệnh -> động phủ tu tiên <-> đan phòng / vườn dược. */
 type Man = 'mo-dau' | 'thien-menh' | 'tu-tien' | 'lo-dan' | 'vuon';
-type Bang = null | 'tui' | 'phuong-thi';
+type Bang = null | 'tui' | 'phuong-thi' | 'sao-luu';
 
 export function UngDung() {
   const [kho, datKho] = useState<Kho>(napKho);
@@ -35,7 +36,8 @@ export function UngDung() {
   if (man === 'mo-dau') {
     return (
       <div className="ung-dung toi">
-        <ManMoDau daCoNhanVat={coNhanVat} onVao={() => datMan(coNhanVat ? 'tu-tien' : 'thien-menh')} />
+        <ManMoDau daCoNhanVat={coNhanVat} onVao={() => datMan(coNhanVat ? 'tu-tien' : 'thien-menh')} onSaoLuu={() => datBang('sao-luu')} />
+        {bang === 'sao-luu' && <SaoLuu kho={kho} onNap={(k) => datKho(k)} onDong={() => datBang(null)} />}
       </div>
     );
   }

@@ -118,43 +118,64 @@ export function khoMoi(nv: NhanVat | null = null): Kho {
   };
 }
 
+/** Bù các mục mới thêm vào dữ liệu sau khi người chơi đã có bản lưu. Không phải bản lưu hợp lệ thì trả về null. */
+function buKho(k: Kho | null): Kho | null {
+  if (!k || k.phienBan !== 3 || !k.tuVi || !k.tuiDan) return null;
+  const moi = khoMoi();
+  return {
+      ...moi,
+      ...k,
+      duocLieu: { ...Object.fromEntries(DUOC_LIEU.map((d) => [d.id, [0, 0, 0] as [number, number, number]])), ...k.duocLieu },
+      phuLieu: { ...moi.phuLieu, ...k.phuLieu },
+      tuiDan: { ...moi.tuiDan, ...k.tuiDan },
+      danVan: { ...moi.danVan, ...k.danVan },
+      thongThao: { ...moi.thongThao, ...k.thongThao },
+      nangCap: { ...moi.nangCap, ...k.nangCap },
+      thongKe: { ...moi.thongKe, ...k.thongKe },
+      tuVi: { ...moi.tuVi, ...k.tuVi },
+      hatGiong: { ...k.hatGiong },
+      vuon: { ...moi.vuon, ...k.vuon },
+      cho: { ...moi.cho, ...k.cho },
+      loDan: { ...moi.loDan, ...k.loDan },
+      donHang: { ...moi.donHang, ...k.donHang },
+      danhVong: { ...k.danhVong },
+      doc: { ...moi.doc, ...k.doc },
+      tangToc: { ...moi.tangToc, ...k.tangToc },
+      chiSoCong: { ...k.chiSoCong },
+      daUong: { ...k.daUong },
+      mau: { ...moi.mau, ...k.mau },
+  };
+}
+
 export function napKho(): Kho {
   try {
     const s = localStorage.getItem(KHOA);
-    if (s) {
-      const k = JSON.parse(s) as Kho;
-      if (k && k.phienBan === 3) {
-        // bù các mục mới thêm vào dữ liệu sau khi người chơi đã có bản lưu
-        const moi = khoMoi();
-        return {
-          ...moi,
-          ...k,
-          duocLieu: { ...Object.fromEntries(DUOC_LIEU.map((d) => [d.id, [0, 0, 0] as [number, number, number]])), ...k.duocLieu },
-          phuLieu: { ...moi.phuLieu, ...k.phuLieu },
-          tuiDan: { ...moi.tuiDan, ...k.tuiDan },
-          danVan: { ...moi.danVan, ...k.danVan },
-          thongThao: { ...moi.thongThao, ...k.thongThao },
-          nangCap: { ...moi.nangCap, ...k.nangCap },
-          thongKe: { ...moi.thongKe, ...k.thongKe },
-          tuVi: { ...moi.tuVi, ...k.tuVi },
-          hatGiong: { ...k.hatGiong },
-          vuon: { ...moi.vuon, ...k.vuon },
-          cho: { ...moi.cho, ...k.cho },
-          loDan: { ...moi.loDan, ...k.loDan },
-          donHang: { ...moi.donHang, ...k.donHang },
-          danhVong: { ...k.danhVong },
-          doc: { ...moi.doc, ...k.doc },
-          tangToc: { ...moi.tangToc, ...k.tangToc },
-          chiSoCong: { ...k.chiSoCong },
-          daUong: { ...k.daUong },
-          mau: { ...moi.mau, ...k.mau },
-        };
-      }
-    }
+    const k = s ? buKho(JSON.parse(s) as Kho) : null;
+    if (k) return k;
   } catch {
     // bản lưu hỏng hoặc trình duyệt chặn lưu trữ: chơi bằng kho mới
   }
   return khoMoi();
+}
+
+/** Đóng gói cả bản lưu thành một dòng mã để chép sang máy khác hoặc địa chỉ web khác. */
+export function xuatMa(k: Kho): string {
+  const bytes = new TextEncoder().encode(JSON.stringify(k));
+  let nhi = '';
+  for (const b of bytes) nhi += String.fromCharCode(b);
+  return 'LD3.' + btoa(nhi);
+}
+/** Đọc lại mã do xuatMa tạo ra. Mã sai hay hỏng thì trả về null. */
+export function nhapMa(ma: string): Kho | null {
+  try {
+    const sach = ma.replace(/\s+/g, '');
+    if (!sach.startsWith('LD3.')) return null;
+    const nhi = atob(sach.slice(4));
+    const bytes = Uint8Array.from(nhi, (c) => c.charCodeAt(0));
+    return buKho(JSON.parse(new TextDecoder().decode(bytes)) as Kho);
+  } catch {
+    return null;
+  }
 }
 
 export function luuKho(k: Kho) {
