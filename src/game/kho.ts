@@ -1,5 +1,5 @@
 // Trạng thái lâu dài của người chơi (linh thạch, dược liệu, túi đan…) + lưu vào trình duyệt.
-import { CANH_GIOI, CHI_SO, DAN_PHUONG, DUOC_LIEU, HE_SO_DAN_VAN, HE_SO_GIA, LUAT, NANG_CAP_GOC, TONG_MON, bacSo, giaBan, giaHatGiong, laDanThat, timDanPhuong, timDuocLieu, timLoDan, timPhuLieu, type ChiSo, type DanPhuong, type LoiThe, type NangCap, type PhamThat, type Tuoi } from './duLieu.ts';
+import { CANH_GIOI, CHI_SO, DAN_PHUONG, DUOC_LIEU, HE_SO_DAN_VAN, HE_SO_GIA, LUAT, NANG_CAP_GOC, TONG_MON, bacSo, giaBan, giaHatGiong, heSoChuyen, laDanThat, timDanPhuong, timDuocLieu, timLoDan, timPhuLieu, type ChiSo, type DanPhuong, type LoiThe, type NangCap, type PhamThat, type Tuoi } from './duLieu.ts';
 import type { KetQua } from './luyenDan.ts';
 import { loiThe, timXuatThan, type NhanVat } from './nhanVat.ts';
 
@@ -48,6 +48,21 @@ export interface Kho {
   daUong: Record<string, number>;
   /** Máu: lượng đang thiếu tại thời điểm `luc` (ms); từ đó tới giờ đã tự hồi bớt, xem mauHienTai. */
   mau: { thieu: number; luc: number };
+  /** Đan đã dưỡng lên chuyển: khoá `id đan phương|loại|số chuyển` (xem khoaChuyen) -> số viên. Viên chưa chuyển nào vẫn nằm ở tuiDan/danVan. */
+  danChuyen: Record<string, number>;
+  /** Mẻ đang dưỡng dở (các viên này đã được lấy ra khỏi túi); không dưỡng thì null. */
+  duong: { phuongId: string; vien: VienDuong[] } | null;
+}
+
+/** Loại viên đan dưỡng được: thượng phẩm, cực phẩm, hoặc đan văn. */
+export type LoaiQuy = 2 | 3 | 'dv';
+/** Một viên đang dưỡng: đã lên mấy chuyển, đã trượt mấy lần, đã vỡ chưa, và có đang được giữ lại (không bấm tiếp) không. */
+export interface VienDuong {
+  loai: LoaiQuy;
+  bac: number;
+  truot: number;
+  vo: boolean;
+  giu: boolean;
 }
 
 /** Một đơn đặt đan của tông môn. */
@@ -115,6 +130,8 @@ export function khoMoi(nv: NhanVat | null = null): Kho {
     chiSoCong: {},
     daUong: {},
     mau: { thieu: 0, luc: 0 },
+    danChuyen: {},
+    duong: null,
   };
 }
 
@@ -122,7 +139,8 @@ export function khoMoi(nv: NhanVat | null = null): Kho {
 function buKho(k: Kho | null): Kho | null {
   if (!k || k.phienBan !== 3 || !k.tuVi || !k.tuiDan) return null;
   const moi = khoMoi();
-  return {
+  // mẻ đang dưỡng dở lúc tắt game thì cất luôn vào túi ở mức đang có
+  return thuDuong({
       ...moi,
       ...k,
       duocLieu: { ...Object.fromEntries(DUOC_LIEU.map((d) => [d.id, [0, 0, 0] as [number, number, number]])), ...k.duocLieu },
@@ -144,7 +162,9 @@ function buKho(k: Kho | null): Kho | null {
       chiSoCong: { ...k.chiSoCong },
       daUong: { ...k.daUong },
       mau: { ...moi.mau, ...k.mau },
-  };
+      danChuyen: { ...k.danChuyen },
+      duong: k.duong ?? null,
+  });
 }
 
 export function napKho(): Kho {
@@ -369,6 +389,123 @@ export function banLe(k: Kho, phuongId: string, loai: PhamThat | 'dv', soLuong: 
   if (n < 1) return k;
   tui[loai] -= n;
   return { ...k, linhThach: k.linhThach + n * giaBan(p, loai, false, hs), tuiDan: { ...k.tuiDan, [phuongId]: tui } };
+}
+
+// ---------- dưỡng đan ----------
+
+export const khoaChuyen = (phuongId: string, loai: LoaiQuy, bac: number) => `${phuongId}|${loai}|${bac}`;
+/** Tách khoá của danChuyen ra lại ba phần. */
+export function docKhoaChuyen(khoa: string): { phuongId: string; loai: LoaiQuy; bac: number } {
+  const [phuongId, loai, bac] = khoa.split('|');
+  return { phuongId, loai: loai === 'dv' ? 'dv' : (Number(loai) as 2 | 3), bac: Number(bac) };
+}
+
+/** Giá bán lẻ một viên đã lên `bac` chuyển. */
+export function giaChuyen(k: Kho, phuongId: string, loai: LoaiQuy, bac: number): number {
+  const p = timDanPhuong(phuongId);
+  const hs = loiThe(k.nhanVat).heSoBan * heSoChuyen(bac);
+  return loai === 'dv' ? giaBan(p, 3, true, hs) : giaBan(p, loai, false, hs);
+}
+
+/** Tỉ lệ để một viên lên chuyển kế tiếp. */
+export function tiLeDuong(k: Kho, v: VienDuong): number {
+  const d = LUAT.duong;
+  const goc = v.bac < d.tiLe.length ? d.tiLe[v.bac] : d.tiLe[d.tiLe.length - 1] * d.giamSauBang ** (v.bac - d.tiLe.length + 1);
+  const tuChat = Math.min(100, Math.max(0, k.nhanVat?.tuChat ?? 0));
+  return Math.min(d.tiLeToiDa, goc * (1 + (d.tuChat * tuChat) / 100) * (v.loai === 'dv' ? d.danVan : 1));
+}
+
+/** Mẻ vừa mở lò có bao nhiêu viên dưỡng được. */
+export const soVienDuongDuoc = (kq: KetQua) => kq.vien.filter((v) => v.danVan || v.pham >= LUAT.duong.phamToiThieu).length;
+
+/** Bắt đầu dưỡng: lấy các viên quý của mẻ vừa luyện ra khỏi túi. Túi không còn đủ (đã bán mất) thì viên đó bị bỏ qua. */
+export function vaoDuong(k: Kho, phuongId: string, kq: KetQua): Kho {
+  if (k.duong) return k;
+  const tui = [...k.tuiDan[phuongId]] as [number, number, number, number];
+  let dv = k.danVan[phuongId] ?? 0;
+  const vien: VienDuong[] = [];
+  for (const v of kq.vien) {
+    let loai: LoaiQuy | null = null;
+    if (v.danVan) {
+      if (dv > 0) {
+        dv -= 1;
+        loai = 'dv';
+      }
+    } else if ((v.pham === 2 || v.pham === 3) && v.pham >= LUAT.duong.phamToiThieu && tui[v.pham] > 0) {
+      tui[v.pham] -= 1;
+      loai = v.pham;
+    }
+    if (loai !== null) vien.push({ loai, bac: 0, truot: 0, vo: false, giu: false });
+  }
+  if (!vien.length) return k;
+  return { ...k, tuiDan: { ...k.tuiDan, [phuongId]: tui }, danVan: { ...k.danVan, [phuongId]: dv }, duong: { phuongId, vien } };
+}
+
+export type KetQuaDuong = 'thanh' | 'truot' | 'vo' | null;
+/**
+ * Một lần bấm: mọi viên chưa vỡ và không bị giữ đều quay riêng, viên thứ i dùng số ngẫu nhiên r[i] trong [0,1).
+ * Trả về kho mới và kết quả của từng viên (null = viên đó không quay).
+ */
+export function bamDuong(k: Kho, r: readonly number[]): { kho: Kho; kq: KetQuaDuong[] } {
+  if (!k.duong) return { kho: k, kq: [] };
+  const d = LUAT.duong;
+  const kq: KetQuaDuong[] = [];
+  const vien = k.duong.vien.map((v, i): VienDuong => {
+    if (v.vo || v.giu) {
+      kq.push(null);
+      return v;
+    }
+    if ((r[i] ?? 1) < tiLeDuong(k, v)) {
+      kq.push('thanh');
+      return { ...v, bac: v.bac + 1 };
+    }
+    const truot = v.truot + 1;
+    if (truot > d.truotToiDa) {
+      kq.push('vo');
+      return { ...v, truot, vo: true };
+    }
+    kq.push('truot');
+    return { ...v, truot, bac: Math.max(0, v.bac - d.tut) };
+  });
+  return { kho: { ...k, duong: { ...k.duong, vien } }, kq };
+}
+
+/** Giữ lại một viên (không bấm tiếp cho nó nữa) hoặc thả ra bấm tiếp. */
+export function datGiuDuong(k: Kho, viTri: number): Kho {
+  if (!k.duong) return k;
+  return { ...k, duong: { ...k.duong, vien: k.duong.vien.map((v, i) => (i === viTri && !v.vo ? { ...v, giu: !v.giu } : v)) } };
+}
+
+/** Kết thúc dưỡng: cất các viên còn nguyên vào túi theo đúng số chuyển đang có. */
+export function thuDuong(k: Kho): Kho {
+  if (!k.duong) return k;
+  const id = k.duong.phuongId;
+  const tui = [...(k.tuiDan[id] ?? [0, 0, 0, 0])] as [number, number, number, number];
+  let dv = k.danVan[id] ?? 0;
+  const danChuyen = { ...k.danChuyen };
+  for (const v of k.duong.vien) {
+    if (v.vo) continue;
+    if (v.bac > 0) danChuyen[khoaChuyen(id, v.loai, v.bac)] = (danChuyen[khoaChuyen(id, v.loai, v.bac)] ?? 0) + 1;
+    else if (v.loai === 'dv') dv += 1;
+    else tui[v.loai] += 1;
+  }
+  return { ...k, tuiDan: { ...k.tuiDan, [id]: tui }, danVan: { ...k.danVan, [id]: dv }, danChuyen, duong: null };
+}
+
+/** Các loại đan đã chuyển đang có trong túi, chuyển cao đứng trước. */
+export function dsChuyen(k: Kho): { khoa: string; phuongId: string; loai: LoaiQuy; bac: number; co: number }[] {
+  return Object.entries(k.danChuyen)
+    .filter(([khoa, co]) => co > 0 && DAN_PHUONG.some((p) => khoa.startsWith(p.id + '|')))
+    .map(([khoa, co]) => ({ khoa, co, ...docKhoaChuyen(khoa) }))
+    .sort((a, b) => b.bac - a.bac || a.phuongId.localeCompare(b.phuongId));
+}
+
+/** Bán lẻ một số viên đan đã chuyển. */
+export function banChuyen(k: Kho, khoa: string, soLuong: number): Kho {
+  const n = Math.min(soLuong, k.danChuyen[khoa] ?? 0);
+  if (n < 1) return k;
+  const { phuongId, loai, bac } = docKhoaChuyen(khoa);
+  return { ...k, linhThach: k.linhThach + n * giaChuyen(k, phuongId, loai, bac), danChuyen: { ...k.danChuyen, [khoa]: (k.danChuyen[khoa] ?? 0) - n } };
 }
 
 // ---------- đơn hàng tông môn ----------

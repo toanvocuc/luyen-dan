@@ -30,6 +30,7 @@ NEN = {
 THU_MUC = {
     'duoc-lieu': (256, False),
     'dan': (256, True),
+    'nguyen-lieu': (256, False),
 }
 BO_QUA = {'spirit_herb.png'}
 

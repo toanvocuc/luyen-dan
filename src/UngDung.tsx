@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { datNhac, phat } from './amThanh.ts';
 import { DAN_PHUONG, anhNen } from './game/duLieu.ts';
-import { khoMoi, lamMoiDon, luuKho, napKho, tuLuyen, type Kho } from './game/kho.ts';
+import { dsChuyen, khoMoi, lamMoiDon, luuKho, napKho, tuLuyen, type Kho } from './game/kho.ts';
+import { DuongDan } from './manHinh/DuongDan.tsx';
 import { LoDan } from './manHinh/LoDan.tsx';
 import { PhuongThi } from './manHinh/PhuongThi.tsx';
 import { SaoLuu } from './manHinh/SaoLuu.tsx';
@@ -94,7 +95,7 @@ export function UngDung() {
   const tongDan = DAN_PHUONG.reduce((s, p) => {
     const t = kho.tuiDan[p.id];
     return s + t[0] + t[1] + t[2] + t[3] + (kho.danVan[p.id] ?? 0);
-  }, 0);
+  }, dsChuyen(kho).reduce((s, c) => s + c.co, 0));
   const oVuon = man === 'vuon';
 
   return (
@@ -125,6 +126,7 @@ export function UngDung() {
 
       {bang === 'tui' && <TuiDan kho={kho} doiKho={doiKho} onDong={() => datBang(null)} />}
       {bang === 'phuong-thi' && <PhuongThi kho={kho} doiKho={doiKho} onDong={() => datBang(null)} />}
+      {kho.duong && <DuongDan kho={kho} doiKho={doiKho} />}
     </div>
   );
 }

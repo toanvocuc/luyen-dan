@@ -444,6 +444,27 @@ export const LUAT = {
    * Giao viên phẩm cao hơn yêu cầu thì viên đó được trả theo đúng phẩm của nó (xem thuongDon), không bao giờ thiệt so với bán lẻ.
    * Giao xong hoặc từ chối thì chỗ đó trống choMoi giây (đồng hồ thật) rồi mới có đơn khác.
    */
+  /**
+   * Dưỡng đan: lượt luyện thêm sau khi mở lò, chỉ cho viên từ phamToiThieu trở lên. Mỗi lần bấm, từng viên tự quay riêng:
+   * trúng thì lên một chuyển, trượt thì tụt `tut` chuyển; trượt quá truotToiDa lần thì viên đan vỡ.
+   * tiLe[b] = tỉ lệ gốc để lên từ chuyển b sang b+1 (từ 12 lên 13 chỉ còn 1%); quá bảng thì mỗi chuyển lại nhân giamSauBang.
+   * Tư chất 100 nhân tỉ lệ thêm `tuChat` lần, viên đan văn nhân `danVan` lần.
+   * Giá và dược lực nhân `gia` cho mỗi chuyển; chạm mốc cuối (đan huyền thoại) nhân thêm giaHuyenThoai.
+   * moc = các chuyển mà viên đan đổi màu và có hào quang.
+   */
+  duong: {
+    phamToiThieu: 2,
+    tiLe: [0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.22, 0.15, 0.1, 0.06, 0.03, 0.01],
+    giamSauBang: 0.5,
+    tut: 3,
+    truotToiDa: 3,
+    tuChat: 0.2,
+    danVan: 1.3,
+    tiLeToiDa: 0.95,
+    gia: 1.25,
+    moc: [5, 7, 10, 12, 13],
+    giaHuyenThoai: 5,
+  },
   don: {
     soDon: 5,
     choMoi: 30,
@@ -556,6 +577,16 @@ export const anhLoDan = (id: string) => `./hinh/lo/${id}.png`;
 export const timDuocLieu = (id: string) => DUOC_LIEU.find((d) => d.id === id)!;
 export const timDanPhuong = (id: string) => DAN_PHUONG.find((d) => d.id === id)!;
 export const timPhuLieu = (id: string | null) => (id ? PHU_LIEU.find((d) => d.id === id) ?? null : null);
+
+/** Viên đan đã qua mấy mốc đổi màu (0 = chưa mốc nào, 5 = đan huyền thoại). */
+export const mocChuyen = (bac: number) => LUAT.duong.moc.filter((m) => bac >= m).length;
+/** Tên của từng mốc, theo mocChuyen. */
+export const TEN_MOC = ['', 'Linh đan', 'Bảo đan', 'Thánh đan', 'Tiên đan', 'Huyền thoại'] as const;
+/** Giá và dược lực của viên đan nhân lên bấy nhiêu lần sau `bac` chuyển. */
+export function heSoChuyen(bac: number): number {
+  const d = LUAT.duong;
+  return d.gia ** bac * (bac >= d.moc[d.moc.length - 1] ? d.giaHuyenThoai : 1);
+}
 
 /** Giá bán một viên ở phường thị. */
 export function giaBan(phuong: DanPhuong, pham: PhamThat, danVan = false, heSo = 1): number {

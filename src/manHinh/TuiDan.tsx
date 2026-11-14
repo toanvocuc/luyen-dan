@@ -1,7 +1,7 @@
 // Túi đan: giao đan theo đơn hàng của tông môn (trả đủ giá) hoặc bán lẻ ở phường thị (mất nửa giá).
 import { useState } from 'react';
-import { DAN_PHUONG, LUAT, TEN_PHAM, TONG_MON, anhDan, giaBan, timDanPhuong, timTongMon, type PhamThat } from '../game/duLieu.ts';
-import { banDan, banLe, giaTriTui, giaoDon, loiTheKho, soVienHopDon, thuongDon, tuChoiDon, vienSeGiao, type Kho } from '../game/kho.ts';
+import { DAN_PHUONG, LUAT, TEN_MOC, TEN_PHAM, TONG_MON, anhDan, giaBan, mocChuyen, timDanPhuong, timTongMon, type PhamThat } from '../game/duLieu.ts';
+import { banChuyen, banDan, banLe, dsChuyen, giaChuyen, giaTriTui, giaoDon, loiTheKho, soVienHopDon, thuongDon, tuChoiDon, vienSeGiao, type Kho } from '../game/kho.ts';
 import { dongHo, useBayGio } from './PhuongThi.tsx';
 
 type Loai = PhamThat | 'dv';
@@ -24,6 +24,7 @@ export function TuiDan({ kho, doiKho, onDong }: { kho: Kho; doiKho: (ham: (k: Kh
   const tongGiaTri = DAN_PHUONG.reduce((s, p) => s + giaTriTui(kho, p.id), 0);
   const tongDanhVong = TONG_MON.reduce((s, t) => s + (kho.danhVong[t.id] ?? 0), 0);
 
+  const chuyen = dsChuyen(kho);
   const dong: { khoa: string; id: string; ten: string; loai: Loai; co: number; gia: number }[] = [];
   for (const p of DAN_PHUONG) {
     // phẩm cao đứng trước
@@ -44,7 +45,7 @@ export function TuiDan({ kho, doiKho, onDong }: { kho: Kho; doiKho: (ham: (k: Kh
             Đơn hàng tông môn
           </button>
           <button className={`the nho ${trang === 'ban-le' ? 'chon' : ''}`} onClick={() => datTrang('ban-le')}>
-            Bán lẻ ({dong.reduce((s, d) => s + d.co, 0)})
+            Bán lẻ ({dong.reduce((s, d) => s + d.co, 0) + chuyen.reduce((s, c) => s + c.co, 0)})
           </button>
         </div>
 
@@ -117,7 +118,30 @@ export function TuiDan({ kho, doiKho, onDong }: { kho: Kho; doiKho: (ham: (k: Kh
             <p className="chu-nho">
               Bán lẻ ở phường thị chỉ được {Math.round(LUAT.heSoBan * 100)}% giá trị. Đã luyện {kho.thongKe.soMe} mẻ, nổ lò {kho.thongKe.noLo} lần.
             </p>
-            {dong.length === 0 && <p className="chu-nho">Chưa có viên đan nào. Hãy khai lò luyện một mẻ.</p>}
+            {chuyen.map((c) => {
+              const gia = giaChuyen(kho, c.phuongId, c.loai, c.bac);
+              const moc = mocChuyen(c.bac);
+              return (
+                <div key={c.khoa} className={`dong-tui dong-ban dong-chuyen moc-${moc}`}>
+                  <img src={anhDan(c.phuongId)} alt="" />
+                  <div className="than-dong">
+                    <b>
+                      {timDanPhuong(c.phuongId).ten} · {c.bac} chuyển{moc ? ` · ${TEN_MOC[moc]}` : ''}
+                    </b>
+                    <div className="hang-pham">
+                      <span className={c.loai === 'dv' ? 'pham-dv' : `pham-${c.loai}`}>
+                        {c.loai === 'dv' ? 'Đan văn' : TEN_PHAM[c.loai]} ×{c.co}
+                      </span>
+                      <span>{gia}/viên</span>
+                    </div>
+                  </div>
+                  <button className="nut-nho nut-ban" onClick={() => doiKho((k) => banChuyen(k, c.khoa, 1))}>
+                    Bán {gia}
+                  </button>
+                </div>
+              );
+            })}
+            {dong.length === 0 && chuyen.length === 0 && <p className="chu-nho">Chưa có viên đan nào. Hãy khai lò luyện một mẻ.</p>}
             {dong.map((d) => {
               const n = Math.min(d.co, Math.max(1, soBan[d.khoa] ?? 1));
               const dat = (x: number) => datSoBan((c) => ({ ...c, [d.khoa]: Math.min(d.co, Math.max(1, x)) }));
@@ -158,7 +182,7 @@ export function TuiDan({ kho, doiKho, onDong }: { kho: Kho; doiKho: (ham: (k: Kh
             <button
               className="nut-nho nguy-hiem"
               onClick={() => {
-                if (confirm(`Bán toàn bộ đan trong túi lấy ${tongGiaTri} linh thạch?`)) doiKho((k) => DAN_PHUONG.reduce((kk, p) => banDan(kk, p.id), k));
+                if (confirm(`Bán toàn bộ đan chưa dưỡng trong túi lấy ${tongGiaTri} linh thạch? (Đan đã lên chuyển được giữ lại.)`)) doiKho((k) => DAN_PHUONG.reduce((kk, p) => banDan(kk, p.id), k));
               }}
             >
               Bán hết ({tongGiaTri})

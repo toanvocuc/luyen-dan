@@ -2635,3 +2635,372 @@ button.bien-ten:active {
   font-size: 17px;
   line-height: 1;
 }
+
+/* ---------- dưỡng đan ---------- */
+.man-duong {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 12px 12px;
+  text-align: center;
+  background: radial-gradient(ellipse at 50% 34%, rgba(38, 74, 78, 0.55), rgba(4, 8, 10, 0.94) 68%), rgba(4, 8, 10, 0.72);
+  backdrop-filter: blur(3px);
+  animation: man-duong-hien 0.3s ease-out both;
+}
+.man-duong h2 {
+  margin: 0;
+}
+.man-duong > .chu-nho {
+  margin: 0;
+  max-width: 340px;
+}
+/* phần giữa tự cuộn khi mẻ nhiều viên, để nút Thu đan luôn nằm trong màn */
+.than-duong {
+  flex: 1 1 0;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  overflow-y: auto;
+}
+.day-duong {
+  flex: 1 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px 12px;
+  width: 100%;
+  padding-top: 6px;
+}
+.vien-duong {
+  --mau: #cfe9e2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: calc(var(--co) + 8px);
+}
+.vien-duong.moc-1 {
+  --mau: #58c8ff;
+}
+.vien-duong.moc-2 {
+  --mau: #b98cff;
+}
+.vien-duong.moc-3 {
+  --mau: #ffd34d;
+}
+.vien-duong.moc-4 {
+  --mau: #ff6a4d;
+}
+.vien-duong.moc-5 {
+  --mau: #ff5ad1;
+}
+.than-vien {
+  position: relative;
+  width: var(--co);
+  height: calc(var(--co) * 1.12);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.than-vien:disabled {
+  cursor: default;
+}
+.than-vien .dai {
+  position: absolute;
+  left: 8%;
+  bottom: 0;
+  width: 84%;
+  filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.6));
+}
+.than-vien .dan {
+  position: absolute;
+  left: 19%;
+  top: 6%;
+  width: 62%;
+  filter: drop-shadow(0 0 calc(var(--co) * 0.05) var(--mau));
+  animation: dan-tho 2.6s ease-in-out infinite;
+}
+.moc-1 .than-vien .dan {
+  filter: saturate(1.2) brightness(1.08) drop-shadow(0 0 calc(var(--co) * 0.09) var(--mau));
+}
+.moc-2 .than-vien .dan {
+  filter: saturate(1.35) brightness(1.14) drop-shadow(0 0 calc(var(--co) * 0.11) var(--mau));
+}
+.moc-3 .than-vien .dan {
+  filter: saturate(1.5) brightness(1.2) drop-shadow(0 0 calc(var(--co) * 0.13) var(--mau));
+}
+.moc-4 .than-vien .dan {
+  filter: saturate(1.7) brightness(1.26) drop-shadow(0 0 calc(var(--co) * 0.15) var(--mau)) drop-shadow(0 0 4px #fff);
+}
+.moc-5 .than-vien .dan {
+  animation:
+    dan-tho 2.6s ease-in-out infinite,
+    dan-ngu-sac 3s linear infinite;
+}
+.vien-duong.giu .than-vien .dan {
+  animation: none;
+  opacity: 0.75;
+}
+.than-vien .dan.vua-thanh {
+  animation:
+    dan-nay 0.38s ease-out 1,
+    dan-tho 2.6s ease-in-out 0.38s infinite;
+}
+.than-vien .dan.vua-truot {
+  animation:
+    dan-lac 0.38s linear 1,
+    dan-tho 2.6s ease-in-out 0.38s infinite;
+}
+@keyframes dan-tho {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -4%;
+  }
+}
+@keyframes dan-nay {
+  0% {
+    scale: 1;
+  }
+  40% {
+    scale: 1.22;
+  }
+  100% {
+    scale: 1;
+  }
+}
+@keyframes dan-lac {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  20%,
+  60% {
+    translate: -5% 0;
+  }
+  40%,
+  80% {
+    translate: 5% 0;
+  }
+}
+@keyframes dan-ngu-sac {
+  from {
+    filter: saturate(1.8) brightness(1.3) hue-rotate(0deg) drop-shadow(0 0 calc(var(--co) * 0.16) var(--mau)) drop-shadow(0 0 5px #fff);
+  }
+  to {
+    filter: saturate(1.8) brightness(1.3) hue-rotate(360deg) drop-shadow(0 0 calc(var(--co) * 0.16) var(--mau)) drop-shadow(0 0 5px #fff);
+  }
+}
+/* hào quang: quầng sáng (mốc 1), vòng xoay (mốc 2), tia xoay (mốc 3 trở lên) — dùng lại ảnh mặt nạ của hiệu ứng mở lò */
+.than-vien > i {
+  position: absolute;
+  left: 50%;
+  top: 37%;
+  translate: -50% -50%;
+  pointer-events: none;
+}
+.than-vien .hao-quang {
+  width: 105%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--mau) 62%, transparent), transparent 66%);
+  animation: quang-dap 2.2s ease-in-out infinite;
+}
+.than-vien .vong-quay,
+.than-vien .tia-quay {
+  aspect-ratio: 1;
+  background: color-mix(in srgb, var(--mau) 72%, #fff);
+  -webkit-mask: url(./hinh/hieu-ung/vong.png) center / contain no-repeat;
+  mask: url(./hinh/hieu-ung/vong.png) center / contain no-repeat;
+  animation: quay-tron 9s linear infinite;
+}
+.than-vien .vong-quay {
+  width: 112%;
+  opacity: 0.8;
+}
+.than-vien .tia-quay {
+  width: 150%;
+  opacity: 0.5;
+  -webkit-mask-image: url(./hinh/hieu-ung/tia.png);
+  mask-image: url(./hinh/hieu-ung/tia.png);
+  animation-duration: 16s;
+  animation-direction: reverse;
+}
+.moc-4 .than-vien .tia-quay,
+.moc-5 .than-vien .tia-quay {
+  width: 185%;
+  opacity: 0.75;
+}
+.moc-5 .than-vien > i {
+  animation-duration: 3.5s;
+  filter: hue-rotate(0deg);
+}
+@keyframes quay-tron {
+  to {
+    rotate: 360deg;
+  }
+}
+@keyframes quang-dap {
+  0%,
+  100% {
+    scale: 0.92;
+    opacity: 0.75;
+  }
+  50% {
+    scale: 1.08;
+    opacity: 1;
+  }
+}
+.than-vien .bao {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  translate: -50% 0;
+  white-space: nowrap;
+  font-style: normal;
+  font-weight: 700;
+  font-size: 15px;
+  text-shadow: 0 1px 3px #000, 0 0 8px #000;
+  pointer-events: none;
+  animation: bao-bay 0.9s ease-out both;
+}
+.bao-thanh {
+  color: #8ff0b8;
+}
+.bao-truot {
+  color: #ffb36b;
+}
+.bao-vo {
+  color: #ff6b5e;
+}
+@keyframes bao-bay {
+  0% {
+    opacity: 0;
+    translate: -50% 40%;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    translate: -50% -90%;
+  }
+}
+.vien-duong.vo .than-vien .dai {
+  filter: grayscale(1) brightness(0.55);
+}
+.vien-duong .ten-chuyen {
+  color: var(--mau);
+  font-size: 13px;
+  line-height: 1.2;
+}
+.vien-duong.vo .ten-chuyen {
+  color: var(--mau-no-lo);
+}
+.vien-duong small {
+  color: var(--chu-mo);
+  font-size: 11px;
+}
+.vien-duong small.nguy {
+  color: #ff8a7a;
+}
+.thanh-duong {
+  position: relative;
+  width: 100%;
+  height: 16px;
+  border: 1px solid var(--dong-toi);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.55);
+  overflow: hidden;
+}
+.thanh-duong > i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: linear-gradient(90deg, #2f8f66, var(--ngoc));
+  transition: width 0.25s ease-out;
+}
+.thanh-duong > span {
+  position: relative;
+  display: block;
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 700;
+  text-shadow: 0 1px 2px #000;
+}
+.bang-duong {
+  width: 100%;
+  max-width: 380px;
+  border: 1px solid var(--dong-toi);
+  border-radius: 8px;
+  background: rgba(6, 12, 14, 0.82);
+  font-size: 12.5px;
+}
+.bang-duong .dong {
+  display: grid;
+  grid-template-columns: 1fr 72px 78px;
+  gap: 6px;
+  padding: 5px 10px;
+  text-align: right;
+  border-top: 1px solid rgba(185, 147, 90, 0.18);
+}
+.bang-duong .dong > span:first-child {
+  text-align: left;
+}
+.bang-duong .dong.dau {
+  border-top: 0;
+  color: var(--dong);
+  font-weight: 700;
+}
+.bang-duong .dong.vo {
+  opacity: 0.45;
+}
+.man-duong > .hang-nut {
+  width: 100%;
+  max-width: 380px;
+}
+/* đan đã chuyển trong túi: tên mang màu của mốc */
+.dong-chuyen.moc-1 b {
+  color: #58c8ff;
+}
+.dong-chuyen.moc-2 b {
+  color: #b98cff;
+}
+.dong-chuyen.moc-3 b {
+  color: #ffd34d;
+}
+.dong-chuyen.moc-4 b {
+  color: #ff6a4d;
+}
+.dong-chuyen.moc-5 b {
+  color: #ff5ad1;
+}
+@keyframes man-duong-hien {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.vien-duong .nut-nho {
+  padding: 3px 6px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.than-duong {
+  padding: 14px 4px 0;
+}
