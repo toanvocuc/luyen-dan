@@ -15,8 +15,8 @@ function HuyHieu({ id }: { id: string }) {
   );
 }
 
-export function TuiDan({ kho, doiKho, onDong }: { kho: Kho; doiKho: (ham: (k: Kho) => Kho) => void; onDong: () => void }) {
-  const [trang, datTrang] = useState<Trang>('don');
+export function TuiDan({ kho, doiKho, onDong, trangDau = 'don' }: { kho: Kho; doiKho: (ham: (k: Kho) => Kho) => void; onDong: () => void; trangDau?: Trang }) {
+  const [trang, datTrang] = useState<Trang>(trangDau);
   /** Số lượng muốn bán của từng dòng (khoá = id đan | phẩm); chưa chỉnh thì là 1. */
   const [soBan, datSoBan] = useState<Record<string, number>>({});
   const luc = useBayGio();

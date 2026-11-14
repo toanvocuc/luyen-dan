@@ -23,7 +23,7 @@ import {
   type DanPhuong,
   type Tuoi,
 } from '../game/duLieu.ts';
-import { loiTheKho, duLieu, nhanKetQua, soVienDuongDuoc, suaLo, thieuGi, truNguyenLieu, vaoDuong, type Kho } from '../game/kho.ts';
+import { loiTheKho, duLieu, nhanKetQua, suaLo, thieuGi, truNguyenLieu, type Kho } from '../game/kho.ts';
 import {
   batDauMe,
   coTheToi,
@@ -146,8 +146,6 @@ export function LoDan({
   const [ketQua, datKetQua] = useState<KetQua | null>(null);
   const [soHien, datSoHien] = useState(0);
   const [daBung, datDaBung] = useState(false);
-  /** Mẻ này đã đem đi dưỡng rồi (mỗi mẻ chỉ dưỡng một lượt). */
-  const [daDuong, datDaDuong] = useState(false);
   const coManh = useManh();
   const [vt, datVt] = useState<VungToi | null>(null);
   const [dangNghi, datDangNghi] = useState(false);
@@ -197,7 +195,6 @@ export function LoDan({
   const ketThuc = (kq: KetQua) => {
     if (kq.noLo) phat('no-lo');
     datKetQua(kq);
-    datDaDuong(false);
     datPha('mo');
     doiKho((k) => nhanKetQua(k, phuong.id, kq));
   };
@@ -502,7 +499,6 @@ export function LoDan({
   const bacMe = coHieuUng ? bacCuaMe(ketQua) : 0;
   const coKiep = coHieuUng && ketQua.vien.some((v) => v.vuotKiep !== undefined);
   const soDanThat = ketQua ? ketQua.vien.filter((v) => v.pham >= 0).length : 0;
-  const soDuong = ketQua && !daDuong ? soVienDuongDuoc(ketQua) : 0;
   const phanAp = me ? kep(me.apLo / LUAT.apNoLo, 0, 1) : 0;
 
   return (
@@ -803,18 +799,7 @@ export function LoDan({
                     : 'Đang mở lò…'}
             </div>
             <div className="hang-nut">
-              {moXong && soDuong > 0 && (
-                <button
-                  className="nut chinh nut-duong"
-                  onClick={() => {
-                    datDaDuong(true);
-                    doiKho((k) => vaoDuong(k, phuong.id, ketQua));
-                  }}
-                >
-                  Dưỡng đan ({soDuong} viên)
-                </button>
-              )}
-              <button className={soDuong > 0 && moXong ? 'nut' : 'nut chinh'} disabled={!moXong} onClick={meMoi}>
+              <button className="nut chinh" disabled={!moXong} onClick={meMoi}>
                 Luyện mẻ mới
               </button>
             </div>

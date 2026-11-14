@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { datNhac, phat } from './amThanh.ts';
 import { DAN_PHUONG, anhNen } from './game/duLieu.ts';
-import { dsChuyen, khoMoi, lamMoiDon, luuKho, napKho, tuLuyen, type Kho } from './game/kho.ts';
+import { dsChuyen, khoMoi, lamMoiDon, luuKho, napKho, soVienHopDon, tuLuyen, type Kho } from './game/kho.ts';
 import { DuongDan } from './manHinh/DuongDan.tsx';
 import { LoDan } from './manHinh/LoDan.tsx';
 import { PhuongThi } from './manHinh/PhuongThi.tsx';
@@ -13,7 +13,7 @@ import { VuonDuoc } from './manHinh/VuonDuoc.tsx';
 
 /** Luồng màn hình: mở đầu -> (lần đầu) thiên mệnh -> động phủ tu tiên <-> đan phòng / vườn dược. */
 type Man = 'mo-dau' | 'thien-menh' | 'tu-tien' | 'lo-dan' | 'vuon';
-type Bang = null | 'tui' | 'phuong-thi' | 'sao-luu';
+type Bang = null | 'tui' | 'don' | 'phuong-thi' | 'sao-luu' | 'duong';
 
 export function UngDung() {
   const [kho, datKho] = useState<Kho>(napKho);
@@ -97,6 +97,8 @@ export function UngDung() {
     return s + t[0] + t[1] + t[2] + t[3] + (kho.danVan[p.id] ?? 0);
   }, dsChuyen(kho).reduce((s, c) => s + c.co, 0));
   const oVuon = man === 'vuon';
+  /** Số đơn tông môn đang đủ đan để giao. */
+  const donDu = kho.donHang.ds.filter((d) => d && soVienHopDon(kho, d) >= d.soLuong).length;
 
   return (
     <div className="ung-dung" style={{ backgroundImage: oVuon ? 'url(./hinh/nen/vuon.jpg)' : anhNen('dan-phong', kho.tuVi.canhGioi) }}>
@@ -121,12 +123,26 @@ export function UngDung() {
           )}
         </span>
       </header>
+      {/* thanh trên đã chật nên nút đơn hàng và dưỡng đan nằm riêng ngay bên dưới; đang luyện dở thì ẩn nút dưỡng */}
+      {!oVuon && (
+        <div className="nut-duong-noi">
+          <button className={`nut-nho ${donDu ? 'co-don' : ''}`} onClick={() => datBang('don')}>
+            Đơn tông môn{donDu ? ` (${donDu})` : ''}
+          </button>
+          {!dangLuyen && (
+            <button className="nut-nho" onClick={() => datBang('duong')}>
+              Dưỡng đan
+            </button>
+          )}
+        </div>
+      )}
 
       {oVuon ? <VuonDuoc kho={kho} doiKho={doiKho} /> : <LoDan kho={kho} doiKho={doiKho} onDangLuyen={datDangLuyen} />}
 
-      {bang === 'tui' && <TuiDan kho={kho} doiKho={doiKho} onDong={() => datBang(null)} />}
+      {bang === 'tui' && <TuiDan kho={kho} doiKho={doiKho} onDong={() => datBang(null)} trangDau="ban-le" />}
+      {bang === 'don' && <TuiDan kho={kho} doiKho={doiKho} onDong={() => datBang(null)} />}
       {bang === 'phuong-thi' && <PhuongThi kho={kho} doiKho={doiKho} onDong={() => datBang(null)} />}
-      {kho.duong && <DuongDan kho={kho} doiKho={doiKho} />}
+      {(bang === 'duong' || kho.duong) && <DuongDan kho={kho} doiKho={doiKho} onDong={() => datBang(null)} />}
     </div>
   );
 }

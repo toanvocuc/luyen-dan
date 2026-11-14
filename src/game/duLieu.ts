@@ -134,7 +134,7 @@ const DAN_GOC: readonly DanPhuong[] = [
     uong: { loai: 'hoi-mau', giaTri: [0.25, 0.4, 0.6, 0.85, 1] },
     chiSo: { khiHuyet: 0.4 },
     lieu: ['chu-qua', 'han-bang-hoa', 'linh-thao'],
-    doKho: 0.3,
+    doKho: 0.27,
     rongVung: 18,
     xungDot: 3,
     doan: [
@@ -153,7 +153,7 @@ const DAN_GOC: readonly DanPhuong[] = [
     uong: { loai: 'tu-chat', giaTri: [1, 2, 3, 5, 8], doc: 2 },
     chiSo: { phongNgu: 0.4, khiHuyet: 0.2 },
     lieu: ['dia-tam-sam', 'han-bang-hoa', 'tu-van-chi'],
-    doKho: 0.6,
+    doKho: 0.55,
     rongVung: 16,
     xungDot: 3,
     doan: [
@@ -172,7 +172,7 @@ const DAN_GOC: readonly DanPhuong[] = [
     uong: { loai: 'dot-pha', giaTri: [0.04, 0.07, 0.11, 0.16, 0.22] },
     chiSo: { thanThuc: 0.4 },
     lieu: ['han-bang-hoa', 'long-tu-thao', 'tu-van-chi'],
-    doKho: 0.85,
+    doKho: 0.75,
     rongVung: 15,
     xungDot: 4,
     doan: [
@@ -190,7 +190,7 @@ const DAN_GOC: readonly DanPhuong[] = [
     bac: 'Luyện Khí',
     dotPha: 2,
     lieu: ['dia-tam-sam', 'kim-diep-truc', 'huyet-lien'],
-    doKho: 1.1,
+    doKho: 1.0,
     rongVung: 14,
     xungDot: 4,
     doan: [
@@ -210,7 +210,7 @@ const DAN_GOC: readonly DanPhuong[] = [
     uong: { loai: 'tu-vi', giaTri: [0.2, 0.35, 0.6, 1, 1], doc: 1.5 },
     chiSo: { luc: 0.3, thanPhap: 0.3 },
     lieu: ['huyet-lien', 'long-tu-thao', 'kim-diep-truc'],
-    doKho: 1.4,
+    doKho: 1.25,
     rongVung: 13,
     xungDot: 5,
     doan: [
@@ -248,7 +248,7 @@ const NHIET_MAU = [34, 78, 26, 84, 44, 72, 20, 60] as const;
 /**
  * Dựng một đan đột phá theo công thức: cảnh giới đích càng cao thì đan càng khó (phẩm bị kéo xuống,
  * vùng hỏa hầu hẹp lại, dược tính xung đột nhiều hơn, chuỗi hỏa hầu dài hơn) và đòi thuốc lâu năm hơn.
- * Bù lại, tu sĩ cảnh giới cao được cộng lợi thế luyện đan (xem LUAT.canhGioi), nên độ khó thực tế chỉ nhích dần.
+ * Bù lại, tu sĩ cảnh giới cao được cộng lợi thế luyện đan (xem LUAT.canhGioi), và lợi thế đó lớn hơn phần khó thêm, nên càng lên cao tay nghề càng thấy rõ.
  */
 function taoDanDotPha([dich, id, ten, lieu, anh]: (typeof BANG_DOT_PHA)[number]): DanPhuong {
   const dau = dich === 1;
@@ -265,7 +265,7 @@ function taoDanDotPha([dich, id, ten, lieu, anh]: (typeof BANG_DOT_PHA)[number])
     moTa: `Đan đột phá: giúp tu sĩ ${CANH_GIOI[dich - 1]} viên mãn bước lên ${CANH_GIOI[dich]}.`,
     bac: CANH_GIOI[dich - 1],
     lieu,
-    doKho: dau ? -0.2 : +(1.1 + 0.2 * (dich - 2)).toFixed(2),
+    doKho: dau ? -0.2 : +(1.0 + 0.18 * (dich - 2)).toFixed(2),
     rongVung: dau ? 22 : Math.max(9, 14 - 0.5 * (dich - 2)),
     xungDot: dau ? 1 : Math.min(8, 4 + Math.floor((dich - 2) / 2)),
     doan,
@@ -383,7 +383,7 @@ export const LUAT = {
   },
 
   /** Đường cong phẩm cấp: tâm = goc + doc * chatLuong/100 - doKho + cấp tôi, trên thang 0 (phế) … 4 (cực phẩm). */
-  phamGoc: 0.3,
+  phamGoc: 0.4,
   phamDoc: 2.2,
   phamDoRong: 0.7,
 
@@ -429,7 +429,7 @@ export const LUAT = {
    */
   chiSo: { goc: 10, moiCanhGioi: 1.5, moiTang: 0.04, heSoMau: 10, heSoPham: [1, 1.5, 2.5, 4, 6], khangDuoc: 20, hoiMau: 0.002 },
   /** Lợi thế luyện đan theo cảnh giới (thần thức mạnh dần): mỗi cảnh giới trên Luyện Khí cộng bấy nhiêu. */
-  canhGioi: { pham: 0.18, rongVung: 0.4 },
+  canhGioi: { pham: 0.26, rongVung: 0.4 },
 
   /**
    * Vườn dược: gieo một hạt giống, sau giay[0] giây thành thuốc 10 năm, giay[1] thành 100 năm, giay[2] thành 1000 năm
@@ -445,7 +445,8 @@ export const LUAT = {
    * Giao xong hoặc từ chối thì chỗ đó trống choMoi giây (đồng hồ thật) rồi mới có đơn khác.
    */
   /**
-   * Dưỡng đan: lượt luyện thêm sau khi mở lò, chỉ cho viên từ phamToiThieu trở lên. Mỗi lần bấm, từng viên tự quay riêng:
+   * Dưỡng đan: lượt luyện thêm cho đan đã có trong túi (vào từ đan phòng, lúc nào cũng được), chỉ cho viên từ phamToiThieu trở lên
+   * và chưa dưỡng lần nào; mỗi lượt dưỡng tối đa soVienToiDa viên. Mỗi lần bấm, từng viên tự quay riêng:
    * trúng thì lên một chuyển, trượt thì tụt `tut` chuyển; trượt quá truotToiDa lần thì viên đan vỡ.
    * tiLe[b] = tỉ lệ gốc để lên từ chuyển b sang b+1 (từ 12 lên 13 chỉ còn 1%); quá bảng thì mỗi chuyển lại nhân giamSauBang.
    * Tư chất 100 nhân tỉ lệ thêm `tuChat` lần, viên đan văn nhân `danVan` lần.
@@ -454,7 +455,8 @@ export const LUAT = {
    */
   duong: {
     phamToiThieu: 2,
-    tiLe: [0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.22, 0.15, 0.1, 0.06, 0.03, 0.01],
+    soVienToiDa: 6,
+    tiLe: [0.95, 0.9, 0.85, 0.8, 0.75, 0.65, 0.55, 0.45, 0.35, 0.25, 0.15, 0.06, 0.01],
     giamSauBang: 0.5,
     tut: 3,
     truotToiDa: 3,
@@ -482,10 +484,17 @@ export const LUAT = {
     gioDoiHang: 3,
     tiLe: [0.8, 0.4, 0.12],
     soLuong: [[4, 10], [1, 3], [1, 1]],
-    hatTiLe: 0.55,
-    hatSoLuong: [1, 3],
+    hatTiLe: 0.85,
+    hatSoLuong: [2, 5],
     luonCo: ['linh-thao', 'chu-qua'],
     luonCoSoLuong: 12,
+    /** Trả linh thạch để đổi hàng ngay: mỗi ngày luotMoiNgay lượt, lượt đầu giá `gia`, mỗi lượt sau trong ngày đắt gấp `nhan`. */
+    lamMoi: { luotMoiNgay: 5, gia: 100, nhan: 1.5 },
+    /**
+     * Đan bày bán: chỉ đan thường (không phải đan đột phá) cùng bậc với cảnh giới người chơi, cao nhất tới phẩm phamCao.
+     * tiLe[phẩm] là cơ hội có hàng, soLuong[phẩm] là khoảng số viên; giá bằng giá trị gốc của viên đan nhân một số trong khoảng heSoGia.
+     */
+    dan: { phamCao: 2, tiLe: [0.7, 0.45, 0.2], soLuong: [[2, 5], [1, 3], [1, 1]], heSoGia: [1.5, 1.6] },
   },
 } as const;
 

@@ -3004,3 +3004,51 @@ button.bien-ten:active {
 .than-duong {
   padding: 14px 4px 0;
 }
+
+/* dưỡng đan: bảng chọn viên đem đi dưỡng */
+.chon-duong {
+  flex: 1 1 0;
+  min-height: 0;
+  width: 100%;
+  max-width: 380px;
+  overflow-y: auto;
+  text-align: left;
+}
+.chon-duong .dong-tui {
+  background: rgba(6, 12, 14, 0.72);
+}
+.man-duong > .hang-nut {
+  flex: 0 0 auto;
+}
+.nut-duong-noi {
+  position: absolute;
+  top: calc(max(8px, env(safe-area-inset-top)) + 44px);
+  right: 12px;
+  z-index: 5;
+  white-space: nowrap;
+  display: flex;
+  gap: 6px;
+}
+.nut-duong-noi .co-don {
+  border-color: #ffd34d;
+  color: #ffe9a0;
+}
+.than-duong {
+  width: calc(100% + 24px);
+  margin: 0 -12px;
+  padding: 30px 12px 0;
+  overflow-x: hidden;
+}
+
+/* phường thị: trả tiền đổi hàng ngay */
+.hang-doi-hang {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 8px;
+}
+.hang-doi-hang small {
+  opacity: 0.75;
+  white-space: nowrap;
+}

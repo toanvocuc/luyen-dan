@@ -29,7 +29,15 @@ export interface Kho {
   /** Vườn dược: số ô đã mở và cây trong từng ô (null = ô trống). */
   vuon: { soO: number; o: (OVuon | null)[] };
   /** Phường thị: kỳ hàng gần nhất mà người chơi đã mua, và số đã mua của từng mặt hàng trong kỳ đó. */
-  cho: { ky: number; daMua: Record<string, number> };
+  cho: {
+    ky: number;
+    daMua: Record<string, number>;
+    /** Số lần đã trả tiền đổi hàng trong kỳ `ky` (mỗi lần cho ra một lượt hàng khác). */
+    lan: number;
+    /** Ngày (theo giờ máy) của lần trả tiền đổi hàng gần nhất, và số lượt đã dùng trong ngày đó. */
+    ngay: number;
+    soLan: number;
+  };
   /** Lò đan: chiếc đang dùng và những chiếc đã mua. */
   loDan: { dung: string; co: string[] };
   /** Đơn hàng tông môn: đơn ở từng chỗ (null = chỗ trống), và thời điểm (ms) chỗ trống đó có đơn mới. */
@@ -50,14 +58,15 @@ export interface Kho {
   mau: { thieu: number; luc: number };
   /** Đan đã dưỡng lên chuyển: khoá `id đan phương|loại|số chuyển` (xem khoaChuyen) -> số viên. Viên chưa chuyển nào vẫn nằm ở tuiDan/danVan. */
   danChuyen: Record<string, number>;
-  /** Mẻ đang dưỡng dở (các viên này đã được lấy ra khỏi túi); không dưỡng thì null. */
-  duong: { phuongId: string; vien: VienDuong[] } | null;
+  /** Các viên đang dưỡng dở (đã được lấy ra khỏi túi); không dưỡng thì null. */
+  duong: { vien: VienDuong[] } | null;
 }
 
 /** Loại viên đan dưỡng được: thượng phẩm, cực phẩm, hoặc đan văn. */
 export type LoaiQuy = 2 | 3 | 'dv';
 /** Một viên đang dưỡng: đã lên mấy chuyển, đã trượt mấy lần, đã vỡ chưa, và có đang được giữ lại (không bấm tiếp) không. */
 export interface VienDuong {
+  phuongId: string;
   loai: LoaiQuy;
   bac: number;
   truot: number;
@@ -120,7 +129,7 @@ export function khoMoi(nv: NhanVat | null = null): Kho {
     thongKe: { soMe: 0, noLo: 0 },
     hatGiong: {},
     vuon: { soO: LUAT.vuon.soODau, o: [] },
-    cho: { ky: 0, daMua: {} },
+    cho: { ky: 0, daMua: {}, lan: 0, ngay: 0, soLan: 0 },
     loDan: { dung: 'thanh-dong-lo', co: ['thanh-dong-lo'] },
     donHang: { ds: [], luc: [] },
     danhVong: {},
@@ -280,6 +289,18 @@ export const giayToiKySau = (luc = Date.now()) => Math.ceil(((kyCho(luc) + 1) * 
 /** Khoá của một mặt hàng: thuốc theo tuổi, hoặc hạt giống. */
 export const khoaThuoc = (id: string, tuoi: Tuoi) => `${id}|${tuoi}`;
 export const khoaHat = (id: string) => `${id}|hat`;
+export const khoaDanCho = (id: string, pham: PhamThat) => `${id}|dan${pham}`;
+/** Bậc đan mà phường thị bày bán: cùng cảnh giới người chơi; cảnh giới đó chưa có đan thường thì lấy bậc gần nhất bên dưới. */
+export function bacDanCho(k: Kho): number {
+  for (let b = k.tuVi.canhGioi; b >= 0; b--) if (DAN_PHUONG.some((p) => !p.dotPha && bacSo(p) === b)) return b;
+  return -1;
+}
+/** Các loại đan phường thị có thể bày bán cho người chơi này. */
+export const dsDanCho = (k: Kho) => DAN_PHUONG.filter((p) => !p.dotPha && bacSo(p) === bacDanCho(k));
+/** Số lần người chơi đã trả tiền đổi hàng trong kỳ `ky`. */
+const lanCho = (k: Kho, ky: number) => (k.cho.ky === ky ? k.cho.lan ?? 0 : 0);
+/** Số ngày tính theo giờ máy, để đếm lượt đổi hàng mỗi ngày. */
+const ngayMay = (luc: number) => Math.floor((luc - new Date(luc).getTimezoneOffset() * 60_000) / 86_400_000);
 
 function bam(chu: string): number {
   let h = 2166136261;
@@ -289,10 +310,14 @@ function bam(chu: string): number {
 const boNhoCho = new Map<string, Record<string, number>>();
 /** Số lượng từng mặt hàng mà phường thị bày bán trong một kỳ (chưa trừ phần người chơi đã mua). */
 export function hangCho(k: Kho, ky: number): Record<string, number> {
-  const khoa = `${k.nhanVat?.ten ?? ''}|${ky}`;
+  const lan = lanCho(k, ky);
+  const bacDan = bacDanCho(k);
+  // lượt hàng gốc của kỳ giữ nguyên hạt cũ; mỗi lần trả tiền đổi hàng cho một hạt khác
+  const goc = `${k.nhanVat?.ten ?? ''}|${ky}` + (lan ? `|${lan}` : '');
+  const khoa = `${goc}|b${bacDan}`;
   const co = boNhoCho.get(khoa);
   if (co) return co;
-  let hat = bam(khoa);
+  let hat = bam(goc);
   const rng = () => {
     hat = (hat + 0x6d2b79f5) >>> 0;
     let t = hat;
@@ -315,6 +340,15 @@ export function hangCho(k: Kho, ky: number): Record<string, number> {
     const n = trong(c.hatSoLuong);
     hang[khoaHat(d.id)] = luonCo ? Math.max(2, n) : coHat ? n : 0;
   }
+  // đan quay sau cùng và quay đủ cho mọi đan phương, nên không làm xô lệch hàng thuốc
+  for (const p of DAN_PHUONG) {
+    if (p.dotPha) continue;
+    for (let ph = 0; ph <= c.dan.phamCao; ph++) {
+      const coHang = rng() < c.dan.tiLe[ph];
+      const n = trong(c.dan.soLuong[ph]);
+      hang[khoaDanCho(p.id, ph as PhamThat)] = coHang && bacSo(p) === bacDan ? n : 0;
+    }
+  }
   boNhoCho.set(khoa, hang);
   return hang;
 }
@@ -327,7 +361,45 @@ function ghiDaMua(k: Kho, khoa: string, luc: number): Kho['cho'] {
   const ky = kyCho(luc);
   const daMua = k.cho.ky === ky ? { ...k.cho.daMua } : {};
   daMua[khoa] = (daMua[khoa] ?? 0) + 1;
-  return { ky, daMua };
+  return { ...k.cho, ky, daMua, lan: lanCho(k, ky) };
+}
+
+/** Hôm nay còn mấy lượt trả tiền đổi hàng. */
+export function luotLamMoiCon(k: Kho, luc = Date.now()): number {
+  return LUAT.cho.lamMoi.luotMoiNgay - (k.cho.ngay === ngayMay(luc) ? k.cho.soLan ?? 0 : 0);
+}
+/** Giá của lượt đổi hàng kế tiếp trong ngày. */
+export function giaLamMoi(k: Kho, luc = Date.now()): number {
+  const m = LUAT.cho.lamMoi;
+  return Math.round(m.gia * m.nhan ** (m.luotMoiNgay - luotLamMoiCon(k, luc)));
+}
+/** Trả linh thạch để phường thị đổi hàng ngay (kể cả những món đã mua hết cũng có lại theo lượt hàng mới). */
+export function lamMoiCho(k: Kho, luc = Date.now()): Kho {
+  const con = luotLamMoiCon(k, luc);
+  const gia = giaLamMoi(k, luc);
+  if (con < 1 || k.linhThach < gia) return k;
+  const ky = kyCho(luc);
+  return {
+    ...k,
+    linhThach: k.linhThach - gia,
+    cho: { ky, daMua: {}, lan: lanCho(k, ky) + 1, ngay: ngayMay(luc), soLan: LUAT.cho.lamMoi.luotMoiNgay - con + 1 },
+  };
+}
+
+/** Giá mua một viên đan ở phường thị: đắt hơn giá trị gốc 50–60%, mỗi kỳ mỗi món một mức. */
+export function giaMuaDan(k: Kho, id: string, pham: PhamThat, luc = Date.now()): number {
+  const ky = kyCho(luc);
+  const [a, b] = LUAT.cho.dan.heSoGia;
+  const hs = a + ((bam(`${k.nhanVat?.ten ?? ''}|${ky}|${lanCho(k, ky)}|${id}|${pham}`) % 1000) / 1000) * (b - a);
+  return Math.max(1, Math.round(timDanPhuong(id).giaGoc * HE_SO_GIA[pham] * hs * loiThe(k.nhanVat).heSoMua));
+}
+export function muaDan(k: Kho, id: string, pham: PhamThat, luc = Date.now()): Kho {
+  const gia = giaMuaDan(k, id, pham, luc);
+  const khoa = khoaDanCho(id, pham);
+  if (k.linhThach < gia || conHang(k, khoa, luc) < 1) return k;
+  const t = [...k.tuiDan[id]] as [number, number, number, number];
+  t[pham] += 1;
+  return { ...k, linhThach: k.linhThach - gia, tuiDan: { ...k.tuiDan, [id]: t }, cho: ghiDaMua(k, khoa, luc) };
 }
 
 export function muaDuocLieu(k: Kho, id: string, tuoi: Tuoi, luc = Date.now()): Kho {
@@ -415,30 +487,47 @@ export function tiLeDuong(k: Kho, v: VienDuong): number {
   return Math.min(d.tiLeToiDa, goc * (1 + (d.tuChat * tuChat) / 100) * (v.loai === 'dv' ? d.danVan : 1));
 }
 
-/** Mẻ vừa mở lò có bao nhiêu viên dưỡng được. */
-export const soVienDuongDuoc = (kq: KetQua) => kq.vien.filter((v) => v.danVan || v.pham >= LUAT.duong.phamToiThieu).length;
+/** Một lựa chọn đem đi dưỡng: loại đan nào, phẩm nào, mấy viên. */
+export interface ChonDuong {
+  phuongId: string;
+  loai: LoaiQuy;
+  soLuong: number;
+}
 
-/** Bắt đầu dưỡng: lấy các viên quý của mẻ vừa luyện ra khỏi túi. Túi không còn đủ (đã bán mất) thì viên đó bị bỏ qua. */
-export function vaoDuong(k: Kho, phuongId: string, kq: KetQua): Kho {
-  if (k.duong) return k;
-  const tui = [...k.tuiDan[phuongId]] as [number, number, number, number];
-  let dv = k.danVan[phuongId] ?? 0;
-  const vien: VienDuong[] = [];
-  for (const v of kq.vien) {
-    let loai: LoaiQuy | null = null;
-    if (v.danVan) {
-      if (dv > 0) {
-        dv -= 1;
-        loai = 'dv';
-      }
-    } else if ((v.pham === 2 || v.pham === 3) && v.pham >= LUAT.duong.phamToiThieu && tui[v.pham] > 0) {
-      tui[v.pham] -= 1;
-      loai = v.pham;
+/** Những viên trong túi đem dưỡng được: từ thượng phẩm trở lên và chưa dưỡng lần nào. Phẩm cao đứng trước. */
+export function dsDuongDuoc(k: Kho): { phuongId: string; loai: LoaiQuy; co: number }[] {
+  const ra: { phuongId: string; loai: LoaiQuy; co: number }[] = [];
+  for (const p of DAN_PHUONG) {
+    const dv = k.danVan[p.id] ?? 0;
+    if (dv > 0) ra.push({ phuongId: p.id, loai: 'dv', co: dv });
+    for (const ph of [3, 2] as const) {
+      const co = k.tuiDan[p.id]?.[ph] ?? 0;
+      if (ph >= LUAT.duong.phamToiThieu && co > 0) ra.push({ phuongId: p.id, loai: ph, co });
     }
-    if (loai !== null) vien.push({ loai, bac: 0, truot: 0, vo: false, giu: false });
+  }
+  return ra;
+}
+
+/** Bắt đầu dưỡng: lấy các viên đã chọn ra khỏi túi. Chọn quá số đang có hay quá soVienToiDa thì phần thừa bị bỏ qua. */
+export function vaoDuong(k: Kho, chon: readonly ChonDuong[]): Kho {
+  if (k.duong) return k;
+  const tuiDan = { ...k.tuiDan };
+  const danVan = { ...k.danVan };
+  const vien: VienDuong[] = [];
+  for (const c of chon) {
+    const co = c.loai === 'dv' ? danVan[c.phuongId] ?? 0 : tuiDan[c.phuongId]?.[c.loai] ?? 0;
+    const n = Math.max(0, Math.min(Math.floor(c.soLuong), co, LUAT.duong.soVienToiDa - vien.length));
+    if (n < 1 || (c.loai !== 'dv' && c.loai < LUAT.duong.phamToiThieu)) continue;
+    if (c.loai === 'dv') danVan[c.phuongId] = co - n;
+    else {
+      const t = [...tuiDan[c.phuongId]] as [number, number, number, number];
+      t[c.loai] -= n;
+      tuiDan[c.phuongId] = t;
+    }
+    for (let i = 0; i < n; i++) vien.push({ phuongId: c.phuongId, loai: c.loai, bac: 0, truot: 0, vo: false, giu: false });
   }
   if (!vien.length) return k;
-  return { ...k, tuiDan: { ...k.tuiDan, [phuongId]: tui }, danVan: { ...k.danVan, [phuongId]: dv }, duong: { phuongId, vien } };
+  return { ...k, tuiDan, danVan, duong: { vien } };
 }
 
 export type KetQuaDuong = 'thanh' | 'truot' | 'vo' | null;
@@ -479,17 +568,23 @@ export function datGiuDuong(k: Kho, viTri: number): Kho {
 /** Kết thúc dưỡng: cất các viên còn nguyên vào túi theo đúng số chuyển đang có. */
 export function thuDuong(k: Kho): Kho {
   if (!k.duong) return k;
-  const id = k.duong.phuongId;
-  const tui = [...(k.tuiDan[id] ?? [0, 0, 0, 0])] as [number, number, number, number];
-  let dv = k.danVan[id] ?? 0;
+  const tuiDan = { ...k.tuiDan };
+  const danVan = { ...k.danVan };
   const danChuyen = { ...k.danChuyen };
+  // bản lưu của bản đầu tiên ghi id đan phương chung cho cả mẻ thay vì từng viên
+  const idChung = (k.duong as { phuongId?: string }).phuongId;
   for (const v of k.duong.vien) {
-    if (v.vo) continue;
+    const id = v.phuongId ?? idChung;
+    if (v.vo || !id || !tuiDan[id]) continue;
     if (v.bac > 0) danChuyen[khoaChuyen(id, v.loai, v.bac)] = (danChuyen[khoaChuyen(id, v.loai, v.bac)] ?? 0) + 1;
-    else if (v.loai === 'dv') dv += 1;
-    else tui[v.loai] += 1;
+    else if (v.loai === 'dv') danVan[id] = (danVan[id] ?? 0) + 1;
+    else {
+      const t = [...tuiDan[id]] as [number, number, number, number];
+      t[v.loai] += 1;
+      tuiDan[id] = t;
+    }
   }
-  return { ...k, tuiDan: { ...k.tuiDan, [id]: tui }, danVan: { ...k.danVan, [id]: dv }, danChuyen, duong: null };
+  return { ...k, tuiDan, danVan, danChuyen, duong: null };
 }
 
 /** Các loại đan đã chuyển đang có trong túi, chuyển cao đứng trước. */
