@@ -441,11 +441,12 @@ export const LUAT = {
   /**
    * Đơn hàng tông môn: luôn có soDon chỗ. Mỗi đơn đòi một loại đan từ một phẩm trở lên (phamTiLe là xác suất của từng phẩm),
    * số viên trong khoảng soLuong[phẩm], và trả heSo lần giá trị gốc — tức gấp đôi trở lên so với bán lẻ.
+   * Giao viên phẩm cao hơn yêu cầu thì viên đó được trả theo đúng phẩm của nó (xem thuongDon), không bao giờ thiệt so với bán lẻ.
    * Giao xong hoặc từ chối thì chỗ đó trống choMoi giây (đồng hồ thật) rồi mới có đơn khác.
    */
   don: {
-    soDon: 3,
-    choMoi: 600,
+    soDon: 5,
+    choMoi: 30,
     heSo: [1, 1.3],
     phamTiLe: [0.55, 0.33, 0.1, 0.02],
     soLuong: [[2, 6], [1, 4], [1, 2], [1, 1]],

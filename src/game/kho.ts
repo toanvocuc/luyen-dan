@@ -1,5 +1,5 @@
 // Trạng thái lâu dài của người chơi (linh thạch, dược liệu, túi đan…) + lưu vào trình duyệt.
-import { CANH_GIOI, CHI_SO, DAN_PHUONG, DUOC_LIEU, HE_SO_GIA, LUAT, NANG_CAP_GOC, TONG_MON, bacSo, giaBan, giaHatGiong, laDanThat, timDanPhuong, timDuocLieu, timLoDan, timPhuLieu, type ChiSo, type DanPhuong, type LoiThe, type NangCap, type PhamThat, type Tuoi } from './duLieu.ts';
+import { CANH_GIOI, CHI_SO, DAN_PHUONG, DUOC_LIEU, HE_SO_DAN_VAN, HE_SO_GIA, LUAT, NANG_CAP_GOC, TONG_MON, bacSo, giaBan, giaHatGiong, laDanThat, timDanPhuong, timDuocLieu, timLoDan, timPhuLieu, type ChiSo, type DanPhuong, type LoiThe, type NangCap, type PhamThat, type Tuoi } from './duLieu.ts';
 import type { KetQua } from './luyenDan.ts';
 import { loiThe, timXuatThan, type NhanVat } from './nhanVat.ts';
 
@@ -430,24 +430,48 @@ function dongDon(k: Kho, viTri: number, luc: number): Kho['donHang'] {
   return { ds, luc: lucMoi };
 }
 
-/** Giao một đơn: lấy viên phẩm thấp nhất còn đủ điều kiện trước, để giữ lại viên quý. */
-export function giaoDon(k: Kho, viTri: number, luc = Date.now()): Kho {
-  const d = k.donHang.ds[viTri];
-  if (!d || soVienHopDon(k, d) < d.soLuong) return k;
-  const tui = [...k.tuiDan[d.phuongId]] as [number, number, number, number];
-  let dv = k.danVan[d.phuongId] ?? 0;
+/**
+ * Những viên sẽ được lấy nếu giao đơn này ngay: số viên theo phẩm [hạ, trung, thượng, cực] và số viên đan văn.
+ * Lấy viên phẩm thấp nhất còn đủ điều kiện trước, để giữ lại viên quý. Chưa đủ viên thì trả về null.
+ */
+export function vienSeGiao(k: Kho, d: Don): { pham: [number, number, number, number]; danVan: number } | null {
+  if (soVienHopDon(k, d) < d.soLuong) return null;
+  const t = k.tuiDan[d.phuongId];
+  const pham: [number, number, number, number] = [0, 0, 0, 0];
   let con = d.soLuong;
   for (let ph = d.pham; ph <= 3 && con > 0; ph++) {
-    const lay = Math.min(con, tui[ph]);
-    tui[ph] -= lay;
-    con -= lay;
+    pham[ph] = Math.min(con, t[ph]);
+    con -= pham[ph];
   }
-  dv -= con;
+  return { pham, danVan: con };
+}
+
+/**
+ * Tiền thưởng thật khi giao đơn lúc này. Mức ghi trên đơn (d.thuong) là cho toàn viên đúng phẩm tối thiểu;
+ * viên nào phẩm cao hơn thì được trả theo đúng phẩm của nó, đan văn nhân thêm như lúc bán — nên giao viên quý không bao giờ thiệt.
+ * Chưa đủ viên thì trả về mức ghi trên đơn.
+ */
+export function thuongDon(k: Kho, d: Don): number {
+  const g = vienSeGiao(k, d);
+  if (!g) return d.thuong;
+  const moiVien = d.thuong / d.soLuong;
+  let tong = (g.danVan * moiVien * HE_SO_GIA[3] * HE_SO_DAN_VAN) / HE_SO_GIA[d.pham];
+  for (let ph = d.pham; ph <= 3; ph++) tong += (g.pham[ph] * moiVien * HE_SO_GIA[ph]) / HE_SO_GIA[d.pham];
+  return Math.round(tong);
+}
+
+/** Giao một đơn. */
+export function giaoDon(k: Kho, viTri: number, luc = Date.now()): Kho {
+  const d = k.donHang.ds[viTri];
+  const g = d ? vienSeGiao(k, d) : null;
+  if (!d || !g) return k;
+  const tui = [...k.tuiDan[d.phuongId]] as [number, number, number, number];
+  for (let ph = 0; ph <= 3; ph++) tui[ph] -= g.pham[ph];
   return {
     ...k,
-    linhThach: k.linhThach + d.thuong,
+    linhThach: k.linhThach + thuongDon(k, d),
     tuiDan: { ...k.tuiDan, [d.phuongId]: tui },
-    danVan: { ...k.danVan, [d.phuongId]: dv },
+    danVan: { ...k.danVan, [d.phuongId]: (k.danVan[d.phuongId] ?? 0) - g.danVan },
     danhVong: { ...k.danhVong, [d.tongMon]: (k.danhVong[d.tongMon] ?? 0) + d.danhVong },
     donHang: dongDon(k, viTri, luc),
   };

@@ -1,7 +1,7 @@
 // Túi đan: giao đan theo đơn hàng của tông môn (trả đủ giá) hoặc bán lẻ ở phường thị (mất nửa giá).
 import { useState } from 'react';
 import { DAN_PHUONG, LUAT, TEN_PHAM, TONG_MON, anhDan, giaBan, timDanPhuong, timTongMon, type PhamThat } from '../game/duLieu.ts';
-import { banDan, banLe, giaTriTui, giaoDon, loiTheKho, soVienHopDon, tuChoiDon, type Kho } from '../game/kho.ts';
+import { banDan, banLe, giaTriTui, giaoDon, loiTheKho, soVienHopDon, thuongDon, tuChoiDon, vienSeGiao, type Kho } from '../game/kho.ts';
 import { dongHo, useBayGio } from './PhuongThi.tsx';
 
 type Loai = PhamThat | 'dv';
@@ -51,7 +51,7 @@ export function TuiDan({ kho, doiKho, onDong }: { kho: Kho; doiKho: (ham: (k: Kh
         {trang === 'don' && (
           <>
             <p className="chu-nho">
-              Tông môn trả đủ giá, gấp đôi bán lẻ. Viên phẩm cao hơn yêu cầu vẫn giao được. Danh vọng đã tích: {tongDanhVong}.
+              Tông môn trả đủ giá, gấp đôi bán lẻ. Viên phẩm cao hơn yêu cầu vẫn giao được và được trả theo đúng phẩm của nó. Danh vọng đã tích: {tongDanhVong}.
             </p>
             {Array.from({ length: LUAT.don.soDon }, (_, i) => {
               const d = kho.donHang.ds[i] ?? null;
@@ -66,6 +66,14 @@ export function TuiDan({ kho, doiKho, onDong }: { kho: Kho; doiKho: (ham: (k: Kh
               const p = timDanPhuong(d.phuongId);
               const co = soVienHopDon(kho, d);
               const du = co >= d.soLuong;
+              const giao = vienSeGiao(kho, d);
+              const thuong = thuongDon(kho, d);
+              // liệt kê đúng những viên sẽ bị lấy, để không ai lỡ tay giao mất viên quý mà không biết
+              const seGiao = giao
+                ? [...TEN_PHAM.map((ten, ph) => (giao.pham[ph] > 0 ? `${giao.pham[ph]} ${ten.replace(' phẩm', '')}` : '')), giao.danVan > 0 ? `${giao.danVan} Đan văn` : '']
+                    .filter(Boolean)
+                    .join(', ')
+                : '';
               return (
                 <div key={i} className={`the-don ${du ? 'du' : ''}`}>
                   <HuyHieu id={d.tongMon} />
@@ -81,8 +89,14 @@ export function TuiDan({ kho, doiKho, onDong }: { kho: Kho; doiKho: (ham: (k: Kh
                       </span>
                     </div>
                     <div className="thuong">
-                      Thưởng {d.thuong} linh thạch · +{d.danhVong} danh vọng · đang có {Math.min(co, d.soLuong)}/{d.soLuong}
+                      Thưởng {thuong} linh thạch · +{d.danhVong} danh vọng · đang có {Math.min(co, d.soLuong)}/{d.soLuong}
                     </div>
+                    {giao && (
+                      <small>
+                        Sẽ giao: {seGiao}
+                        {thuong > d.thuong ? ` — viên phẩm cao được trả thêm (đơn gốc ${d.thuong})` : ''}
+                      </small>
+                    )}
                   </div>
                   <span className="cot-nut-don">
                     <button className="nut-nho giao" disabled={!du} onClick={() => doiKho((k) => giaoDon(k, i))}>
