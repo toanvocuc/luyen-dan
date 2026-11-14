@@ -1,11 +1,13 @@
-// Sao lưu bằng mã: chép cả bản lưu thành một dòng chữ để mang sang máy khác hoặc địa chỉ web khác, rồi dán vào để nạp lại.
-import { useState } from 'react';
+// Cài đặt: bật tắt âm thanh, và sao lưu bằng mã: chép cả bản lưu thành một dòng chữ để mang sang máy khác hoặc địa chỉ web khác, rồi dán vào để nạp lại.
+import { useState, useSyncExternalStore } from 'react';
+import { dangKyCaiDatAm, datCaiDatAm, layCaiDatAm } from '../amThanh.ts';
 import { CANH_GIOI } from '../game/duLieu.ts';
 import { nhapMa, xuatMa, type Kho } from '../game/kho.ts';
 
 export function SaoLuu({ kho, onNap, onDong }: { kho: Kho; onNap: (k: Kho) => void; onDong: () => void }) {
   const [maDan, datMaDan] = useState('');
   const [bao, datBao] = useState('');
+  const am = useSyncExternalStore(dangKyCaiDatAm, layCaiDatAm);
   const ma = kho.nhanVat ? xuatMa(kho) : '';
   const tomTat = (k: Kho) => `${k.nhanVat?.ten ?? 'chưa có nhân vật'}, ${CANH_GIOI[k.tuVi.canhGioi]} tầng ${k.tuVi.tang}, ${k.linhThach} linh thạch`;
 
@@ -32,8 +34,19 @@ export function SaoLuu({ kho, onNap, onDong }: { kho: Kho; onNap: (k: Kho) => vo
   return (
     <div className="lop-phu" onClick={onDong}>
       <div className="bang tam sao-luu" onClick={(e) => e.stopPropagation()}>
-        <h2>Sao lưu</h2>
-        <p className="chu-nho">Bản lưu nằm trong trình duyệt này. Muốn chơi tiếp trên máy khác hoặc địa chỉ web khác thì chép mã ở đây rồi dán vào bên đó.</p>
+        <h2>Cài đặt</h2>
+        <h3>Âm thanh</h3>
+        <div className="hang-chon">
+          <button className={`the nho ${am.nhac ? 'chon' : ''}`} onClick={() => datCaiDatAm({ nhac: !am.nhac })}>
+            Nhạc nền: {am.nhac ? 'bật' : 'tắt'}
+          </button>
+          <button className={`the nho ${am.hieuUng ? 'chon' : ''}`} onClick={() => datCaiDatAm({ hieuUng: !am.hieuUng })}>
+            Hiệu ứng: {am.hieuUng ? 'bật' : 'tắt'}
+          </button>
+        </div>
+
+        <h3>Sao lưu</h3>
+        <p className="chu-nho trai">Bản lưu nằm trong trình duyệt này. Muốn chơi tiếp trên máy khác hoặc địa chỉ web khác thì chép mã ở đây rồi dán vào bên đó.</p>
 
         <h3>Mã của nhân vật đang chơi</h3>
         {kho.nhanVat ? (

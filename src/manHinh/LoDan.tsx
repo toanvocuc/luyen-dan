@@ -1,5 +1,6 @@
 // Màn hình lò đan: phối liệu -> khống hỏa -> tôi đan (dừng con lắc đúng khoảng xanh) -> mở lò.
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { batLua, datLua, phat, tatLua } from '../amThanh.ts';
 import {
   CAC_BAC,
   CANH_GIOI,
@@ -192,6 +193,7 @@ export function LoDan({
   const bacThay = CAC_BAC.filter((b) => CANH_GIOI.indexOf(b) <= kho.tuVi.canhGioi + 1);
 
   const ketThuc = (kq: KetQua) => {
+    if (kq.noLo) phat('no-lo');
     datKetQua(kq);
     datPha('mo');
     doiKho((k) => nhanKetQua(k, phuong.id, kq));
@@ -281,6 +283,7 @@ export function LoDan({
       if (tienDoRef.current) tienDoRef.current.style.width = `${kep(t / tong, 0, 1) * 100}%`;
       if (canhRef.current) {
         canhRef.current.style.setProperty('--lua', String(nhiet / 100));
+        datLua(nhiet / 100);
         canhRef.current.classList.toggle('bao-dong', meRef.current!.apLo >= LUAT.apNoLo * 0.6);
       }
 
@@ -337,6 +340,11 @@ export function LoDan({
     meRef.current = kq.me;
     datMe(kq.me);
     datBaoToi((b) => ({ loai: kq.loai, luot: (b?.luot ?? 0) + 1 }));
+    // đại thành kêu cao hơn thành; trượt và lệch cùng một tiếng, lệch trầm hơn; nổ lò có tiếng riêng ở ketThuc
+    if (kq.loai === 'thanh') phat('toi-trung');
+    else if (kq.loai === 'dai-thanh') phat('toi-trung', { toc: 1.3, am: 1.2 });
+    else if (kq.loai === 'truot') phat('toi-truot');
+    else if (kq.loai === 'lech') phat('toi-truot', { toc: 0.8, am: 1.2 });
     nghiRef.current = true;
     datDangNghi(true);
     setTimeout(() => {
@@ -382,6 +390,13 @@ export function LoDan({
     };
   }, [pha]);
 
+  // tiếng lửa chỉ cháy trong lúc khống hỏa
+  useEffect(() => {
+    if (pha !== 'lua') return;
+    batLua();
+    return () => tatLua();
+  }, [pha]);
+
   // ---- mở lò: nín thở một nhịp, rồi bung sáng và hiện từng viên một ----
   useEffect(() => {
     if (pha !== 'mo' || !ketQua || ketQua.noLo) return;
@@ -389,12 +404,18 @@ export function LoDan({
     datDaBung(false);
     let id: ReturnType<typeof setInterval> | undefined;
     // nín thở: lò rung, ánh sáng rò qua khe nắp mang màu của viên quý nhất, rồi mới bung
+    const bac = bacCuaMe(ketQua);
+    // đan kiếp: sấm nổ giữa lúc chờ, khớp với tia sét trên màn
+    const coKiepMe = ketQua.vien.some((v) => v.vuotKiep !== undefined);
+    const sam = coKiepMe ? setTimeout(() => phat('set-danh'), CHO_MO[bac] * 0.48) : undefined;
     const cho = setTimeout(() => {
       datDaBung(true);
+      if (ketQua.vien.length) phat(bac >= 2 ? 'mo-lo-quy' : 'mo-lo-thuong', bac === 3 ? { am: 1.25 } : {});
       id = setInterval(() => datSoHien((n) => (n >= ketQua.vien.length ? n : n + 1)), 480);
     }, ketQua.vien.length ? CHO_MO[bacCuaMe(ketQua)] : 0);
     return () => {
       clearTimeout(cho);
+      clearTimeout(sam);
       clearInterval(id);
     };
   }, [pha, ketQua]);

@@ -277,6 +277,17 @@ def main():
             im.save(os.path.join(RA, 'hieu-ung', ten), optimize=True)
             print('ok hieu-ung/' + ten, im.size)
 
+    # âm thanh: Am_thanh/*.mp3 -> public/am/ (chép nguyên; âm lượng và điểm lặp chỉnh trong src/amThanh.ts)
+    vao = os.path.join(os.path.dirname(__file__), '..', 'Am_thanh')
+    if os.path.isdir(vao):
+        import shutil
+        ra_am = os.path.join(os.path.dirname(__file__), '..', 'public', 'am')
+        os.makedirs(ra_am, exist_ok=True)
+        for ten in sorted(os.listdir(vao)):
+            if ten.lower().endswith(('.mp3', '.ogg', '.wav')):
+                shutil.copyfile(os.path.join(vao, ten), os.path.join(ra_am, ten))
+                print('ok am/' + ten)
+
     sys.exit(1 if loi else 0)
 
 

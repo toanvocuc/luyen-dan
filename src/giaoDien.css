@@ -2623,3 +2623,15 @@ button.bien-ten:active {
 .bao-sao-luu {
   color: #ffe2a0;
 }
+
+/* ---------- nút cài đặt ở động phủ ---------- */
+.dau-tu-tien .nhom-nut {
+  align-items: center;
+  gap: 10px;
+}
+.nut-cai-dat {
+  min-width: 34px;
+  padding: 2px 0;
+  font-size: 17px;
+  line-height: 1;
+}

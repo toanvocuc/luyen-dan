@@ -28,7 +28,7 @@ export function ManMoDau({ daCoNhanVat, onVao, onSaoLuu }: { daCoNhanVat: boolea
         <p>{daCoNhanVat ? 'Chạm để trở về động phủ' : 'Chạm để khai mở thiên mệnh'}</p>
       </button>
       <button className="nut-nho nut-sao-luu" onClick={onSaoLuu}>
-        Sao lưu · Nạp bản lưu
+        Cài đặt · Sao lưu
       </button>
     </>
   );

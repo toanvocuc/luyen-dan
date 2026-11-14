@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { datNhac, phat } from './amThanh.ts';
 import { DAN_PHUONG, anhNen } from './game/duLieu.ts';
 import { khoMoi, lamMoiDon, luuKho, napKho, tuLuyen, type Kho } from './game/kho.ts';
 import { LoDan } from './manHinh/LoDan.tsx';
@@ -20,6 +21,19 @@ export function UngDung() {
   const [dangLuyen, datDangLuyen] = useState(false);
 
   useEffect(() => luuKho(kho), [kho]);
+
+  // nhạc nền theo màn: đan phòng và vườn dược có bản riêng, còn lại dùng bản của động phủ
+  useEffect(() => {
+    datNhac(man === 'lo-dan' ? 'dan-phong' : man === 'vuon' ? 'vuon' : 'dong-phu');
+  }, [man]);
+
+  // linh thạch đổi (mua, bán, giao đơn) thì kêu một tiếng; đổi nhân vật hay nạp bản lưu thì không
+  const linhThachCu = useRef({ so: kho.linhThach, ten: kho.nhanVat?.ten });
+  useEffect(() => {
+    const cu = linhThachCu.current;
+    if (cu.ten === kho.nhanVat?.ten && cu.so !== kho.linhThach) phat('linh-thach');
+    linhThachCu.current = { so: kho.linhThach, ten: kho.nhanVat?.ten };
+  }, [kho.linhThach, kho.nhanVat?.ten]);
 
   const doiKho = useCallback((ham: (k: Kho) => Kho) => datKho(ham), []);
 
@@ -65,12 +79,14 @@ export function UngDung() {
           onLuyenDan={() => datMan('lo-dan')}
           onVuon={() => datMan('vuon')}
           onMonPhai={() => datBang('tui')}
+          onCaiDat={() => datBang('sao-luu')}
           onChoiLai={() => {
             datKho(khoMoi());
             datMan('mo-dau');
           }}
         />
         {bang === 'tui' && <TuiDan kho={kho} doiKho={doiKho} onDong={() => datBang(null)} />}
+        {bang === 'sao-luu' && <SaoLuu kho={kho} onNap={(k) => datKho(k)} onDong={() => datBang(null)} />}
       </div>
     );
   }

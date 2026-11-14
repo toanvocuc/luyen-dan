@@ -1,5 +1,6 @@
 // Động phủ: nhân vật ngồi tu luyện, tu vi tự tăng; từ đây mở hành trang, xem thiên mệnh, sang đan phòng.
 import { useState } from 'react';
+import { phat } from '../amThanh.ts';
 import { CANH_GIOI, CHI_SO, DAN_PHUONG, DUOC_LIEU, LUAT, PHU_LIEU, TEN_PHAM, TEN_TUOI_NGAN, anhDan, anhDuocLieu, type PhamThat } from '../game/duLieu.ts';
 import { chiSo, chiSoDan, danDotPha, docHienTai, dotPha, mauHienTai, mauToiDa, soTang, tiLeDotPha, tocDoTuVi, tuViCan, uongDan, vienMan, xemUong, type Kho } from '../game/kho.ts';
 import type { NhanVat } from '../game/nhanVat.ts';
@@ -33,6 +34,7 @@ export function TuTien({
   onLuyenDan,
   onVuon,
   onMonPhai,
+  onCaiDat,
   onChoiLai,
 }: {
   kho: Kho;
@@ -42,6 +44,8 @@ export function TuTien({
   onVuon: () => void;
   /** Mở bảng đơn hàng của các tông môn. */
   onMonPhai: () => void;
+  /** Mở bảng cài đặt (âm thanh, sao lưu). */
+  onCaiDat: () => void;
   onChoiLai: () => void;
 }) {
   const [bang, datBang] = useState<Bang>(null);
@@ -56,6 +60,7 @@ export function TuTien({
     const kq = dotPha(kho, pham, danVan, Math.random());
     if (!kq) return;
     doiKho(() => kq.kho);
+    phat(kq.thanh ? 'dot-pha' : 'toi-truot');
     datBang(null);
     datKetQuaDotPha({ thanh: kq.thanh, ten: CANH_GIOI[kho.tuVi.canhGioi + 1], luot: Date.now() });
   };
@@ -90,9 +95,14 @@ export function TuTien({
             {CANH_GIOI[kho.tuVi.canhGioi]} tầng {kho.tuVi.tang}/{soTang(kho.tuVi.canhGioi)}
           </small>
         </div>
-        <span className="linh-thach">
-          <i className="cham-linh-thach" />
-          {kho.linhThach}
+        <span className="nhom-nut">
+          <span className="linh-thach">
+            <i className="cham-linh-thach" />
+            {kho.linhThach}
+          </span>
+          <button className="nut-nho nut-cai-dat" onClick={onCaiDat} aria-label="Cài đặt" title="Cài đặt">
+            ⚙
+          </button>
         </span>
       </header>
 
