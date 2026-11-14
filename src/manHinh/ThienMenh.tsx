@@ -52,7 +52,7 @@ export function dongThienMenh(nv: NhanVat): DongThienMenh[] {
   const so = Array.from({ length: 12 }, (_, i) => String(7 + i * 8));
   return [
     { nhan: 'Giới diện', giaTri: gd.ten, moTa: gd.moTa, hiem: gd.hiem, kho: GIOI_DIEN.map((d) => d.ten) },
-    { nhan: 'Giới tính', giaTri: nv.gioiTinh, moTa: '', hiem: 0, kho: ['Nam'] },
+    { nhan: 'Giới tính', giaTri: nv.gioiTinh, moTa: '', hiem: 0, kho: ['Nam', 'Nữ'] },
     { nhan: 'Xuất thân', giaTri: xt.ten, moTa: xt.moTa, hiem: xt.hiem, kho: XUAT_THAN.map((d) => d.ten) },
     { nhan: 'Linh căn', giaTri: lc.ten, moTa: lc.moTa, hiem: lc.hiem, kho: LINH_CAN.map((d) => d.ten) },
     { nhan: 'Thể chất', giaTri: tc.ten, moTa: tc.moTa, hiem: tc.hiem, kho: THE_CHAT.map((d) => d.ten) },
@@ -91,7 +91,7 @@ export function ManThienMenh({ onXong }: { onXong: (nv: NhanVat) => void }) {
       </header>
 
       <div className={`khung-bup-be ${xong ? 'hien' : ''}`}>
-        <BupBe dang={nv.dang} an={!xong} />
+        <BupBe dang={nv.dang} gioiTinh={nv.gioiTinh} an={!xong} />
         <div className="ten-nhan-vat">{xong ? nv.ten : '· · ·'}</div>
       </div>
 

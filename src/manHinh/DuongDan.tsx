@@ -3,8 +3,8 @@
 // Luật nằm ở LUAT.duong và bamDuong.
 import { useRef, useState, type CSSProperties } from 'react';
 import { phat } from '../amThanh.ts';
-import { LUAT, TEN_MOC, TEN_PHAM, anhDan, heSoChuyen, mocChuyen, timDanPhuong } from '../game/duLieu.ts';
-import { bamDuong, datGiuDuong, dsDuongDuoc, giaChuyen, thuDuong, tiLeDuong, vaoDuong, type KetQuaDuong, type Kho, type LoaiQuy } from '../game/kho.ts';
+import { LUAT, TEN_MOC, TEN_PHAM, anhDan, mocChuyen, timDanPhuong } from '../game/duLieu.ts';
+import { bamDuong, datGiuDuong, dsDuongDuoc, duocLucChuyen, giaChuyen, thuDuong, tiLeDuong, vaoDuong, type KetQuaDuong, type Kho, type LoaiQuy } from '../game/kho.ts';
 
 const tenLoai = (loai: LoaiQuy) => (loai === 'dv' ? 'Đan văn' : TEN_PHAM[loai]);
 /** Tỉ lệ nhỏ thì hiện một số lẻ, để 1% không bị làm tròn thành 0 hay 2. */
@@ -169,7 +169,7 @@ function DangDuong({ kho, doiKho }: { kho: Kho; doiKho: (ham: (k: Kho) => Kho) =
               <span className={v.loai === 'dv' ? 'pham-dv' : `pham-${v.loai}`}>
                 {timDanPhuong(v.phuongId).ten} · {tenLoai(v.loai).replace(' phẩm', '')} · {v.bac} chuyển
               </span>
-              <span>{v.vo ? '—' : `×${(heSoChuyen(v.bac) * (v.loai === 'dv' ? 2 : 1)).toFixed(2)}`}</span>
+              <span>{v.vo ? '—' : `×${duocLucChuyen(v.loai, v.bac).toFixed(2)}`}</span>
               <span>{v.vo ? 'vỡ' : giaChuyen(kho, v.phuongId, v.loai, v.bac)}</span>
             </div>
           ))}

@@ -60,6 +60,8 @@ export interface Kho {
   danChuyen: Record<string, number>;
   /** Các viên đang dưỡng dở (đã được lấy ra khỏi túi); không dưỡng thì null. */
   duong: { vien: VienDuong[] } | null;
+  /** Phần tốc độ tu luyện được cộng vĩnh viễn nhờ uống đan đã dưỡng (0,1 = nhanh hơn 10%). */
+  tocDoCong: number;
 }
 
 /** Loại viên đan dưỡng được: thượng phẩm, cực phẩm, hoặc đan văn. */
@@ -141,6 +143,7 @@ export function khoMoi(nv: NhanVat | null = null): Kho {
     mau: { thieu: 0, luc: 0 },
     danChuyen: {},
     duong: null,
+    tocDoCong: 0,
   };
 }
 
@@ -795,7 +798,7 @@ export function tuViCan(tang: number, canhGioi: number): number {
 export const vienMan = (k: Kho) => k.tuVi.tang >= soTang(k.tuVi.canhGioi) && k.tuVi.diem >= tuViCan(k.tuVi.tang, k.tuVi.canhGioi);
 
 /** Tu vi mỗi giây khi không có đan trợ lực (linh căn quyết định). */
-export const tocDoGoc = (k: Kho) => LUAT.tuViMoiGiay * loiThe(k.nhanVat).tocDoTuLuyen;
+export const tocDoGoc = (k: Kho) => LUAT.tuViMoiGiay * loiThe(k.nhanVat).tocDoTuLuyen * (1 + (k.tocDoCong ?? 0));
 /** Tu vi mỗi giây ngay lúc này, đã tính phần tăng tốc nhờ đan. */
 export const tocDoTuVi = (k: Kho) => tocDoGoc(k) * (1 + (k.tangToc.giay > 0 ? k.tangToc.nhan : 0));
 
@@ -987,6 +990,80 @@ export function uongDan(k: Kho, phuongId: string, loai: PhamThat | 'dv', soLuong
     moi.congDotPha = Math.min(LUAT.dotPha.congToiDa, k.congDotPha + v * soLuong);
   }
   return moi;
+}
+
+// ---------- uống đan đã dưỡng ----------
+
+/** Dược lực của một viên đã chuyển so với viên thường cùng phẩm. */
+export const duocLucChuyen = (loai: LoaiQuy, bac: number) => heSoChuyen(bac) * (loai === 'dv' ? LUAT.duong.duocLucDanVan : 1);
+/** Uống một viên đã chuyển thì tốc độ tu luyện được cộng vĩnh viễn bao nhiêu (đã tính trần). */
+function tocDoKhiUong(k: Kho, loai: LoaiQuy, bac: number): number {
+  const d = LUAT.duong;
+  return Math.max(0, Math.min(d.tocDoToiDa - (k.tocDoCong ?? 0), d.tocDo * bac * (loai === 'dv' ? d.duocLucDanVan : 1)));
+}
+/** Kho giả có thêm đúng một viên thường cùng loại, để mượn lại phần tính tác dụng chính của xemUong / uongDan. */
+function themMotVien(k: Kho, phuongId: string, loai: LoaiQuy): Kho {
+  if (loai === 'dv') return { ...k, danVan: { ...k.danVan, [phuongId]: (k.danVan[phuongId] ?? 0) + 1 } };
+  const t = [...k.tuiDan[phuongId]] as [number, number, number, number];
+  t[loai] += 1;
+  return { ...k, tuiDan: { ...k.tuiDan, [phuongId]: t } };
+}
+
+export interface XemUongChuyen extends XemUong {
+  /** Tác dụng chính của viên đan (tăng tốc, hồi máu…) có dùng được lúc này không; không thì vẫn uống được để lấy chỉ số. */
+  coTacDungChinh: boolean;
+}
+
+/** Xem trước việc uống một viên đã chuyển (khoá của danChuyen). */
+export function xemUongChuyen(k: Kho, khoa: string, luc = Date.now()): XemUongChuyen {
+  const { phuongId, loai, bac } = docKhoaChuyen(khoa);
+  const p = timDanPhuong(phuongId);
+  const docNay = docHienTai(k, luc);
+  if (!p?.uong) return { duoc: false, coTacDungChinh: false, lyDo: p?.dotPha ? 'Đan đột phá, dùng ở nút Đột phá' : 'Đan này không uống được', docThem: 0, docSau: docNay, moTa: '' };
+  const goc = xemUong(themMotVien(k, phuongId, loai), phuongId, loai, 1, luc);
+  const quaDoc = goc.docSau > LUAT.doc.day + 0.0001;
+  const hs = duocLucChuyen(loai, bac);
+  const them = chiSoKhiUong(k, p, loai, 1);
+  const phan: string[] = [];
+  const chuChiSo = CHI_SO.filter((cs) => them[cs.id])
+    .map((cs) => `${cs.ten} +${(them[cs.id]! * hs * (cs.id === 'khiHuyet' ? LUAT.chiSo.heSoMau : 1)).toFixed(1)}`)
+    .join(', ');
+  if (chuChiSo) phan.push(chuChiSo);
+  const tocDo = tocDoKhiUong(k, loai, bac);
+  if (tocDo > 0) phan.push(`Tốc độ tu luyện +${(tocDo * 100).toFixed(1)}% vĩnh viễn`);
+  if (goc.duoc) phan.push(goc.moTa.split(' · ')[0]);
+  let lyDo: string | undefined;
+  if ((k.danChuyen[khoa] ?? 0) < 1) lyDo = 'Không đủ viên';
+  else if (quaDoc) lyDo = 'Đan độc sẽ vượt ngưỡng chịu đựng';
+  return { duoc: !lyDo, coTacDungChinh: goc.duoc, lyDo, docThem: goc.docThem, docSau: goc.docSau, moTa: phan.join(' · ') };
+}
+
+/** Uống một viên đã chuyển: được tác dụng của viên thường cùng phẩm, chỉ số nhân theo dược lực, và tốc độ tu luyện tăng vĩnh viễn. */
+export function uongChuyen(k: Kho, khoa: string, luc = Date.now()): Kho {
+  const xem = xemUongChuyen(k, khoa, luc);
+  if (!xem.duoc || !k.nhanVat) return k;
+  const { phuongId, loai, bac } = docKhoaChuyen(khoa);
+  const p = timDanPhuong(phuongId);
+  const hs = duocLucChuyen(loai, bac);
+  const them = chiSoKhiUong(k, p, loai, 1);
+  const tocDo = tocDoKhiUong(k, loai, bac);
+  let moi: Kho;
+  // phần chỉ số mà bước dưới đã cộng sẵn (uongDan cộng đúng một lần phần gốc)
+  let daCong = 0;
+  if (xem.coTacDungChinh) {
+    moi = uongDan(themMotVien(k, phuongId, loai), phuongId, loai, 1, luc);
+    daCong = 1;
+  } else {
+    // tác dụng chính đang vô ích (đã viên mãn, tư chất đã đỉnh…): vẫn nhận độc và chỉ số
+    const thieuNay = mauToiDa(k) - mauHienTai(k, luc);
+    moi = { ...k, doc: { diem: xem.docSau, luc }, daUong: { ...k.daUong, [phuongId]: (k.daUong[phuongId] ?? 0) + 1 }, mau: { thieu: thieuNay, luc } };
+  }
+  const chiSoCong = { ...moi.chiSoCong };
+  for (const cs of CHI_SO) if (them[cs.id]) chiSoCong[cs.id] = (chiSoCong[cs.id] ?? 0) + them[cs.id]! * (hs - daCong);
+  const danChuyen = { ...moi.danChuyen };
+  if ((danChuyen[khoa] ?? 0) <= 1) delete danChuyen[khoa];
+  else danChuyen[khoa] -= 1;
+  return { ...moi, chiSoCong, danChuyen, tocDoCong: (k.tocDoCong ?? 0) + tocDo };
 }
 
 // ---------- đột phá ----------

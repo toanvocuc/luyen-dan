@@ -1,8 +1,8 @@
 // Động phủ: nhân vật ngồi tu luyện, tu vi tự tăng; từ đây mở hành trang, xem thiên mệnh, sang đan phòng.
 import { useState } from 'react';
 import { phat } from '../amThanh.ts';
-import { CANH_GIOI, CHI_SO, DAN_PHUONG, DUOC_LIEU, LUAT, PHU_LIEU, TEN_PHAM, TEN_TUOI_NGAN, anhDan, anhDuocLieu, type PhamThat } from '../game/duLieu.ts';
-import { chiSo, chiSoDan, danDotPha, docHienTai, dotPha, mauHienTai, mauToiDa, soTang, tiLeDotPha, tocDoTuVi, tuViCan, uongDan, vienMan, xemUong, type Kho } from '../game/kho.ts';
+import { CANH_GIOI, CHI_SO, DAN_PHUONG, DUOC_LIEU, LUAT, PHU_LIEU, TEN_MOC, TEN_PHAM, TEN_TUOI_NGAN, anhDan, anhDuocLieu, mocChuyen, timDanPhuong, type PhamThat } from '../game/duLieu.ts';
+import { chiSo, chiSoDan, danDotPha, docHienTai, dotPha, dsChuyen, duocLucChuyen, mauHienTai, mauToiDa, soTang, tiLeDotPha, tocDoTuVi, tuViCan, uongChuyen, uongDan, vienMan, xemUong, xemUongChuyen, type Kho } from '../game/kho.ts';
 import type { NhanVat } from '../game/nhanVat.ts';
 import { dongHo, useBayGio } from './PhuongThi.tsx';
 import { BupBe } from './BupBe.tsx';
@@ -67,6 +67,8 @@ export function TuTien({
   const day = vienMan(kho);
   const tocDo = tocDoTuVi(kho);
   const luc = useBayGio();
+  /** Đan đã dưỡng lên chuyển, uống từng viên một. */
+  const danDaDuong = dsChuyen(kho);
   const docNay = docHienTai(kho, luc);
   /** Số viên muốn uống của từng dòng trong hành trang (khoá = id đan | phẩm); chưa chỉnh thì là 1. */
   const [soUong, datSoUong] = useState<Record<string, number>>({});
@@ -108,7 +110,7 @@ export function TuTien({
 
       <div className="san-tu-luyen">
         <div className={`hao-quang ${day ? 'day' : ''}`} />
-        <BupBe dang={nhanVat.dang} />
+        <BupBe dang={nhanVat.dang} gioiTinh={nhanVat.gioiTinh} />
       </div>
 
       <section className="bang day tu-vi">
@@ -314,7 +316,47 @@ export function TuTien({
             <p className="chu-nho trai">
               Đan độc {Math.round(docNay)}/{LUAT.doc.day} — tự tan {Math.round(3600 / LUAT.doc.giayMoiDiem)} điểm mỗi giờ. Đan phẩm càng cao càng ít độc.
             </p>
-            {dongDan.length === 0 && <p className="chu-nho trai">Chưa có viên đan nào.</p>}
+            {dongDan.length === 0 && danDaDuong.length === 0 && <p className="chu-nho trai">Chưa có viên đan nào.</p>}
+            {danDaDuong.map((c) => {
+              const xem = xemUongChuyen(kho, c.khoa, luc);
+              const moc = mocChuyen(c.bac);
+              const uongDuoc = xem.moTa !== '';
+              return (
+                <div key={c.khoa} className="dong-uong">
+                  <div className={`dong-tui dong-ban dong-chuyen moc-${moc}`}>
+                    <img src={anhDan(c.phuongId)} alt="" />
+                    <div className="than-dong">
+                      <b>{timDanPhuong(c.phuongId).ten}</b>
+                      <div className="hang-pham">
+                        <span className={c.loai === 'dv' ? 'pham-dv' : `pham-${c.loai}`}>
+                          {c.loai === 'dv' ? 'Đan văn' : TEN_PHAM[c.loai]} · {c.bac} chuyển{moc ? ` · ${TEN_MOC[moc]}` : ''} ×{c.co}
+                        </span>
+                      </div>
+                    </div>
+                    {uongDuoc && (
+                      <button className="nut-nho nut-ban" disabled={!xem.duoc} onClick={() => doiKho((k) => uongChuyen(k, c.khoa))}>
+                        Uống
+                      </button>
+                    )}
+                  </div>
+                  <div className={`tac-dung ${xem.duoc ? '' : 'khong'}`}>
+                    {uongDuoc ? (
+                      <>
+                        <span>
+                          Dược lực ×{duocLucChuyen(c.loai, c.bac).toFixed(2)} · {xem.moTa}
+                        </span>
+                        <span className={xem.docSau > LUAT.doc.day ? 'qua-doc' : 'doc'}>
+                          Độc +{Math.round(xem.docThem)} → {Math.round(xem.docSau)}/{LUAT.doc.day}
+                        </span>
+                        {xem.lyDo && <em>{xem.lyDo}</em>}
+                      </>
+                    ) : (
+                      <span>{xem.lyDo}</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
             {dongDan.map((d) => {
               const n = Math.min(d.co, Math.max(1, soUong[d.khoa] ?? 1));
               const dat = (x: number) => datSoUong((c) => ({ ...c, [d.khoa]: Math.min(d.co, Math.max(1, x)) }));

@@ -97,8 +97,9 @@ function tamVong(phuong: DanPhuong, t: number): { tam: number; doan: number } {
     const d = phuong.doan[i];
     if (t < dau + d.giay || i === phuong.doan.length - 1) {
       const truoc = i > 0 ? phuong.doan[i - 1].tam : d.tam;
-      // chuyển đoạn trong 1,5 giây đầu để người chơi kịp đuổi theo
-      return { tam: truoc + (d.tam - truoc) * muot((t - dau) / 1.5), doan: i };
+      // chuyển đoạn đủ chậm để lửa đuổi theo kịp: đoạn nhảy càng xa thì trượt càng lâu
+      const giayChuyen = Math.max(LUAT.chinh.chuyenToiThieu, Math.abs(d.tam - truoc) / LUAT.chinh.tocVung);
+      return { tam: truoc + (d.tam - truoc) * muot((t - dau) / giayChuyen), doan: i };
     }
     dau += d.giay;
   }
@@ -265,14 +266,16 @@ export function LoDan({
         lechDich = lechDich > 0 ? -bien : lechDich < 0 ? bien : Math.random() < 0.5 ? bien : -bien;
         datXungDot((n) => n + 1);
       }
-      lech += (lechDich - lech) * Math.min(1, dt * 6);
+      lech += (lechDich - lech) * Math.min(1, dt * LUAT.chinh.xungDotToc);
 
       const { tam, doan } = tamVong(phuong, t);
       const tamKep = kep(tam + lech, rong / 2, 100 - rong / 2);
       const v: Vung = nhiet > tamKep + rong / 2 ? 'nong' : nhiet < tamKep - rong / 2 ? 'lanh' : 'trong';
-      giayNong = v === 'nong' ? giayNong + dt : 0;
+      // quá nóng mà đã thả tay thì lửa đang tự hạ, người chơi không làm gì hơn được: áp chỉ dâng nhẹ và không tính là nằm lì
+      const dangHa = v === 'nong' && !giuRef.current;
+      giayNong = v === 'nong' && !dangHa ? giayNong + dt : 0;
       // giây đầu tiên không tính điểm, cho người chơi kịp đặt tay
-      if (t >= 1) meRef.current = giuLua(meRef.current!, v, dt, nangCap, giayNong);
+      if (t >= 1) meRef.current = giuLua(meRef.current!, v, dangHa ? dt * LUAT.chinh.nongThaTay : dt, nangCap, giayNong);
 
       if (kimRef.current) kimRef.current.style.bottom = `${nhiet}%`;
       if (vungRef.current) {
@@ -727,7 +730,7 @@ export function LoDan({
             <div className="tien-do">
               <div ref={tienDoRef} />
             </div>
-            <p className="chu-nho">Nhấn giữ màn hình để tăng lửa, thả tay để hạ lửa. Lửa có đà — hãy đón trước vùng sáng. Quá nóng một chút là áp lò dâng rất nhanh.</p>
+            <p className="chu-nho">Nhấn giữ màn hình để tăng lửa, thả tay để hạ lửa. Lửa có đà — hãy đón trước vùng sáng. Quá nóng mà còn giữ tay thì áp lò dâng rất nhanh; thả tay ra là áp chỉ dâng nhẹ.</p>
           </>
         )}
 

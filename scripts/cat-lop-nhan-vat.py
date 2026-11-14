@@ -1,4 +1,4 @@
-# Cắt lớp búp bê nhân vật: Hinh_anh/nhan-vat/ -> public/hinh/nhan-vat/
+# Cắt lớp búp bê nhân vật: Hinh_anh/nhan-vat/ -> public/hinh/nhan-vat/ (nam) và Hinh_anh/nhan-vat-nu/ -> public/hinh/nhan-vat-nu/ (nữ)
 # Chạy: python scripts/cat-lop-nhan-vat.py
 #
 # Ảnh gốc: than.png (thân trọc đầu, áo lót trắng) và các biến thể toc-N / mat-N / ao-N — mỗi biến thể là
@@ -14,8 +14,9 @@ import numpy as np
 from PIL import Image, ImageFilter
 
 DAY = os.path.dirname(os.path.abspath(__file__))
-GOC = os.path.join(DAY, '..', 'Hinh_anh', 'nhan-vat')
-RA = os.path.join(DAY, '..', 'public', 'hinh', 'nhan-vat')
+# [thư mục, tóc được rủ xuống tới đâu tính bằng số lần chiều cao đầu kể từ cổ] — tóc nữ dài tới eo nên vùng tóc phải sâu hơn
+BO = [('nhan-vat', 1.25), ('nhan-vat-nu', 4.2)]
+GOC = RA = ''
 CANH = 640  # cạnh ảnh xuất
 
 # dùng lại hàm tách nền trắng của script xử lý ảnh
@@ -68,7 +69,7 @@ def khung_dau(than_alpha: np.ndarray):
     return tren, co, cot[0], cot[-1]
 
 
-def main():
+def cat_bo(toc_sau: float) -> int:
     os.makedirs(RA, exist_ok=True)
     than = doc('than.png')
     than_rgba = tach_nen_dac(Image.open(os.path.join(GOC, 'than.png')))
@@ -85,7 +86,7 @@ def main():
         # mặt: hình bầu dục trong lòng đầu, chừa đỉnh sọ và hai tai
         'mat': (((xx - tam_x) / ((phai - trai) * 0.40)) ** 2 + ((yy - (tren + cao_dau * 0.56)) / (cao_dau * 0.36)) ** 2) <= 1,
         # tóc: mọi thứ từ ngang ngực trở lên (tóc dài rủ xuống vai), trừ lòng mặt
-        'toc': yy < co + cao_dau * 1.25,
+        'toc': yy < co + cao_dau * toc_sau,
         # áo: từ cổ trở xuống
         'ao': yy > co - cao_dau * 0.10,
     }
@@ -128,6 +129,19 @@ def main():
         ngoai = khac[(than_alpha > 0.5) & ~vung[loai]]
         lech = f'tb {ngoai.mean():.3f} / p99 {np.percentile(ngoai, 99):.3f}' if ngoai.size else 'khong do duoc'
         print(f'ok {ten}: lop chiem {ti_le * 100:.1f}% anh, lech ngoai vung {lech}')
+    return loi
+
+
+def main():
+    global GOC, RA
+    loi = 0
+    for ten, toc_sau in BO:
+        GOC = os.path.join(DAY, '..', 'Hinh_anh', ten)
+        RA = os.path.join(DAY, '..', 'public', 'hinh', ten)
+        if not os.path.exists(os.path.join(GOC, 'than.png')):
+            continue
+        print('==', ten)
+        loi += cat_bo(toc_sau)
     sys.exit(1 if loi else 0)
 
 

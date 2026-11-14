@@ -347,8 +347,12 @@ export const LUAT = {
    * - trong vùng: chất lượng +trong, áp lò xả bớt xaAp;
    * - quá nguội: chất lượng +lanh (âm);
    * - quá nóng: áp lò +nongAp, và càng nằm lì ngoài vùng càng dâng nhanh (nhân thêm nongTangToc mỗi giây liên tục).
+   *   Nhưng nếu người chơi đã thả tay (lửa đang hạ, không làm gì hơn được nữa) thì áp chỉ dâng nongThaTay phần và không tính là nằm lì:
+   *   áp lò phạt việc còn đốt khi đã quá nóng, không phạt việc vùng hỏa hầu tụt xuống nhanh hơn lửa hạ kịp.
+   * Vùng hỏa hầu: sang đoạn mới thì trượt tới chỗ mới với tốc độ trung bình tocVung đơn vị nhiệt mỗi giây (ít nhất chuyenToiThieu giây),
+   * chậm hơn tốc độ hạ lửa, nên bám theo được; dược tính xung đột kéo vùng lệch đi với nhịp xungDotToc (càng nhỏ càng từ từ).
    */
-  chinh: { trong: 1.75, lanh: -1.5, nongAp: 18, nongTangToc: 0.6, xaAp: 3 },
+  chinh: { trong: 1.75, lanh: -1.5, nongAp: 18, nongTangToc: 0.6, xaAp: 3, nongThaTay: 0.35, tocVung: 24, chuyenToiThieu: 1.5, xungDotToc: 2.5 },
   /** Áp lò chạm ngưỡng này là nổ lò tại chỗ — cả lúc khống hỏa lẫn lúc tôi đan. */
   apNoLo: 100,
   /** Dược tính xung đột: vùng hỏa hầu lệch đi tối đa bấy nhiêu. */
@@ -452,6 +456,8 @@ export const LUAT = {
    * Tư chất 100 nhân tỉ lệ thêm `tuChat` lần, viên đan văn nhân `danVan` lần.
    * Giá và dược lực nhân `gia` cho mỗi chuyển; chạm mốc cuối (đan huyền thoại) nhân thêm giaHuyenThoai.
    * moc = các chuyển mà viên đan đổi màu và có hào quang.
+   * Uống viên đã chuyển: chỉ số được cộng nhân theo dược lực (heSoChuyen, viên đan văn nhân thêm duocLucDanVan),
+   * và tốc độ tu luyện tăng vĩnh viễn tocDo mỗi chuyển (đan văn nhân duocLucDanVan), cộng dồn tối đa tocDoToiDa.
    */
   duong: {
     phamToiThieu: 2,
@@ -466,6 +472,9 @@ export const LUAT = {
     gia: 1.25,
     moc: [5, 7, 10, 12, 13],
     giaHuyenThoai: 5,
+    duocLucDanVan: 2,
+    tocDo: 0.004,
+    tocDoToiDa: 1,
   },
   don: {
     soDon: 5,

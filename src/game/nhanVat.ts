@@ -80,14 +80,15 @@ export const THE_CHAT: readonly TheChat[] = [
 ];
 
 const HO = ['Tô', 'Lâm', 'Diệp', 'Hàn', 'Cố', 'Tiêu', 'Mộ', 'Thẩm', 'Lục', 'Bạch', 'Tần', 'Sở', 'Vân', 'Giang', 'Trần', 'Lý'];
+const TEN_NU = ['Thanh Y', 'Nguyệt Dao', 'Tử Yên', 'Linh Lung', 'Như Sương', 'Vân Khanh', 'Tuyết Ngưng', 'Uyển Nhi', 'Khuynh Thành', 'Mộng Dao', 'Băng Tâm', 'Tố Tâm', 'Ngọc Hoa', 'Vọng Thư', 'Tinh Hà', 'Thanh Loan'];
 const TEN = ['Vô Trần', 'Thanh Huyền', 'Trường Sinh', 'Minh Viễn', 'Tử Mặc', 'Hạo Nhiên', 'Vân Phi', 'Thiên Hành', 'Mặc Uyên', 'Cảnh Hành', 'Dật Trần', 'Thừa Phong', 'Vọng Thư', 'Tinh Hà', 'Bất Phàm', 'Quy Nhất'];
 
-/** Số kiểu của mỗi lớp búp bê (ảnh mat-N, toc-N, ao-N trong public/hinh/nhan-vat). */
+/** Số kiểu của mỗi lớp búp bê (ảnh mat-N, toc-N, ao-N trong public/hinh/nhan-vat cho nam, nhan-vat-nu cho nữ). */
 export const SO_KIEU = { mat: 3, toc: 3, ao: 3 } as const;
 
 export interface NhanVat {
   ten: string;
-  gioiTinh: 'Nam';
+  gioiTinh: 'Nam' | 'Nữ';
   gioiDien: string;
   xuatThan: string;
   linhCan: string;
@@ -115,9 +116,10 @@ const boc = <T>(ds: readonly T[], rng: () => number) => ds[Math.floor(rng() * ds
 export function taoNhanVat(rng: () => number = Math.random): NhanVat {
   const gd = chonTheoTrong(GIOI_DIEN, rng);
   const xt = chonTheoTrong(XUAT_THAN, rng);
+  const nu = rng() < 0.5;
   return {
-    ten: `${boc(HO, rng)} ${boc(TEN, rng)}`,
-    gioiTinh: 'Nam',
+    ten: `${boc(HO, rng)} ${boc(nu ? TEN_NU : TEN, rng)}`,
+    gioiTinh: nu ? 'Nữ' : 'Nam',
     gioiDien: gd.id,
     xuatThan: xt.id,
     linhCan: chonTheoTrong(LINH_CAN, rng).id,
