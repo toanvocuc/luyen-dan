@@ -29,7 +29,7 @@ export function UngDung() {
 
   // nhạc nền theo màn: đan phòng và vườn dược có bản riêng, còn lại dùng bản của động phủ
   useEffect(() => {
-    datNhac(man === 'lo-dan' ? 'dan-phong' : man === 'vuon' ? 'vuon' : 'dong-phu');
+    datNhac(man === 'lo-dan' ? 'dan-phong' : man === 'vuon' ? 'vuon' : man === 'ban-do' ? 'du-ngoan' : 'dong-phu');
   }, [man]);
 
   // linh thạch đổi (mua, bán, giao đơn) thì kêu một tiếng; đổi nhân vật hay nạp bản lưu thì không

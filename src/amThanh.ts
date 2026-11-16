@@ -20,6 +20,18 @@ const TIENG = {
   'set-danh': { dau: 0.49, dai: 4.2, am: 0.9 },
   'dot-pha': { dau: 0.24, dai: 2.2, am: 5 },
   'linh-thach': { dau: 0.03, dai: 1, am: 0.8 },
+  // du ngoạn (đo 2026-11-16): nhiều file dài, chỉ phát đoạn đầu có tiếng
+  'buoc-di': { dau: 0.8, dai: 0.9, am: 0.6 },
+  'gap-cuop': { dau: 0.05, dai: 2.1, am: 1 },
+  'gap-tien-nu': { dau: 0.34, dai: 3.1, am: 1.25 },
+  'gap-yeu-thu': { dau: 0.47, dai: 3.6, am: 0.4 },
+  'gap-ma': { dau: 0.12, dai: 3.2, am: 2 },
+  'gap-ky-ngo': { dau: 0.81, dai: 2.8, am: 0.4 },
+  'thanh-cong': { dau: 0.02, dai: 0.9, am: 1.5 },
+  'that-bai': { dau: 0.08, dai: 0.5, am: 0.6 },
+  'ket-dep': { dau: 0.19, dai: 3.5, am: 0.4 },
+  'tu-tran': { dau: 0.03, dai: 3.7, am: 0.55 },
+  'hao-cam': { dau: 0.02, dai: 1.1, am: 0.4 },
 } as const;
 export type Tieng = keyof typeof TIENG;
 
@@ -28,6 +40,7 @@ const NHAC = {
   'dong-phu': { file: 'nhac-dong-phu', dau: 0.3, cuoi: 66.5, am: 0.32 },
   vuon: { file: 'nhac-dong-phu2', dau: 0.5, cuoi: 99.5, am: 0.4 },
   'dan-phong': { file: 'nhac-dan-phong', dau: 0, cuoi: 28, am: 0.5 },
+  'du-ngoan': { file: 'nhac-du-ngoan', dau: 0.5, cuoi: 99.5, am: 0.4 },
 } as const;
 export type Nhac = keyof typeof NHAC;
 

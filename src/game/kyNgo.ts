@@ -54,6 +54,8 @@ export interface Buoc {
   luaChon: readonly LuaChon[];
 }
 
+export type TiengGap = 'cuop' | 'tien-nu' | 'yeu-thu' | 'ma' | 'ky-ngo';
+
 export interface SuKien {
   id: string;
   ten: string;
@@ -61,6 +63,8 @@ export interface SuKien {
   anh: string;
   /** Nhân vật trong truyện (khoá trong NHAN_VAT hoặc NPC): hiện chân dung, nhận hảo cảm. */
   nv?: string;
+  /** Tiếng báo khi kỳ ngộ mở ra (mặc định: kỳ ngộ thường). */
+  tieng?: TiengGap;
   mo: string;
   luaChon: readonly LuaChon[];
   buoc?: Readonly<Record<string, Buoc>>;
@@ -105,6 +109,7 @@ export const SU_KIEN: Record<string, SuKien> = {
   },
   'yeu-lang': {
     id: 'yeu-lang',
+    tieng: 'yeu-thu',
     ten: 'Yêu lang giữ linh thảo',
     anh: 'yeu-lang',
     mo: 'Dưới vách đá, một con yêu lang lớn bằng con trâu đang cuộn mình ngủ quanh một gốc linh thảo tỏa ánh sáng nhạt. Một bên mắt nó hé mở.',
@@ -130,6 +135,7 @@ export const SU_KIEN: Record<string, SuKien> = {
   },
   'lang-vuong': {
     id: 'lang-vuong',
+    tieng: 'yeu-thu',
     ten: 'Lang vương Hắc Phong',
     anh: 'yeu-lang',
     mo: 'Sâu trong Hắc Phong Uyên, lang vương mắt đỏ canh giữ một gốc huyết linh chi ngàn năm. Khí tức của nó đè nặng lên ngực ngươi, từng hơi thở cũng thấy nặng nề.',
@@ -155,6 +161,7 @@ export const SU_KIEN: Record<string, SuKien> = {
   },
   'cuop-duong': {
     id: 'cuop-duong',
+    tieng: 'cuop',
     ten: 'Tán tu chặn đường',
     anh: 'cuop-duong',
     mo: 'Đang đi qua đèo, ba tán tu mặt mũi bặm trợn từ sau tảng đá nhảy ra chặn đường. Gã cầm đao cười khẩy: “Để lại linh thạch, tha cho ngươi cái mạng.”',
@@ -225,6 +232,7 @@ export const SU_KIEN: Record<string, SuKien> = {
   // ---------- kỳ ngộ nhiều bước, xoay quanh các nữ nhân vật ----------
   'ho-ly': {
     id: 'ho-ly',
+    tieng: 'tien-nu',
     ten: 'Hồ ly dưới trăng',
     anh: 'ho-ly',
     nv: 'ho-ly',
@@ -299,6 +307,7 @@ export const SU_KIEN: Record<string, SuKien> = {
   },
   'y-su': {
     id: 'y-su',
+    tieng: 'tien-nu',
     ten: 'Y sư và giếng độc',
     anh: 'y-su',
     nv: 'y-su',
@@ -370,6 +379,7 @@ export const SU_KIEN: Record<string, SuKien> = {
   },
   'thanh-nu': {
     id: 'thanh-nu',
+    tieng: 'tien-nu',
     ten: 'Thánh nữ trên cầu đá',
     anh: 'thanh-nu',
     nv: 'thanh-nu',
@@ -425,6 +435,7 @@ export const SU_KIEN: Record<string, SuKien> = {
   },
   'quan-tro': {
     id: 'quan-tro',
+    tieng: 'cuop',
     ten: 'Quán trọ đêm mưa',
     anh: 'quan-tro',
     nv: 'chu-quan',
@@ -483,6 +494,7 @@ export const SU_KIEN: Record<string, SuKien> = {
   },
   'u-hon': {
     id: 'u-hon',
+    tieng: 'ma',
     ten: 'U hồn miếu hoang',
     anh: 'u-hon',
     nv: 'u-hon',
@@ -552,6 +564,7 @@ export const SU_KIEN: Record<string, SuKien> = {
   },
   'tieu-thu': {
     id: 'tieu-thu',
+    tieng: 'cuop',
     ten: 'Tiểu thư bị bắt cóc',
     anh: 'tieu-thu',
     nv: 'tieu-thu',
@@ -621,6 +634,7 @@ export const SU_KIEN: Record<string, SuKien> = {
   },
   tuyet: {
     id: 'tuyet',
+    tieng: 'tien-nu',
     ten: 'Cùng Lâm Thanh Tuyết săn yêu xà',
     anh: 'tuyet',
     nv: 'nu-tu',
@@ -670,6 +684,7 @@ export const SU_KIEN: Record<string, SuKien> = {
   },
   'tien-tu': {
     id: 'tien-tu',
+    tieng: 'tien-nu',
     ten: 'Tiên tử bên thác',
     anh: 'tien-tu',
     nv: 'tien-tu',

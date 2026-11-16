@@ -1,7 +1,7 @@
 // Du ngoạn: bản đồ điểm nối đường của một vùng. Chạm điểm kề bên để đi (tốn thể lực); tới nơi thì gặp kỳ ngộ, NPC hoặc linh địa.
 // Mọi sự kiện kể trong khung giấy (KhungKe). Luật nằm ở game/kyNgo.ts.
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { phat } from '../amThanh.ts';
+import { phat, type Tieng } from '../amThanh.ts';
 import { LUAT, TEN_PHAM, anhDan, timDanPhuong, type PhamThat } from '../game/duLieu.ts';
 import { mauHienTai, mauToiDa, type Kho } from '../game/kho.ts';
 import {
@@ -34,6 +34,7 @@ import {
   tyThi,
   xetCan,
   type KetQuaKyNgo,
+  type TiengGap,
 } from '../game/kyNgo.ts';
 import { dongHo, useBayGio } from './PhuongThi.tsx';
 
@@ -42,6 +43,24 @@ const anhKe = (ten: string) => `./hinh/ky-ngo/${ten}.jpg`;
 const anhNv = (ten: string) => `./hinh/ky-ngo/${ten}.png`;
 const phanTram = (x: number) => `${Math.round(x * 100)}%`;
 const mauTiLe = (x: number) => (x >= 0.6 ? 'cao' : x >= 0.3 ? 'vua' : 'thap');
+
+/** Tiếng sau khi chọn một lựa chọn: mất hồn > còn bước sau (thành/bại) > kết thúc (đẹp/xấu/thành/bại). */
+function tiengKetQua(kq: KetQuaKyNgo): Tieng | null {
+  if (kq.trongThuong) return 'tu-tran';
+  if (kq.tiep) return kq.coKiem ? (kq.thanh ? 'thanh-cong' : 'that-bai') : null;
+  if (kq.nhan.some((n) => n.includes('vĩnh viễn'))) return 'ket-dep';
+  const chiCoMat = kq.mat.length > 0 && !kq.nhan.some((n) => !n.startsWith('Hảo cảm'));
+  // chưa có file ket-xau riêng: kết cục chỉ có mất mát dùng tiếng thất bại
+  if (chiCoMat) return 'that-bai';
+  if (kq.coKiem) return kq.thanh ? 'thanh-cong' : 'that-bai';
+  return kq.nhan.length ? 'thanh-cong' : null;
+}
+const TIENG_GAP: Record<TiengGap, Tieng> = { cuop: 'gap-cuop', 'tien-nu': 'gap-tien-nu', 'yeu-thu': 'gap-yeu-thu', ma: 'gap-ma', 'ky-ngo': 'gap-ky-ngo' };
+/** Phát tiếng chính, rồi nếu có hảo cảm tăng thì thêm tiếng hảo cảm sau một nhịp. */
+function phatKetQua(chinh: Tieng | null, coHaoCam: boolean) {
+  if (chinh) phat(chinh);
+  if (coHaoCam) setTimeout(() => phat('hao-cam'), chinh ? 650 : 0);
+}
 
 /** Bảng đang mở trên bản đồ. */
 type Mo =
@@ -113,7 +132,11 @@ export function BanDo({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho) 
   /** Tới một điểm (hoặc chạm lại điểm đang đứng) thì mở thứ đang chờ ở đó. */
   const moTai = (k: Kho, id: number) => {
     const d = timDiem(id);
-    if (canhTai(k, id)) datMo({ loai: 'su-kien', id });
+    const c = canhTai(k, id);
+    if (c) {
+      if (c.buoc === null) phat(TIENG_GAP[c.sk.tieng ?? 'ky-ngo']);
+      datMo({ loai: 'su-kien', id });
+    }
     else if (d.loai === 'npc' && d.npc) datMo({ loai: 'npc', id: d.npc, loi: `${NPC[d.npc].ten} gật đầu chào ngươi.` });
     else if (d.loai === 'linh-dia' && !daXongKy(k, id)) datMo({ loai: 'linh-dia', id });
     else datMo(null);
@@ -125,7 +148,7 @@ export function BanDo({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho) 
     const sau = diToi(kho, id);
     if (sau === kho) return;
     doiKho(() => sau);
-    phat('nut-bam');
+    phat('buoc-di');
     moTai(sau, id);
   };
 
@@ -177,6 +200,7 @@ export function BanDo({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho) 
             return (
               <button
                 key={d.id}
+                data-im
                 className={`diem-ban-do loai-${d.loai} ${thay ? '' : 'suong'} ${ke && duBuoc && khoeManh ? 'ke' : ''} ${d.id === viTri ? 'dang-dung' : ''}`}
                 style={{ left: `${d.x}%`, top: `${d.y}%` }}
                 disabled={!thay}
@@ -207,13 +231,14 @@ export function BanDo({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho) 
               return (
                 <button
                   key={i}
+                  data-im
                   className="lua-chon"
                   disabled={!can.duoc}
                   onClick={() => {
                     const r = chonLuaChon(kho, mo.id, i);
                     if (!r) return;
                     doiKho(() => r.kho);
-                    phat(r.kq.coKiem ? (r.kq.thanh ? 'toi-trung' : 'toi-truot') : 'nut-bam');
+                    phatKetQua(tiengKetQua(r.kq), !r.kq.trongThuong && r.kq.nhan.some((n) => n.startsWith('Hảo cảm')));
                     datMo({ loai: 'ket-qua', diem: mo.id, tieuDe: canh.sk.ten, anh: anhKe(`${canh.sk.anh}-${r.kq.ketCuc.anh}`), kq: r.kq });
                   }}
                 >
@@ -327,6 +352,7 @@ export function BanDo({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho) 
               onClick={() => {
                 const r = troChuyen(kho, mo.id);
                 doiKho(() => r.kho);
+                if (r.them) phatKetQua(null, true);
                 datMo({ ...mo, loi: r.loi, ketQua: r.them ? { chu: '', nhan: [`Hảo cảm +${r.them}`], mat: [] } : undefined });
               }}
             >
@@ -348,7 +374,7 @@ export function BanDo({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho) 
                     const r = tyThi(kho, mo.id);
                     if (!r) return;
                     doiKho(() => r.kho);
-                    phat(r.thang ? 'toi-trung' : 'toi-truot');
+                    phatKetQua(r.thang ? 'thanh-cong' : 'that-bai', true);
                     datMo({
                       ...mo,
                       loi: r.thang ? 'Hảo kiếm pháp! Lần sau ta sẽ không nương tay đâu.' : 'Còn non lắm. Về luyện thêm rồi hẵng tới.',
@@ -396,7 +422,10 @@ export function BanDo({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho) 
                     {d.loai === 'dv' ? 'Đan văn' : TEN_PHAM[d.loai as PhamThat]} ×{d.co}
                   </small>
                 </span>
-                <button className="nut-ke" disabled={npcCua(kho, mo.id).haoCam >= HAO_CAM_TOI_DA} onClick={() => doiKho((k) => tangDan(k, mo.id, d.phuongId, d.loai))}>
+                <button className="nut-ke" disabled={npcCua(kho, mo.id).haoCam >= HAO_CAM_TOI_DA} onClick={() => {
+                    doiKho((k) => tangDan(k, mo.id, d.phuongId, d.loai));
+                    phatKetQua(null, true);
+                  }}>
                   Tặng +{haoCamTang(mo.id, d.phuongId, d.loai)}
                 </button>
               </div>
