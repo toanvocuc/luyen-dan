@@ -113,8 +113,8 @@ export const LUOT_CHI_TAY: readonly LuotChiTay[] = [
     nen: true,
     cho: '.man-ban-do .dau-nguoi',
     buoc: [
-      { chon: '.man-ban-do .chi-so-ban-do', chu: 'Mỗi bước đi tốn 10 thể lực, thể lực tự hồi theo thời gian. Máu mất trong kỳ ngộ cũng tự hồi; dưới 30% thì phải về dưỡng thương.' },
-      { chon: '.man-ban-do .diem-ban-do.ke', chu: 'Chạm điểm có đường nối đỏ để đi tới. Vùng còn phủ sương sẽ hiện ra khi ngươi đến gần.' },
+      { chon: '.man-ban-do .chi-so-ban-do', chu: 'Mỗi bước đi tốn 5 thể lực, thể lực tự hồi theo thời gian. Mỗi lượt du ngoạn kéo dài 1 giờ: thoát ra vào lại vẫn đứng chỗ cũ, hết giờ thì về làng. Máu dưới 30% thì phải về dưỡng thương.' },
+      { chon: '.man-ban-do .diem-ban-do.ke', chu: 'Chạm điểm có đường nối đỏ để đi tới. Ba con đường tách riêng, chỉ gặp nhau ở làng: muốn sang đường khác phải vòng về. Vùng còn phủ sương sẽ hiện ra khi ngươi đến gần.' },
       { chon: '.man-ban-do .dau-su-kien', chu: 'Dấu ? là kỳ ngộ đang chờ. Kỳ ngộ đổi mới mỗi 3 giờ.' },
     ],
   },

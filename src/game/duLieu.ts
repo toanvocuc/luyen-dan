@@ -498,7 +498,9 @@ export const LUAT = {
    */
   kyNgo: {
     theLucToiDa: 100,
-    theLucMoiBuoc: 10,
+    theLucMoiBuoc: 5,
+    /** Một lượt du ngoạn kéo dài bấy nhiêu giây (đồng hồ thật): thoát ra vào lại trong thời gian này thì đứng chỗ cũ, quá thì về làng. */
+    giayLuot: 3600,
     giayHoiTheLuc: 60,
     coKyNgo: 0.65,
     muc: { de: 0.7, vua: 1, kho: 1.4, hiem: 1.9 },

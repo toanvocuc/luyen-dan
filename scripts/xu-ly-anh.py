@@ -312,6 +312,23 @@ def main():
     sys.exit(1 if loi else 0)
 
 
+def noi_dai(im: Image.Image, ti_le: float) -> Image.Image:
+    """Nối ảnh nền theo chiều dọc cho đủ cao = rộng × ti_le: bản trên ở đầu, bản dưới ở cuối, đoạn chồng giữa hoà tuyến tính."""
+    w, h = im.size
+    cao = round(w * ti_le)
+    if cao <= h:
+        return im
+    chong = 2 * h - cao  # đoạn hai bản chồng lên nhau
+    a = np.asarray(im).astype(np.float32)
+    ra = np.zeros((cao, w, 3), dtype=np.float32)
+    ra[:h] = a
+    ra[cao - h:] = a
+    if chong > 0:
+        t = np.linspace(0, 1, chong, dtype=np.float32)[:, None, None]
+        ra[cao - h:h] = a[h - chong:] * (1 - t) + a[:chong] * t
+    return Image.fromarray(ra.round().clip(0, 255).astype(np.uint8), 'RGB')
+
+
 def xu_ly_ky_ngo():
     """Bản đồ và kỳ ngộ. Chạy riêng được: python -c "import importlib.util as u; ..." hoặc qua main.
     - ban-do/nen-*.png: nền giấy -> jpg; ban-do/dau-*.png: dấu nhỏ (tách nền, 128); còn lại là địa điểm (tách nền, 384).
@@ -328,6 +345,9 @@ def xu_ly_ky_ngo():
             if goc_ten.startswith('nen'):
                 thu_nho(im.convert('RGB'), 1280).save(os.path.join(RA, 'ban-do', goc_ten + '.jpg'), quality=85)
                 print('ok ban-do/' + goc_ten + '.jpg')
+                # bản đồ dài: nối hai bản cùng chiều, chồng lên nhau một đoạn và hoà dần để không lộ đường nối
+                noi_dai(thu_nho(im.convert('RGB'), 1280), 1740 / 572).save(os.path.join(RA, 'ban-do', goc_ten + '-dai.jpg'), quality=85)
+                print('ok ban-do/' + goc_ten + '-dai.jpg')
                 continue
             im = thu_nho(cat_sat(tach_nen(im)), 128 if goc_ten.startswith('dau-') else 384)
             im.save(os.path.join(RA, 'ban-do', ten), optimize=True)

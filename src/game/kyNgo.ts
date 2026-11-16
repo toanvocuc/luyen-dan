@@ -781,28 +781,32 @@ export const BAN_DO: BanDo = {
   ten: 'Thanh Vân sơn',
   canhGioi: 1,
   tangChuan: 5,
-  nen: 'nen-thanh-van',
+  nen: 'nen-thanh-van-dai',
   diem: [
-    { id: 0, ten: 'Làng chân núi', anh: 'lang-chan-nui', x: 50, y: 91, loai: 'cong', suKien: ['y-su'] },
-    { id: 1, ten: 'Rừng Tùng Cổ', anh: 'rung-cay', x: 22, y: 79, loai: 'ky-ngo', suKien: ['huou'] },
-    { id: 2, ten: 'Rừng Trúc', anh: 'rung-truc', x: 78, y: 78, loai: 'ky-ngo', suKien: ['huou', 'cuop-duong', 'ho-ly'] },
-    { id: 3, ten: 'Đèo Hắc Phong', anh: 'deo-nui', x: 50, y: 67, loai: 'ky-ngo', suKien: ['cuop-duong', 'tieu-thu'] },
-    { id: 4, ten: 'Ruộng Linh Thảo', anh: 'ruong-thuoc', x: 18, y: 59, loai: 'linh-dia' },
-    { id: 5, ten: 'Đình Vọng Hồ', anh: 'dinh-ho', x: 82, y: 60, loai: 'npc', npc: 'lao-gia' },
-    { id: 6, ten: 'Vách Lang Nha', anh: 'vach-da', x: 36, y: 48, loai: 'ky-ngo', suKien: ['yeu-lang'] },
-    { id: 7, ten: 'Rừng Phong Ảnh', anh: 'rung-cay', x: 70, y: 45, loai: 'ky-ngo', suKien: ['huou', 'yeu-lang', 'thanh-nu'] },
-    { id: 8, ten: 'Động Cổ', anh: 'dong-co', x: 18, y: 32, loai: 'ky-ngo', suKien: ['dong-phu-co'] },
-    { id: 9, ten: 'Thanh Vân Tông', anh: 'thanh-van-tong', x: 54, y: 29, loai: 'npc', npc: 'nu-tu', suKien: ['tuyet'] },
-    { id: 10, ten: 'Đỉnh Lôi Minh', anh: 'dinh-loi', x: 84, y: 25, loai: 'ky-ngo', suKien: ['loi-van'] },
-    { id: 11, ten: 'Hắc Phong Uyên', anh: 'hiem-dia', x: 34, y: 11, loai: 'hiem-dia', suKien: ['lang-vuong'] },
-    { id: 12, ten: 'Miếu hoang', anh: 'mieu-hoang', x: 13, y: 93, loai: 'ky-ngo', suKien: ['u-hon'] },
-    { id: 13, ten: 'Quán trọ', anh: 'quan-tro', x: 87, y: 93, loai: 'ky-ngo', suKien: ['quan-tro'] },
-    { id: 14, ten: 'Thác Thủy Nguyệt', anh: 'thac-nuoc', x: 81, y: 9, loai: 'ky-ngo', suKien: ['tien-tu'] },
+    // ba con đường tách hẳn nhau, chỉ gặp ở làng: muốn xem nhánh khác phải vòng về
+    // Tây lộ: làng -> Rừng Tùng Cổ -> (ngả cụt Miếu hoang) / Ruộng Linh Thảo -> Vách Lang Nha -> Động Cổ -> Hắc Phong Uyên
+    // Trung lộ: làng -> Đèo Hắc Phong -> Thanh Vân Tông
+    // Đông lộ: làng -> Quán trọ -> Rừng Trúc -> (ngả cụt Đình Vọng Hồ) / Rừng Phong Ảnh -> Đỉnh Lôi Minh -> Thác Thủy Nguyệt
+    { id: 0, ten: 'Làng chân núi', anh: 'lang-chan-nui', x: 50, y: 95, loai: 'cong', suKien: ['y-su'] },
+    { id: 1, ten: 'Rừng Tùng Cổ', anh: 'rung-cay', x: 24, y: 85, loai: 'ky-ngo', suKien: ['huou'] },
+    { id: 12, ten: 'Miếu hoang', anh: 'mieu-hoang', x: 12, y: 74, loai: 'ky-ngo', suKien: ['u-hon'] },
+    { id: 4, ten: 'Ruộng Linh Thảo', anh: 'ruong-thuoc', x: 34, y: 64, loai: 'linh-dia' },
+    { id: 6, ten: 'Vách Lang Nha', anh: 'vach-da', x: 18, y: 51, loai: 'ky-ngo', suKien: ['yeu-lang'] },
+    { id: 8, ten: 'Động Cổ', anh: 'dong-co', x: 30, y: 36, loai: 'ky-ngo', suKien: ['dong-phu-co'] },
+    { id: 11, ten: 'Hắc Phong Uyên', anh: 'hiem-dia', x: 16, y: 20, loai: 'hiem-dia', suKien: ['lang-vuong'] },
+    { id: 3, ten: 'Đèo Hắc Phong', anh: 'deo-nui', x: 50, y: 79, loai: 'ky-ngo', suKien: ['cuop-duong', 'tieu-thu'] },
+    { id: 9, ten: 'Thanh Vân Tông', anh: 'thanh-van-tong', x: 52, y: 46, loai: 'npc', npc: 'nu-tu', suKien: ['tuyet'] },
+    { id: 13, ten: 'Quán trọ', anh: 'quan-tro', x: 78, y: 87, loai: 'ky-ngo', suKien: ['quan-tro'] },
+    { id: 2, ten: 'Rừng Trúc', anh: 'rung-truc', x: 84, y: 73, loai: 'ky-ngo', suKien: ['huou', 'cuop-duong', 'ho-ly'] },
+    { id: 5, ten: 'Đình Vọng Hồ', anh: 'dinh-ho', x: 67, y: 61, loai: 'npc', npc: 'lao-gia' },
+    { id: 7, ten: 'Rừng Phong Ảnh', anh: 'rung-cay', x: 84, y: 50, loai: 'ky-ngo', suKien: ['huou', 'yeu-lang', 'thanh-nu'] },
+    { id: 10, ten: 'Đỉnh Lôi Minh', anh: 'dinh-loi', x: 70, y: 34, loai: 'ky-ngo', suKien: ['loi-van'] },
+    { id: 14, ten: 'Thác Thủy Nguyệt', anh: 'thac-nuoc', x: 84, y: 18, loai: 'ky-ngo', suKien: ['tien-tu'] },
   ],
   duong: [
-    [0, 1], [0, 2], [0, 3], [1, 3], [1, 4], [2, 3], [2, 5], [3, 6], [3, 7], [4, 6],
-    [5, 7], [6, 8], [6, 9], [7, 9], [7, 10], [8, 11], [9, 11], [9, 10],
-    [0, 12], [1, 12], [0, 13], [2, 13], [10, 14], [9, 14],
+    [0, 1], [1, 12], [1, 4], [4, 6], [6, 8], [8, 11],
+    [0, 3], [3, 9],
+    [0, 13], [13, 2], [2, 5], [2, 7], [7, 10], [10, 14],
   ],
 };
 
@@ -937,8 +941,20 @@ export function canhTai(k: Kho, id: number, luc = Date.now()): Canh | null {
 export const daXongKy = (k: Kho, id: number, luc = Date.now()) => k.banDo.xong[id] === kyCho(luc);
 
 /** Vào vùng: bắt đầu từ cổng (điểm 0). */
-export function vaoBanDo(k: Kho): Kho {
-  return { ...k, banDo: { ...k.banDo, viTri: 0, daDen: k.banDo.daDen.includes(0) ? k.banDo.daDen : [...k.banDo.daDen, 0] } };
+/** Còn bao nhiêu giây nữa lượt du ngoạn hiện tại hết (0 = đã hết hoặc chưa bắt đầu: lần vào tới sẽ bắt đầu lại từ làng). */
+export function giayConLuot(k: Kho, luc = Date.now()): number {
+  const bd = k.banDo.batDau ?? 0;
+  if (!bd) return 0;
+  return Math.max(0, Math.ceil((bd + LUAT.kyNgo.giayLuot * 1000 - luc) / 1000));
+}
+/**
+ * Vào vùng. Trong một lượt (LUAT.kyNgo.giayLuot) thì đứng lại đúng chỗ lần trước bỏ dở;
+ * hết lượt (hoặc lần đầu) thì bắt đầu lượt mới từ cổng làng (điểm 0).
+ */
+export function vaoBanDo(k: Kho, luc = Date.now()): Kho {
+  const daDen = k.banDo.daDen.includes(0) ? k.banDo.daDen : [...k.banDo.daDen, 0];
+  if (giayConLuot(k, luc) > 0) return { ...k, banDo: { ...k.banDo, daDen } };
+  return { ...k, banDo: { ...k.banDo, viTri: 0, batDau: luc, daDen } };
 }
 
 /** Đi sang một điểm kề bên. Không đi được (không kề, thiếu thể lực, thương nặng) thì trả lại đúng kho cũ. */

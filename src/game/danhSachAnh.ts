@@ -10,6 +10,7 @@ export const DANH_SACH_ANH: readonly string[] = [
   'hinh/ban-do/hiem-dia.webp',
   'hinh/ban-do/lang-chan-nui.webp',
   'hinh/ban-do/mieu-hoang.webp',
+  'hinh/ban-do/nen-thanh-van-dai.webp',
   'hinh/ban-do/nen-thanh-van.webp',
   'hinh/ban-do/quan-tro.webp',
   'hinh/ban-do/rung-cay.webp',

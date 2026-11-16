@@ -19,7 +19,9 @@ import {
   dsDanTang,
   duMau,
   lyDoKhongDi,
+  giayConLuot,
   giayDuBuoc,
+  vaoBanDo,
   haiLinhDia,
   haoCamTang,
   keNhau,
@@ -119,6 +121,17 @@ export function BanDo({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho) 
   const mauMax = mauToiDa(kho);
   const duBuoc = tl >= LUAT.kyNgo.theLucMoiBuoc;
   const khoeManh = duMau(kho, luc) && !lyDoKhongDi(kho, luc);
+  const conLuot = giayConLuot(kho, luc);
+  const [baoVeLang, datBaoVeLang] = useState(false);
+  // hết một lượt du ngoạn ngay khi đang ở trên bản đồ: đưa về làng, bắt đầu lượt mới
+  useEffect(() => {
+    if (conLuot > 0) return;
+    doiKho((k) => vaoBanDo(k));
+    datMo(null);
+    datBaoVeLang(true);
+    // chỉ khi đồng hồ chạm 0
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conLuot === 0]);
 
   // mở bản đồ thì cuộn tới chỗ người chơi đang đứng
   useEffect(() => {
@@ -158,7 +171,10 @@ export function BanDo({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho) 
   return (
     <div className="man-ban-do">
       <header className="dau-ban-do">
-        <b>{BAN_DO.ten}</b>
+        <b>
+          {BAN_DO.ten}
+          <small className="dong-ho-luot" title="Hết giờ thì về lại làng chân núi">Về làng sau {dongHo(conLuot)}</small>
+        </b>
         <div className="chi-so-ban-do">
           <span className="thanh-nho the-luc" title="Thể lực">
             <i style={{ width: `${(tl / LUAT.kyNgo.theLucToiDa) * 100}%` }} />
@@ -174,6 +190,11 @@ export function BanDo({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho) 
           </span>
         </div>
       </header>
+      {baoVeLang && (
+        <p className="bao-ban-do" onClick={() => datBaoVeLang(false)}>
+          Đã hết một canh giờ du ngoạn, ngươi trở về làng chân núi. Lượt mới bắt đầu.
+        </p>
+      )}
       {(!duBuoc || !khoeManh) && (
         <p className="bao-ban-do">
           {!khoeManh

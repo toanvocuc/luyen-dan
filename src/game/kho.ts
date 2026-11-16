@@ -71,6 +71,8 @@ export interface Kho {
     xong: Record<string, number>;
     /** Kỳ ngộ nhiều bước đang dở: ở điểm nào, kỳ nào, sự kiện nào, bước nào. */
     dangKe?: { diem: number; ky: number; sk: string; buoc: string } | null;
+    /** Lúc (ms) bắt đầu lượt du ngoạn hiện tại; quá LUAT.kyNgo.giayLuot thì lượt sau bắt đầu lại từ làng. */
+    batDau?: number;
   };
   /** NPC: hảo cảm (0–100) và kỳ gần nhất đã trò chuyện / tỷ thí. */
   npc: Record<string, { haoCam: number; kyNoi: number; kyTyThi: number }>;
