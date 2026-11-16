@@ -76,6 +76,8 @@ export interface Kho {
   npc: Record<string, { haoCam: number; kyNoi: number; kyTyThi: number }>;
   /** Thời điểm (ms) bị mất hồn gần nhất — máu về 0 trong kỳ ngộ; 0 = chưa từng. Xem LUAT.kyNgo.matHon. */
   matHon: number;
+  /** Nhiệm vụ dẫn đường (danDuong.ts): đang ở nhiệm vụ thứ mấy, và nhiệm vụ đó đã xong chờ nhận thưởng chưa. */
+  danDuong: { buoc: number; xong: boolean };
 }
 
 /** Loại viên đan dưỡng được: thượng phẩm, cực phẩm, hoặc đan văn. */
@@ -162,6 +164,7 @@ export function khoMoi(nv: NhanVat | null = null): Kho {
     banDo: { viTri: 0, daDen: [0], xong: {} },
     npc: {},
     matHon: 0,
+    danDuong: { buoc: 0, xong: false },
   };
 }
 
@@ -198,6 +201,7 @@ function buKho(k: Kho | null): Kho | null {
       banDo: { ...moi.banDo, ...k.banDo },
       npc: { ...k.npc },
       matHon: k.matHon ?? 0,
+      danDuong: { ...moi.danDuong, ...k.danDuong },
   });
 }
 

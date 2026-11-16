@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { datNhac, phat } from './amThanh.ts';
 import { DAN_PHUONG, anhNen } from './game/duLieu.ts';
+import { danhDauXong, nhiemVuNay, vuaXong } from './game/danDuong.ts';
 import { vaoBanDo } from './game/kyNgo.ts';
 import { dsChuyen, khoMoi, lamMoiDon, luuKho, napKho, soVienHopDon, tuLuyen, type Kho } from './game/kho.ts';
 import { BanDo } from './manHinh/BanDo.tsx';
@@ -39,6 +40,35 @@ export function UngDung() {
   }, [kho.linhThach, kho.nhanVat?.ten]);
 
   const doiKho = useCallback((ham: (k: Kho) => Kho) => datKho(ham), []);
+
+  // nhiệm vụ dẫn đường: mỗi lần kho đổi thì xét nhiệm vụ đang làm đã xong chưa, xong thì báo một dòng ở đầu màn
+  const [baoXong, datBaoXong] = useState<null | { ten: string; luot: number }>(null);
+  const khoTruoc = useRef(kho);
+  useEffect(() => {
+    const truoc = khoTruoc.current.nhanVat?.ten === kho.nhanVat?.ten ? khoTruoc.current : kho;
+    khoTruoc.current = kho;
+    if (!kho.nhanVat || !vuaXong(truoc, kho)) return;
+    const ten = nhiemVuNay(kho)!.ten;
+    datKho((k) => danhDauXong(k));
+    // lúc mới mở game (màn mở đầu) thì chỉ đánh dấu lặng lẽ, thẻ nhiệm vụ ở động phủ sẽ tự sáng
+    if (man === 'mo-dau' || man === 'thien-menh') return;
+    phat('toi-trung');
+    datBaoXong({ ten, luot: Date.now() });
+    // chỉ xét khi kho đổi; đổi màn không cần xét lại
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kho]);
+  useEffect(() => {
+    if (!baoXong) return;
+    const id = setTimeout(() => datBaoXong(null), 3500);
+    return () => clearTimeout(id);
+  }, [baoXong]);
+  const theBao = baoXong && (
+    <div key={baoXong.luot} className="bao-nhiem-vu" onClick={() => datBaoXong(null)}>
+      <small>Nhiệm vụ hoàn thành</small>
+      <b>{baoXong.ten}</b>
+      <span>Về động phủ nhận thưởng</span>
+    </div>
+  );
 
   // tu vi tăng đều mỗi giây chừng nào game còn mở, dù đang ở động phủ, đan phòng hay vườn dược;
   // cùng nhịp đó, chỗ đơn hàng nào hết thời gian chờ thì có đơn mới
@@ -102,6 +132,7 @@ export function UngDung() {
     return (
       <div className="ung-dung nen-giay">
         <BanDo kho={kho} doiKho={doiKho} onVe={() => datMan('tu-tien')} />
+        {theBao}
       </div>
     );
   }
@@ -157,6 +188,7 @@ export function UngDung() {
       {bang === 'don' && <TuiDan kho={kho} doiKho={doiKho} onDong={() => datBang(null)} />}
       {bang === 'phuong-thi' && <PhuongThi kho={kho} doiKho={doiKho} onDong={() => datBang(null)} />}
       {(bang === 'duong' || kho.duong) && <DuongDan kho={kho} doiKho={doiKho} onDong={() => datBang(null)} />}
+      {theBao}
     </div>
   );
 }

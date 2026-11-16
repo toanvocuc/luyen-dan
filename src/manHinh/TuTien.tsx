@@ -8,6 +8,7 @@ import { dongHo, useBayGio } from './PhuongThi.tsx';
 import { BupBe } from './BupBe.tsx';
 import { dongThienMenh } from './ThienMenh.tsx';
 import { BAN_DO, giayKhoaMatHon, giayYeuMatHon, lyDoKhongDi } from '../game/kyNgo.ts';
+import { NHIEM_VU, chuThuong, nhanThuongDan, nhiemVuNay } from '../game/danDuong.ts';
 
 type Bang = null | 'hanh-trang' | 'thien-menh' | 'dot-pha' | 'chi-so';
 
@@ -76,6 +77,9 @@ export function TuTien({
   const docNay = docHienTai(kho, luc);
   const khongDi = lyDoKhongDi(kho, luc);
   const yeuMatHon = giayYeuMatHon(kho, luc);
+  const nhiemVu = nhiemVuNay(kho);
+  /** Gợi ý của nhiệm vụ đang mở hay thu gọn. */
+  const [moGoiY, datMoGoiY] = useState(true);
   /** Số viên muốn uống của từng dòng trong hành trang (khoá = id đan | phẩm); chưa chỉnh thì là 1. */
   const [soUong, datSoUong] = useState<Record<string, number>>({});
   // mỗi loại đan ở mỗi phẩm là một dòng, phẩm cao đứng trước
@@ -117,6 +121,32 @@ export function TuTien({
       <button className="nut-nho nut-du-ngoan" disabled={!!khongDi} onClick={onDuNgoan} title={khongDi ? `Du ngoạn: ${khongDi}` : BAN_DO.ten}>
         {khongDi === 'mất hồn' ? `Mất hồn · ${dongHo(giayKhoaMatHon(kho, luc))}` : khongDi ? `Du ngoạn · ${khongDi}` : 'Du ngoạn'}
       </button>
+
+      {nhiemVu && (
+        <section className={`the-nhiem-vu ${kho.danDuong.xong ? 'xong' : ''}`}>
+          <button className="dau-nhiem-vu" onClick={() => datMoGoiY((x) => !x)} aria-expanded={moGoiY}>
+            <small>
+              Dẫn đường {kho.danDuong.buoc + 1}/{NHIEM_VU.length}
+            </small>
+            <b>{nhiemVu.ten}</b>
+            <i>{kho.danDuong.xong ? '✓' : moGoiY ? '▴' : '▾'}</i>
+          </button>
+          {kho.danDuong.xong ? (
+            <button
+              className="nut-nho nut-nhan-thuong"
+              onClick={() => {
+                phat('linh-thach');
+                datMoGoiY(true);
+                doiKho(nhanThuongDan);
+              }}
+            >
+              Nhận: {chuThuong(nhiemVu.thuong)}
+            </button>
+          ) : (
+            moGoiY && <p className="goi-y-nhiem-vu">{nhiemVu.goiY}</p>
+          )}
+        </section>
+      )}
 
       <div className={`san-tu-luyen ${yeuMatHon > 0 ? 'mat-hon' : ''}`}>
         <div className={`hao-quang ${day ? 'day' : ''}`} />

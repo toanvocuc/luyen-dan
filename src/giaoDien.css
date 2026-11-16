@@ -3444,3 +3444,102 @@ button.bien-ten:active {
   display: block;
   clear: both;
 }
+
+/* ---- nhiệm vụ dẫn đường ---- */
+.the-nhiem-vu {
+  position: relative;
+  z-index: 2;
+  margin: 6px 12px 0;
+  padding: 6px 10px 8px;
+  border: 1px solid rgba(214, 178, 110, 0.55);
+  border-radius: 6px;
+  background: rgba(20, 16, 12, 0.72);
+  color: #f1e3c4;
+  max-width: 62%;
+}
+.the-nhiem-vu.xong {
+  border-color: #e9c46a;
+  box-shadow: 0 0 12px rgba(233, 196, 106, 0.45);
+}
+.dau-nhiem-vu {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+.dau-nhiem-vu small {
+  grid-column: 1;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: #c9a96a;
+}
+.dau-nhiem-vu b {
+  grid-column: 1;
+  font-size: 14px;
+  line-height: 1.35;
+}
+.dau-nhiem-vu i {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  margin-left: 8px;
+  font-style: normal;
+  color: #e9c46a;
+}
+.goi-y-nhiem-vu {
+  margin: 4px 0 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: #d9ccb0;
+}
+.nut-nhan-thuong {
+  margin-top: 6px;
+  width: 100%;
+  animation: nhan-thuong-sang 1.6s ease-in-out infinite;
+}
+@keyframes nhan-thuong-sang {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.25); }
+}
+.bao-nhiem-vu {
+  position: fixed;
+  z-index: 60;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(86vw, 340px);
+  padding: 8px 14px;
+  border: 1px solid #e9c46a;
+  border-radius: 6px;
+  background: rgba(20, 16, 12, 0.92);
+  color: #f1e3c4;
+  text-align: center;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
+  animation: bao-nhiem-vu-hien 3.5s ease-out forwards;
+  pointer-events: auto;
+}
+.bao-nhiem-vu small {
+  display: block;
+  font-size: 11px;
+  color: #e9c46a;
+  letter-spacing: 0.06em;
+}
+.bao-nhiem-vu b {
+  display: block;
+  font-size: 15px;
+}
+.bao-nhiem-vu span {
+  font-size: 12px;
+  color: #cbbd9f;
+}
+@keyframes bao-nhiem-vu-hien {
+  0% { opacity: 0; transform: translate(-50%, -12px); }
+  8%, 85% { opacity: 1; transform: translate(-50%, 0); }
+  100% { opacity: 0; transform: translate(-50%, -6px); }
+}
