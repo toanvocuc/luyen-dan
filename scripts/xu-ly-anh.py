@@ -378,7 +378,7 @@ def xu_ly_mo_dau():
 
 
 # ảnh trong THU_MUC phải tách kiểu thường + lấp lỗ (xem lap_lo)
-TACH_THUONG = {'ho-dao-dan.png'}
+TACH_THUONG = {'ho-dao-dan.png', 'ket-kim-dan.png', 'hoa-than-dan.png', 'pha-hu-dan.png', 'dung-the-dan.png'}
 
 
 def lap_lo(im: Image.Image, goc: Image.Image) -> Image.Image:
