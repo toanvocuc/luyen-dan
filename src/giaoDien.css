@@ -1660,7 +1660,7 @@ button {
 
 /* ---------- khung vẽ tay (Hinh_anh/ui/khung-*.png), cắt 9 mảnh bằng border-image ---------- */
 :root {
-  --khung-bang: url('/hinh/ui/khung-bang-toi.png');
+  --khung-bang: url('/hinh/ui/khung-bang-toi.webp');
   /* màu lòng của khung trên, để hàng nút dính đáy phủ nền cho khớp */
   --long-bang: 17 31 32;
 }
@@ -1685,7 +1685,7 @@ button {
   border: 0 solid transparent;
   border-radius: 0;
   background: none;
-  border-image: url('/hinh/ui/khung-nut.png') 121 120 fill / 23px 23px stretch;
+  border-image: url('/hinh/ui/khung-nut.webp') 121 120 fill / 23px 23px stretch;
   text-shadow: 0 1px 0 rgba(255, 236, 180, 0.5);
 }
 .dau-tu-tien .bien-ten {
@@ -1694,7 +1694,7 @@ button {
   padding: 0 46px;
   display: grid;
   place-items: center;
-  border-image: url('/hinh/ui/khung-ten.png') 110 222 fill / 22px 44px stretch;
+  border-image: url('/hinh/ui/khung-ten.webp') 110 222 fill / 22px 44px stretch;
   border-style: solid;
   border-width: 0;
   white-space: nowrap;
@@ -2082,8 +2082,8 @@ button {
 .dp-tia {
   width: min(170%, 700px);
   background: radial-gradient(circle, #fff 0, #ffe9a8 25%, #f0b93a 60%);
-  -webkit-mask: url('/hinh/hieu-ung/tia.png') center / contain no-repeat;
-  mask: url('/hinh/hieu-ung/tia.png') center / contain no-repeat;
+  -webkit-mask: url('/hinh/hieu-ung/tia.webp') center / contain no-repeat;
+  mask: url('/hinh/hieu-ung/tia.webp') center / contain no-repeat;
   mix-blend-mode: screen;
   opacity: 0.55;
   animation: tia-bung 0.9s ease-out both, tia-xoay 24s linear infinite;
@@ -2092,8 +2092,8 @@ button {
 .dp-vong {
   width: min(80%, 340px);
   background: #ffe9a8;
-  -webkit-mask: url('/hinh/hieu-ung/vong.png') center / contain no-repeat;
-  mask: url('/hinh/hieu-ung/vong.png') center / contain no-repeat;
+  -webkit-mask: url('/hinh/hieu-ung/vong.webp') center / contain no-repeat;
+  mask: url('/hinh/hieu-ung/vong.webp') center / contain no-repeat;
   animation: vong-lan 1.6s ease-out infinite;
 }
 .dp-vong.tre {
@@ -2824,8 +2824,8 @@ button.bien-ten:active {
 .than-vien .tia-quay {
   aspect-ratio: 1;
   background: color-mix(in srgb, var(--mau) 72%, #fff);
-  -webkit-mask: url('/hinh/hieu-ung/vong.png') center / contain no-repeat;
-  mask: url('/hinh/hieu-ung/vong.png') center / contain no-repeat;
+  -webkit-mask: url('/hinh/hieu-ung/vong.webp') center / contain no-repeat;
+  mask: url('/hinh/hieu-ung/vong.webp') center / contain no-repeat;
   animation: quay-tron 9s linear infinite;
 }
 .than-vien .vong-quay {
@@ -2835,8 +2835,8 @@ button.bien-ten:active {
 .than-vien .tia-quay {
   width: 150%;
   opacity: 0.5;
-  -webkit-mask-image: url('/hinh/hieu-ung/tia.png');
-  mask-image: url('/hinh/hieu-ung/tia.png');
+  -webkit-mask-image: url('/hinh/hieu-ung/tia.webp');
+  mask-image: url('/hinh/hieu-ung/tia.webp');
   animation-duration: 16s;
   animation-direction: reverse;
 }
@@ -3248,7 +3248,7 @@ button.bien-ten:active {
   /* khung cắt chín ô: góc và viền giữ nguyên tỉ lệ, chỉ phần giấy ở giữa giãn theo nội dung (số đo lấy từ khung.png 551×768) */
   border-style: solid;
   border-width: 80px 42px 58px 40px;
-  border-image: url('/hinh/ky-ngo/khung.png') 141 79 106 75 fill / 80px 42px 58px 40px stretch;
+  border-image: url('/hinh/ky-ngo/khung.webp') 141 79 106 75 fill / 80px 42px 58px 40px stretch;
   animation: man-duong-hien 0.25s ease-out;
 }
 .ruot-ky-ngo {
@@ -3643,4 +3643,37 @@ button.bien-ten:active {
 .cot-nut.trai {
   left: 8px;
   right: auto;
+}
+
+/* ---- màn tải ở màn mở đầu ---- */
+.dang-tai {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: min(70%, 260px);
+}
+.thanh-tai {
+  position: relative;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--dong-toi);
+  overflow: hidden;
+}
+.thanh-tai i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: linear-gradient(90deg, #7a5a2c, #f0c66a);
+  box-shadow: 0 0 8px rgba(240, 198, 106, 0.7);
+  transition: width 0.25s;
+}
+.dang-tai small {
+  font-size: 13px;
+  color: var(--chu-mo);
+  letter-spacing: 0.03em;
+}
+.man-mo-dau:disabled {
+  cursor: progress;
 }

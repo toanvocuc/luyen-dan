@@ -24,8 +24,8 @@ export function VuonDuoc({ kho, doiKho }: { kho: Kho; doiKho: (ham: (k: Kho) => 
           return (
             <button key={i} className={`o-vuon ${chon === i ? 'chon' : ''} ${cay && gd >= 1 ? 'hai-duoc' : ''}`} onClick={() => datChon(i)}>
               <span className="dat">
-                <img className="nen-o" src="./hinh/vuon/o-dat.png" alt="" draggable={false} />
-                {cay && <img className={`cay gd-${gd}`} src={`./hinh/vuon/${ANH_CAY[gd]}.png`} alt="" draggable={false} />}
+                <img className="nen-o" src="./hinh/vuon/o-dat.webp" alt="" draggable={false} />
+                {cay && <img className={`cay gd-${gd}`} src={`./hinh/vuon/${ANH_CAY[gd]}.webp`} alt="" draggable={false} />}
                 {cay && <img className="loai" src={anhDuocLieu(cay.id)} alt="" draggable={false} />}
               </span>
               <span className="nhan-o">{cay ? (gd === 0 ? `Mầm · ${dongHo(con)}` : gd === 3 ? '1000 năm' : `${TEN_TUOI_NGAN[gd - 1]} · ${dongHo(con)}`) : 'Ô trống'}</span>
@@ -35,7 +35,7 @@ export function VuonDuoc({ kho, doiKho }: { kho: Kho; doiKho: (ham: (k: Kho) => 
         {giaO !== null && (
           <button className="o-vuon khoa" disabled={kho.linhThach < giaO} onClick={() => doiKho(moO)}>
             <span className="dat">
-              <img className="nen-o" src="./hinh/vuon/o-dat.png" alt="" draggable={false} />
+              <img className="nen-o" src="./hinh/vuon/o-dat.webp" alt="" draggable={false} />
             </span>
             <span className="nhan-o">Mở ô · {giaO}</span>
           </button>

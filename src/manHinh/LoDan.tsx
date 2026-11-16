@@ -62,10 +62,10 @@ const HAT = Array.from({ length: 22 }, (_, i) => {
   const xa = 70 + ((i * 53) % 90);
   return { x: Math.round(Math.cos(goc) * xa), y: Math.round(Math.sin(goc) * xa * 0.8 - 50), tre: ((i * 37) % 100) / 100, co: 0.6 + ((i * 29) % 10) / 12 };
 });
-/** Mảnh hiệu ứng vẽ tay (public/hinh/hieu-ung/<tên>.png). Chưa có ảnh thì hiệu ứng dùng hình vẽ bằng CSS. */
+/** Mảnh hiệu ứng vẽ tay (public/hinh/hieu-ung/<tên>.webp). Chưa có ảnh thì hiệu ứng dùng hình vẽ bằng CSS. */
 const MANH = ['tia', 'vong', 'hat', 'set'] as const;
 type Manh = (typeof MANH)[number];
-const duongManh = (ten: Manh) => `./hinh/hieu-ung/${ten}.png`;
+const duongManh = (ten: Manh) => `./hinh/hieu-ung/${ten}.webp`;
 function useManh(): Record<Manh, boolean> {
   const [co, datCo] = useState<Record<Manh, boolean>>({ tia: false, vong: false, hat: false, set: false });
   useEffect(() => {
@@ -523,7 +523,7 @@ export function LoDan({
           draggable={false}
           onError={(e) => {
             // lò chưa có ảnh riêng thì dùng ảnh lò mặc định
-            if (!e.currentTarget.src.endsWith('/lo-dan.png')) e.currentTarget.src = './hinh/lo-dan.png';
+            if (!e.currentTarget.src.endsWith('/lo-dan.webp')) e.currentTarget.src = './hinh/lo-dan.webp';
           }}
         />
 

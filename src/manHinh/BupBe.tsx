@@ -2,7 +2,7 @@
 import type { NhanVat } from '../game/nhanVat.ts';
 
 export function BupBe({ dang, gioiTinh = 'Nam', an = false }: { dang: NhanVat['dang'] | null; gioiTinh?: NhanVat['gioiTinh']; /** Chưa định hình: chỉ hiện bóng thân. */ an?: boolean }) {
-  const anh = (ten: string) => `./hinh/${gioiTinh === 'Nữ' ? 'nhan-vat-nu' : 'nhan-vat'}/${ten}.png`;
+  const anh = (ten: string) => `./hinh/${gioiTinh === 'Nữ' ? 'nhan-vat-nu' : 'nhan-vat'}/${ten}.webp`;
   return (
     <div className={`bup-be ${an || !dang ? 'chua-dinh-hinh' : ''}`}>
       <img src={anh('than')} alt="" draggable={false} />

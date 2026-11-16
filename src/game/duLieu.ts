@@ -32,7 +32,7 @@ export const DUOC_LIEU: readonly DuocLieu[] = [
   { id: 'huyet-lien', ten: 'Huyết Liên', gia: [18, 80, 400] },
   { id: 'kim-diep-truc', ten: 'Kim Diệp Trúc', gia: [22, 95, 480] },
 ];
-export const anhDuocLieu = (id: string) => `./hinh/duoc-lieu/${id}.png`;
+export const anhDuocLieu = (id: string) => `./hinh/duoc-lieu/${id}.webp`;
 /** Giá một hạt giống ở phường thị (chưa tính lợi thế mua bán của nhân vật). */
 export const giaHatGiong = (d: DuocLieu) => d.gia[0] * LUAT.vuon.heSoGiaHat;
 
@@ -288,7 +288,7 @@ export const CAC_BAC: readonly Bac[] = CANH_GIOI.filter((b) => DAN_PHUONG.some((
 export const bacSo = (p: DanPhuong) => CANH_GIOI.indexOf(p.bac);
 
 /** Ảnh viên đan: có ảnh riêng (xem anhDanCoSan.ts, do scripts/xu-ly-anh.py ghi) thì dùng, chưa có thì mượn ảnh ghi ở trường anh. */
-export const anhDan = (id: string) => `./hinh/dan/${ANH_DAN_CO_SAN.has(id) ? id : (DAN_PHUONG.find((d) => d.id === id)?.anh ?? id)}.png`;
+export const anhDan = (id: string) => `./hinh/dan/${ANH_DAN_CO_SAN.has(id) ? id : (DAN_PHUONG.find((d) => d.id === id)?.anh ?? id)}.webp`;
 
 export interface PhuLieu {
   id: string;
@@ -330,9 +330,9 @@ export function bacNen(canhGioi: number): number {
  */
 export function anhNen(man: 'dong-phu' | 'dan-phong', canhGioi: number): string {
   const lop: string[] = [];
-  for (let b = bacNen(canhGioi); b >= 1; b--) lop.push(`url(./hinh/nen/${man}-${b}.jpg)`);
-  if (man === 'dong-phu') lop.push('url(./hinh/nen/dan-phong-1.jpg)');
-  lop.push('url(./hinh/nen-dan-phong.jpg)');
+  for (let b = bacNen(canhGioi); b >= 1; b--) lop.push(`url(./hinh/nen/${man}-${b}.webp)`);
+  if (man === 'dong-phu') lop.push('url(./hinh/nen/dan-phong-1.webp)');
+  lop.push('url(./hinh/nen-dan-phong.webp)');
   return lop.join(', ');
 }
 
@@ -576,7 +576,7 @@ export interface NangCap {
 }
 export const NANG_CAP_GOC: NangCap = { lo: 0, lua: 0, tayNghe: 0 };
 
-/** Các tông môn đặt đan. Ảnh huy hiệu: public/hinh/ui/tong-<id>.png, chưa có thì hiện một chữ. */
+/** Các tông môn đặt đan. Ảnh huy hiệu: public/hinh/ui/tong-<id>.webp, chưa có thì hiện một chữ. */
 export const TONG_MON = [
   { id: 'thanh-van', ten: 'Thanh Vân Tông', chu: '雲' },
   { id: 'duoc-vuong', ten: 'Dược Vương Cốc', chu: '藥' },
@@ -607,7 +607,7 @@ export interface LoDan {
   /** Cộng vào số viên mỗi mẻ. */
   soVien?: number;
 }
-/** Lò đầu tiên là lò ai cũng có. Ảnh: public/hinh/lo/<id>.png, chưa có thì dùng ảnh lò mặc định. */
+/** Lò đầu tiên là lò ai cũng có. Ảnh: public/hinh/lo/<id>.webp, chưa có thì dùng ảnh lò mặc định. */
 export const LO_DAN: readonly LoDan[] = [
   { id: 'thanh-dong-lo', ten: 'Thanh Đồng Lô', moTa: 'Lò đồng xanh của người mới học. Không có gì đặc biệt.', gia: 0 },
   { id: 'han-ngoc-lo', ten: 'Hàn Ngọc Lô', moTa: 'Ngọc lạnh trấn hỏa: áp lò dâng chậm đi bốn phần mười, nhưng mỗi mẻ ít hơn một viên.', gia: 2500, heSoAp: 0.6, soVien: -1 },
@@ -617,7 +617,7 @@ export const LO_DAN: readonly LoDan[] = [
   { id: 'cuu-long-than-lo', ten: 'Cửu Long Thần Lô', moTa: 'Thần lô thượng cổ: phẩm đan cao, dễ vượt đan kiếp, thêm một viên mỗi mẻ; áp lò dâng nhanh hơn hai phần mười.', gia: 30000, phamCong: 0.5, vuotKiep: 0.2, soVien: 1, heSoAp: 1.2 },
 ];
 export const timLoDan = (id: string) => LO_DAN.find((l) => l.id === id) ?? LO_DAN[0];
-export const anhLoDan = (id: string) => `./hinh/lo/${id}.png`;
+export const anhLoDan = (id: string) => `./hinh/lo/${id}.webp`;
 
 export const timDuocLieu = (id: string) => DUOC_LIEU.find((d) => d.id === id)!;
 export const timDanPhuong = (id: string) => DAN_PHUONG.find((d) => d.id === id)!;

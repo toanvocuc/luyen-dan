@@ -38,9 +38,9 @@ import {
 } from '../game/kyNgo.ts';
 import { dongHo, useBayGio } from './PhuongThi.tsx';
 
-const anhBanDo = (ten: string) => `./hinh/ban-do/${ten}.png`;
-const anhKe = (ten: string) => `./hinh/ky-ngo/${ten}.jpg`;
-const anhNv = (ten: string) => `./hinh/ky-ngo/${ten}.png`;
+const anhBanDo = (ten: string) => `./hinh/ban-do/${ten}.webp`;
+const anhKe = (ten: string) => `./hinh/ky-ngo/${ten}.webp`;
+const anhNv = (ten: string) => `./hinh/ky-ngo/${ten}.webp`;
 const phanTram = (x: number) => `${Math.round(x * 100)}%`;
 const mauTiLe = (x: number) => (x >= 0.6 ? 'cao' : x >= 0.3 ? 'vua' : 'thap');
 
@@ -183,7 +183,7 @@ export function BanDo({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho) 
       )}
 
       <div className="cuon-ban-do" ref={cuonRef}>
-        <div className="mat-ban-do" style={{ backgroundImage: `url(./hinh/ban-do/${BAN_DO.nen}.jpg)` }}>
+        <div className="mat-ban-do" style={{ backgroundImage: `url(./hinh/ban-do/${BAN_DO.nen}.webp)` }}>
           <svg className="duong-ban-do" viewBox="0 0 100 100" preserveAspectRatio="none">
             {BAN_DO.duong.map(([a, b]) => {
               if (!daThay(kho, a) || !daThay(kho, b)) return null;

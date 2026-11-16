@@ -3,6 +3,7 @@ import { datNhac, phat } from './amThanh.ts';
 import { DAN_PHUONG, anhNen } from './game/duLieu.ts';
 import { danhDauXong, nhiemVuNay, vuaXong } from './game/danDuong.ts';
 import { vaoBanDo } from './game/kyNgo.ts';
+import { taiCot, taiNgam } from './taiTruoc.ts';
 import { dsChuyen, khoMoi, lamMoiDon, luuKho, napKho, soVienHopDon, tuLuyen, type Kho } from './game/kho.ts';
 import { BanDo } from './manHinh/BanDo.tsx';
 import { NutAnh, ThanhDieuHuong, type ManChinh } from './manHinh/DieuHuong.tsx';
@@ -26,6 +27,21 @@ export function UngDung() {
   const [dangLuyen, datDangLuyen] = useState(false);
 
   useEffect(() => luuKho(kho), [kho]);
+
+  // màn tải: ảnh cốt tải xong mới cho vào; vào game rồi thì tải ngầm phần còn lại
+  const [tienDo, datTienDo] = useState(0);
+  useEffect(() => {
+    let huy = false;
+    void taiCot(kho, (x) => !huy && datTienDo((c) => Math.max(c, Math.min(0.99, x)))).then(() => !huy && datTienDo(1));
+    return () => {
+      huy = true;
+    };
+    // chỉ tải một lần lúc mở game
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
+    if (man !== 'mo-dau') taiNgam();
+  }, [man]);
 
   // nhạc nền theo màn: đan phòng và vườn dược có bản riêng, còn lại dùng bản của động phủ
   useEffect(() => {
@@ -84,7 +100,7 @@ export function UngDung() {
   if (man === 'mo-dau') {
     return (
       <div className="ung-dung toi">
-        <ManMoDau daCoNhanVat={coNhanVat} onVao={() => datMan(coNhanVat ? 'tu-tien' : 'thien-menh')} onSaoLuu={() => datBang('sao-luu')} />
+        <ManMoDau daCoNhanVat={coNhanVat} tienDo={tienDo} onVao={() => datMan(coNhanVat ? 'tu-tien' : 'thien-menh')} onSaoLuu={() => datBang('sao-luu')} />
         {bang === 'sao-luu' && <SaoLuu kho={kho} onNap={(k) => datKho(k)} onDong={() => datBang(null)} />}
       </div>
     );
@@ -164,7 +180,7 @@ export function UngDung() {
   const oVuon = man === 'vuon';
 
   return (
-    <div className={`ung-dung ${coDay ? 'co-day' : ''}`} style={{ backgroundImage: oVuon ? 'url(./hinh/nen/vuon.jpg)' : anhNen('dan-phong', kho.tuVi.canhGioi) }}>
+    <div className={`ung-dung ${coDay ? 'co-day' : ''}`} style={{ backgroundImage: oVuon ? 'url(./hinh/nen/vuon.webp)' : anhNen('dan-phong', kho.tuVi.canhGioi) }}>
       {/* thanh trên chỉ để thông tin; việc riêng của đan phòng là cột nút tròn ở mép phải */}
       <header className="thanh-tren">
         <b className="ten-man">{oVuon ? 'Vườn dược' : 'Đan phòng'}</b>

@@ -16,16 +16,37 @@ import {
 } from '../game/nhanVat.ts';
 import { BupBe } from './BupBe.tsx';
 
-export function ManMoDau({ daCoNhanVat, onVao, onSaoLuu }: { daCoNhanVat: boolean; onVao: () => void; onSaoLuu: () => void }) {
+export function ManMoDau({
+  daCoNhanVat,
+  tienDo,
+  onVao,
+  onSaoLuu,
+}: {
+  daCoNhanVat: boolean;
+  /** Tiến độ tải ảnh cốt, 0..1; chưa tới 1 thì chưa cho vào. */
+  tienDo: number;
+  onVao: () => void;
+  onSaoLuu: () => void;
+}) {
+  const dangTai = tienDo < 1;
   return (
     <>
-      <button className="man-mo-dau" onClick={onVao}>
+      <button className="man-mo-dau" disabled={dangTai} onClick={onVao}>
         <span className="an-tu-tien">
           <i />
           <b>丹</b>
         </span>
         <h1>Luyện Đan</h1>
-        <p>{daCoNhanVat ? 'Chạm để trở về động phủ' : 'Chạm để khai mở thiên mệnh'}</p>
+        {dangTai ? (
+          <span className="dang-tai">
+            <span className="thanh-tai">
+              <i style={{ width: `${Math.round(tienDo * 100)}%` }} />
+            </span>
+            <small>Đang chuẩn bị đan lô… {Math.round(tienDo * 100)}%</small>
+          </span>
+        ) : (
+          <p>{daCoNhanVat ? 'Chạm để trở về động phủ' : 'Chạm để khai mở thiên mệnh'}</p>
+        )}
       </button>
       <button className="nut-nho nut-sao-luu" onClick={onSaoLuu}>
         Cài đặt · Sao lưu

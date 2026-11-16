@@ -187,7 +187,7 @@ export function PhuongThi({ kho, doiKho, onDong }: { kho: Kho; doiKho: (ham: (k:
                   alt=""
                   onError={(e) => {
                     // lò chưa có ảnh riêng thì dùng ảnh lò mặc định
-                    if (!e.currentTarget.src.endsWith('/lo-dan.png')) e.currentTarget.src = './hinh/lo-dan.png';
+                    if (!e.currentTarget.src.endsWith('/lo-dan.webp')) e.currentTarget.src = './hinh/lo-dan.webp';
                   }}
                 />
                 <div className="than-dong">

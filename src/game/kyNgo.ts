@@ -19,7 +19,7 @@ export type Thuong =
   | { loai: 'chi-so'; cs: ChiSo; heSo: number };
 
 export interface KetCuc {
-  /** Ảnh kể chuyện: public/hinh/ky-ngo/<anh>-N.jpg. Sự kiện một bước: 1 = mở đầu, 2 = kết tốt, 3 = kết xấu. */
+  /** Ảnh kể chuyện: public/hinh/ky-ngo/<anh>-N.webp. Sự kiện một bước: 1 = mở đầu, 2 = kết tốt, 3 = kết xấu. */
   anh: number;
   chu: string;
   thuong?: readonly Thuong[];
@@ -754,7 +754,7 @@ export type LoaiDiem = 'cong' | 'ky-ngo' | 'linh-dia' | 'npc' | 'hiem-dia';
 export interface Diem {
   id: number;
   ten: string;
-  /** Ảnh địa điểm: public/hinh/ban-do/<anh>.png */
+  /** Ảnh địa điểm: public/hinh/ban-do/<anh>.webp */
   anh: string;
   /** Vị trí trên bản đồ, theo phần trăm bề ngang / bề dọc. */
   x: number;

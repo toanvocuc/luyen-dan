@@ -200,29 +200,39 @@ function capNhatNhac() {
   const muon = caiDat.nhac && !document.hidden ? nhacMuon : null;
   if (muon === nhacDangPhat) return;
   const luc = ctx.currentTime;
+  // bản cũ tắt hẳn rồi bản mới mới vào, không cho hai bản vang chồng lên nhau
+  // (trên iPhone âm lượng của thẻ audio đôi khi không chỉnh được, nên phải dừng hẳn chứ không chỉ vặn nhỏ)
+  const coBanCu = !!nhacDangPhat && !!cacBan.get(nhacDangPhat);
   if (nhacDangPhat) {
     const cu = cacBan.get(nhacDangPhat);
     if (cu) {
       cu.g.gain.cancelScheduledValues(luc);
-      cu.g.gain.setTargetAtTime(0, luc, 0.35);
+      cu.g.gain.setTargetAtTime(0, luc, 0.1);
       const the = cu.the;
       const ten = cu.ten;
       setTimeout(() => {
         if (nhacDangPhat !== ten) the.pause();
-      }, 1600);
+      }, CHO_TAT_NHAC);
     }
   }
   nhacDangPhat = muon;
   if (muon) {
-    const moi = layBan(muon);
-    if (moi) {
+    const vao = () => {
+      if (nhacDangPhat !== muon || !ctx) return;
+      const moi = layBan(muon);
+      if (!moi) return;
       if (moi.the.currentTime < NHAC[muon].dau) moi.the.currentTime = NHAC[muon].dau;
       void moi.the.play().catch(() => {});
-      moi.g.gain.cancelScheduledValues(luc);
-      moi.g.gain.setTargetAtTime(NHAC[muon].am, luc, 0.6);
-    }
+      moi.g.gain.cancelScheduledValues(ctx.currentTime);
+      moi.g.gain.setValueAtTime(0, ctx.currentTime);
+      moi.g.gain.setTargetAtTime(NHAC[muon].am, ctx.currentTime, 0.5);
+    };
+    if (coBanCu) setTimeout(vao, CHO_TAT_NHAC + 30);
+    else vao();
   }
 }
+/** Mili giây chờ bản nhạc cũ tắt hẳn trước khi bản mới vào. */
+const CHO_TAT_NHAC = 450;
 
 /** Chọn bản nhạc nền cho màn hiện tại (null = im lặng). Đổi bản thì bản cũ nhỏ dần, bản mới to dần. */
 export function datNhac(ten: Nhac | null) {

@@ -7,7 +7,7 @@ import { lyDoKhongDi } from '../game/kyNgo.ts';
 export type ManChinh = 'tu-tien' | 'lo-dan' | 'vuon' | 'ban-do';
 
 /**
- * Nút tròn có ảnh public/hinh/ui/nut-<anh>.png (chưa có ảnh thì hiện một chữ trong vòng tròn).
+ * Nút tròn có ảnh public/hinh/ui/nut-<anh>.webp (chưa có ảnh thì hiện một chữ trong vòng tròn).
  * `so`: số đỏ góc trên (0 = ẩn); `cham`: chấm đỏ không số; `nhan`: nhãn nhỏ góc trên (vd lý do bị khoá).
  */
 export function NutAnh({
@@ -35,7 +35,7 @@ export function NutAnh({
   return (
     <button className={`nut-tron ${dang ? 'dang' : ''}`} disabled={khoa} onClick={onClick} aria-current={dang ? 'page' : undefined}>
       <span className="mat-nut">
-        {coAnh ? <img src={`./hinh/ui/nut-${anh}.png`} alt="" draggable={false} onError={() => datCoAnh(false)} /> : <b>{chu}</b>}
+        {coAnh ? <img src={`./hinh/ui/nut-${anh}.webp`} alt="" draggable={false} onError={() => datCoAnh(false)} /> : <b>{chu}</b>}
         {so > 0 ? <i className="cham-so">{so > 9 ? '9+' : so}</i> : cham ? <i className="cham-so trong" /> : null}
       </span>
       <span className="ten-nut">{ten}</span>

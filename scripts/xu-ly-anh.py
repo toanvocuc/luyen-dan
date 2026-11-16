@@ -208,7 +208,7 @@ def main():
             im.save(os.path.join(RA, thu_muc, ten), optimize=True)
             print('ok', thu_muc + '/' + ten, im.size)
     # ghi danh sách đan đã có ảnh riêng, để game biết đan nào còn phải mượn ảnh
-    co = sorted(os.path.splitext(t)[0] for t in os.listdir(os.path.join(RA, 'dan')) if t.endswith('.png'))
+    co = sorted({os.path.splitext(t)[0] for t in os.listdir(os.path.join(RA, 'dan')) if t.endswith(('.png', '.webp'))})
     with open(os.path.join(os.path.dirname(__file__), '..', 'src', 'game', 'anhDanCoSan.ts'), 'w', encoding='utf-8', newline='') as f:
         f.write('// File này do scripts/xu-ly-anh.py ghi lại mỗi lần xử lý ảnh — đừng sửa tay.\n')
         f.write('/** Những đan phương đã có ảnh riêng trong public/hinh/dan/. */\n')

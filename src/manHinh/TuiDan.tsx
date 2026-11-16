@@ -7,11 +7,11 @@ import { dongHo, useBayGio } from './PhuongThi.tsx';
 type Loai = PhamThat | 'dv';
 type Trang = 'don' | 'ban-le';
 
-/** Huy hiệu tông môn: có ảnh public/hinh/ui/tong-<id>.png thì dùng, chưa có thì hiện một chữ. */
+/** Huy hiệu tông môn: có ảnh public/hinh/ui/tong-<id>.webp thì dùng, chưa có thì hiện một chữ. */
 function HuyHieu({ id }: { id: string }) {
   const [coAnh, datCoAnh] = useState(true);
   return (
-    <span className="huy-hieu">{coAnh ? <img src={`./hinh/ui/tong-${id}.png`} alt="" onError={() => datCoAnh(false)} /> : <b>{timTongMon(id).chu}</b>}</span>
+    <span className="huy-hieu">{coAnh ? <img src={`./hinh/ui/tong-${id}.webp`} alt="" onError={() => datCoAnh(false)} /> : <b>{timTongMon(id).chu}</b>}</span>
   );
 }
 

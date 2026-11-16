@@ -127,7 +127,7 @@ function DangDuong({ kho, doiKho }: { kho: Kho; doiKho: (ham: (k: Kho) => Kho) =
             return (
               <div key={i} className={`vien-duong moc-${moc} ${v.vo ? 'vo' : ''} ${v.giu ? 'giu' : ''}`} style={{ '--co': `${coVien(d.vien.length)}px` } as CSSProperties}>
                 <button className="than-vien" onClick={bam} disabled={v.vo || v.giu} aria-label="Dưỡng đan">
-                  <img className="dai" src="./hinh/nguyen-lieu/dai-duong-dan.png" alt="" draggable={false} />
+                  <img className="dai" src="./hinh/nguyen-lieu/dai-duong-dan.webp" alt="" draggable={false} />
                   {moc >= 1 && <i className="hao-quang" />}
                   {moc >= 3 && <i className="tia-quay" />}
                   {moc >= 2 && <i className="vong-quay" />}

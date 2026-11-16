@@ -8,8 +8,8 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host",
     "mo-phong": "node scripts/mo-phong.ts",
-    "xu-ly-anh": "python scripts/xu-ly-anh.py",
-    "cat-lop": "python scripts/cat-lop-nhan-vat.py",
+    "xu-ly-anh": "python scripts/xu-ly-anh.py && python scripts/doi-webp.py",
+    "cat-lop": "python scripts/cat-lop-nhan-vat.py && python scripts/doi-webp.py",
     "day-web": "npm run build && node scripts/day-web.mjs"
   },
   "dependencies": {
