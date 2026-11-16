@@ -17,6 +17,7 @@ import {
   diToi,
   dsDanTang,
   duMau,
+  lyDoKhongDi,
   giayDuBuoc,
   haiLinhDia,
   haoCamTang,
@@ -97,7 +98,7 @@ export function BanDo({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho) 
   const mau = mauHienTai(kho, luc);
   const mauMax = mauToiDa(kho);
   const duBuoc = tl >= LUAT.kyNgo.theLucMoiBuoc;
-  const khoeManh = duMau(kho, luc);
+  const khoeManh = duMau(kho, luc) && !lyDoKhongDi(kho, luc);
 
   // mở bản đồ thì cuộn tới chỗ người chơi đang đứng
   useEffect(() => {
@@ -239,7 +240,10 @@ export function BanDo({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho) 
           <DanhSachNhanMat nhan={mo.kq.nhan} mat={mo.kq.mat} />
           {mo.kq.trongThuong ? (
             <>
-              <p className="loi-ke nguy">Ngươi trọng thương ngã gục, chỉ còn đủ sức lết về động phủ dưỡng thương.</p>
+              <p className="loi-ke nguy">
+                Ngươi ngã gục, hồn phách rời khỏi thân xác. Khi tỉnh lại đã nằm trong động phủ: {Math.round(LUAT.kyNgo.matHon.khoaGiay / 3600)} giờ tới không thể du ngoạn, và
+                trong {Math.round(LUAT.kyNgo.matHon.yeuGiay / 3600)} giờ mọi chỉ số chỉ còn một nửa.
+              </p>
               <button className="nut-ke chinh" onClick={onVe}>
                 Về động phủ
               </button>

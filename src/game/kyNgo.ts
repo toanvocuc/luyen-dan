@@ -1,7 +1,7 @@
 // Du ngoạn và kỳ ngộ: bản đồ điểm nối đường, thể lực, sự kiện thử chỉ số, NPC. Thuần tính toán, không dính giao diện.
 // Số cân bằng nằm ở LUAT.kyNgo (duLieu.ts); dữ liệu bản đồ, sự kiện và NPC nằm ngay trong file này.
 import { CHI_SO, DAN_PHUONG, DUOC_LIEU, LUAT, TEN_PHAM, bacSo, timDanPhuong, type ChiSo, type PhamThat, type Tuoi } from './duLieu.ts';
-import { chiSo, kyCho, mauHienTai, mauToiDa, tuLuyen, tuViCan, type Kho } from './kho.ts';
+import { chiSo, dangMatHon, kyCho, mauHienTai, mauToiDa, tuLuyen, tuViCan, type Kho } from './kho.ts';
 
 // ---------- dữ liệu ----------
 
@@ -331,6 +331,24 @@ export function giayDuBuoc(k: Kho, luc = Date.now()): number {
 /** Máu đủ để du ngoạn chưa. */
 export const duMau = (k: Kho, luc = Date.now()) => mauHienTai(k, luc) >= mauToiDa(k) * LUAT.kyNgo.mauVao;
 
+/** Còn bao nhiêu giây nữa mới hết bị cấm du ngoạn vì mất hồn (0 = không bị cấm). */
+export function giayKhoaMatHon(k: Kho, luc = Date.now()): number {
+  if (!(k.matHon > 0)) return 0;
+  return Math.max(0, Math.ceil((k.matHon + LUAT.kyNgo.matHon.khoaGiay * 1000 - luc) / 1000));
+}
+/** Còn bao nhiêu giây nữa thì chỉ số hồi lại như cũ (0 = không mất hồn). */
+export function giayYeuMatHon(k: Kho, luc = Date.now()): number {
+  if (!dangMatHon(k, luc)) return 0;
+  return Math.max(0, Math.ceil((k.matHon + LUAT.kyNgo.matHon.yeuGiay * 1000 - luc) / 1000));
+}
+/** Du ngoạn được không, và nếu không thì vì sao (chữ ngắn để ghi lên nút). */
+export function lyDoKhongDi(k: Kho, luc = Date.now()): string | null {
+  if (!duocVao(k)) return 'cần Luyện Khí';
+  if (giayKhoaMatHon(k, luc) > 0) return 'mất hồn';
+  if (!duMau(k, luc)) return 'đang dưỡng thương';
+  return null;
+}
+
 // ---------- bản đồ ----------
 
 /** Điểm nhìn thấy được: đã đặt chân tới, hoặc nằm kề một điểm đã tới. Còn lại bị sương che. */
@@ -360,7 +378,7 @@ export function vaoBanDo(k: Kho): Kho {
 export function diToi(k: Kho, id: number, luc = Date.now()): Kho {
   const c = LUAT.kyNgo;
   const tl = theLucHienTai(k, luc);
-  if (!keNhau(k.banDo.viTri, id) || tl < c.theLucMoiBuoc || !duMau(k, luc)) return k;
+  if (!keNhau(k.banDo.viTri, id) || tl < c.theLucMoiBuoc || lyDoKhongDi(k, luc)) return k;
   return {
     ...k,
     theLuc: { diem: tl - c.theLucMoiBuoc, luc },
@@ -415,7 +433,7 @@ export interface KetQuaKyNgo {
   ketCuc: KetCuc;
   nhan: string[];
   mat: string[];
-  /** Máu về 0. */
+  /** Máu về 0: mất hồn. */
   trongThuong: boolean;
 }
 
@@ -513,7 +531,13 @@ export function chonLuaChon(k: Kho, id: number, i: number, rng: () => number = M
     kho = r.kho;
     mat.push(`${r.mat} máu`);
   }
-  return { kho, kq: { thanh, coKiem: !!lc.kiem, ketCuc, nhan, mat, trongThuong: mauHienTai(kho, luc) <= 0 } };
+  const trongThuong = mauHienTai(kho, luc) <= 0;
+  if (trongThuong) {
+    // mất hồn: bị đưa về cổng vùng; máu tính lại theo máu tối đa đã bị giảm, để hồi đều từ 0
+    kho = { ...kho, matHon: luc, banDo: { ...kho.banDo, viTri: 0 } };
+    kho = { ...kho, mau: { thieu: mauToiDa(kho), luc } };
+  }
+  return { kho, kq: { thanh, coKiem: !!lc.kiem, ketCuc, nhan, mat, trongThuong } };
 }
 
 // ---------- linh địa ----------

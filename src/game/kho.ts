@@ -68,6 +68,8 @@ export interface Kho {
   banDo: { viTri: number; daDen: number[]; xong: Record<string, number> };
   /** NPC: hảo cảm (0–100) và kỳ gần nhất đã trò chuyện / tỷ thí. */
   npc: Record<string, { haoCam: number; kyNoi: number; kyTyThi: number }>;
+  /** Thời điểm (ms) bị mất hồn gần nhất — máu về 0 trong kỳ ngộ; 0 = chưa từng. Xem LUAT.kyNgo.matHon. */
+  matHon: number;
 }
 
 /** Loại viên đan dưỡng được: thượng phẩm, cực phẩm, hoặc đan văn. */
@@ -153,6 +155,7 @@ export function khoMoi(nv: NhanVat | null = null): Kho {
     theLuc: { diem: 100, luc: 0 },
     banDo: { viTri: 0, daDen: [0], xong: {} },
     npc: {},
+    matHon: 0,
   };
 }
 
@@ -188,6 +191,7 @@ function buKho(k: Kho | null): Kho | null {
       theLuc: { ...moi.theLuc, ...k.theLuc },
       banDo: { ...moi.banDo, ...k.banDo },
       npc: { ...k.npc },
+      matHon: k.matHon ?? 0,
   });
 }
 
@@ -872,8 +876,11 @@ export function chiSoGoc(k: Kho, cs: ChiSo): number {
 }
 /** Phần được cộng nhờ uống đan. */
 export const chiSoDan = (k: Kho, cs: ChiSo) => (k.chiSoCong[cs] ?? 0) * (cs === 'khiHuyet' ? LUAT.chiSo.heSoMau : 1);
-/** Giá trị một chỉ số (làm tròn xuống). */
-export const chiSo = (k: Kho, cs: ChiSo) => Math.floor(chiSoGoc(k, cs) + chiSoDan(k, cs));
+/** Đang trong thời gian mất hồn (mọi chỉ số bị giảm). */
+export const dangMatHon = (k: Kho, luc = Date.now()) => (k.matHon ?? 0) > 0 && luc - k.matHon < LUAT.kyNgo.matHon.yeuGiay * 1000;
+/** Giá trị một chỉ số (làm tròn xuống). Đang mất hồn thì chỉ còn LUAT.kyNgo.matHon.heSo phần. */
+export const chiSo = (k: Kho, cs: ChiSo, luc = Date.now()) =>
+  Math.floor((chiSoGoc(k, cs) + chiSoDan(k, cs)) * (dangMatHon(k, luc) ? LUAT.kyNgo.matHon.heSo : 1));
 
 /** Uống `soLuong` viên thì mỗi chỉ số được cộng bao nhiêu (đơn vị thô, chưa nhân heSoMau), đã tính nhờn thuốc. */
 function chiSoKhiUong(k: Kho, p: DanPhuong, loai: PhamThat | 'dv', soLuong: number): Partial<Record<ChiSo, number>> {

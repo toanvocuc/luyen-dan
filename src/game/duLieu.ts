@@ -483,7 +483,9 @@ export const LUAT = {
    * - tỉ lệ thành của một lựa chọn: r = chỉ số người chơi / (chỉ số chuẩn của VÙNG — cảnh giới và tầng chuẩn của bản đồ — × muc[độ khó]),
    *   tỉ lệ = r^mu / (r^mu + 1) (r = 1 là 50%, r = 2 là 89%), cộng (khí vận − 50) × khiVan, kẹp trong [tiLeMin, tiLeMax];
    * - phần thưởng linh thạch = heSo × linhThachGoc × heSoCanhGioi^(cảnh giới của vùng);
-   * - máu dưới mauVao phần máu tối đa thì không du ngoạn được (thương thế chưa lành).
+   * - máu dưới mauVao phần máu tối đa thì không du ngoạn được (thương thế chưa lành);
+   * - máu về 0 trong kỳ ngộ là MẤT HỒN: khoaGiay giây không du ngoạn được, và trong yeuGiay giây mọi chỉ số chỉ còn heSo phần
+   *   (tính theo đồng hồ thật, kể cả lúc tắt game).
    */
   kyNgo: {
     theLucToiDa: 100,
@@ -498,6 +500,7 @@ export const LUAT = {
     linhThachGoc: 30,
     heSoCanhGioi: 1.9,
     mauVao: 0.3,
+    matHon: { khoaGiay: 3600, yeuGiay: 10800, heSo: 0.5 },
   },
   don: {
     soDon: 5,

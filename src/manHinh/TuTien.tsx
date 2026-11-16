@@ -7,7 +7,7 @@ import type { NhanVat } from '../game/nhanVat.ts';
 import { dongHo, useBayGio } from './PhuongThi.tsx';
 import { BupBe } from './BupBe.tsx';
 import { dongThienMenh } from './ThienMenh.tsx';
-import { BAN_DO, duMau, duocVao } from '../game/kyNgo.ts';
+import { BAN_DO, giayKhoaMatHon, giayYeuMatHon, lyDoKhongDi } from '../game/kyNgo.ts';
 
 type Bang = null | 'hanh-trang' | 'thien-menh' | 'dot-pha' | 'chi-so';
 
@@ -74,6 +74,8 @@ export function TuTien({
   /** Đan đã dưỡng lên chuyển, uống từng viên một. */
   const danDaDuong = dsChuyen(kho);
   const docNay = docHienTai(kho, luc);
+  const khongDi = lyDoKhongDi(kho, luc);
+  const yeuMatHon = giayYeuMatHon(kho, luc);
   /** Số viên muốn uống của từng dòng trong hành trang (khoá = id đan | phẩm); chưa chỉnh thì là 1. */
   const [soUong, datSoUong] = useState<Record<string, number>>({});
   // mỗi loại đan ở mỗi phẩm là một dòng, phẩm cao đứng trước
@@ -112,16 +114,11 @@ export function TuTien({
         </span>
       </header>
 
-      <button
-        className="nut-nho nut-du-ngoan"
-        disabled={!duocVao(kho) || !duMau(kho, luc)}
-        onClick={onDuNgoan}
-        title={!duocVao(kho) ? 'Cần đạt Luyện Khí' : !duMau(kho, luc) ? 'Thương thế chưa lành' : BAN_DO.ten}
-      >
-        {!duocVao(kho) ? 'Du ngoạn · cần Luyện Khí' : !duMau(kho, luc) ? 'Du ngoạn · đang dưỡng thương' : 'Du ngoạn'}
+      <button className="nut-nho nut-du-ngoan" disabled={!!khongDi} onClick={onDuNgoan} title={khongDi ? `Du ngoạn: ${khongDi}` : BAN_DO.ten}>
+        {khongDi === 'mất hồn' ? `Mất hồn · ${dongHo(giayKhoaMatHon(kho, luc))}` : khongDi ? `Du ngoạn · ${khongDi}` : 'Du ngoạn'}
       </button>
 
-      <div className="san-tu-luyen">
+      <div className={`san-tu-luyen ${yeuMatHon > 0 ? 'mat-hon' : ''}`}>
         <div className={`hao-quang ${day ? 'day' : ''}`} />
         <BupBe dang={nhanVat.dang} gioiTinh={nhanVat.gioiTinh} />
       </div>
@@ -146,6 +143,12 @@ export function TuTien({
               {Math.round(docNay)}/{LUAT.doc.day}
             </b>
           </div>
+        )}
+        {yeuMatHon > 0 && (
+          <p className="chu-nho bao-mat-hon">
+            Mất hồn: mọi chỉ số chỉ còn một nửa, còn {dongHo(yeuMatHon)}.
+            {giayKhoaMatHon(kho, luc) > 0 ? ` Du ngoạn lại được sau ${dongHo(giayKhoaMatHon(kho, luc))}.` : ''}
+          </p>
         )}
         <p className="chu-nho">
           {day
