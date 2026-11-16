@@ -82,6 +82,8 @@ export interface Kho {
   soLanMatHon: number;
   /** Nhiệm vụ dẫn đường (danDuong.ts): đang ở nhiệm vụ thứ mấy, và nhiệm vụ đó đã xong chờ nhận thưởng chưa. */
   danDuong: { buoc: number; xong: boolean };
+  /** Các lượt chỉ tay lần đầu (manHinh/ChiTay.tsx) đã xem. */
+  daChiTay: string[];
 }
 
 /** Loại viên đan dưỡng được: thượng phẩm, cực phẩm, hoặc đan văn. */
@@ -171,6 +173,7 @@ export function khoMoi(nv: NhanVat | null = null): Kho {
     matHonNhe: false,
     soLanMatHon: 0,
     danDuong: { buoc: 0, xong: false },
+    daChiTay: [],
   };
 }
 
@@ -210,6 +213,7 @@ function buKho(k: Kho | null): Kho | null {
       matHonNhe: k.matHonNhe ?? false,
       soLanMatHon: k.soLanMatHon ?? ((k.matHon ?? 0) > 0 ? 1 : 0),
       danDuong: { ...moi.danDuong, ...k.danDuong },
+      daChiTay: [...(k.daChiTay ?? [])],
   });
 }
 

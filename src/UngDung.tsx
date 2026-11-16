@@ -6,6 +6,7 @@ import { vaoBanDo } from './game/kyNgo.ts';
 import { taiCot, taiNgam } from './taiTruoc.ts';
 import { dsChuyen, khoMoi, lamMoiDon, luuKho, napKho, soVienHopDon, tuLuyen, type Kho } from './game/kho.ts';
 import { BanDo } from './manHinh/BanDo.tsx';
+import { ChiTay } from './manHinh/ChiTay.tsx';
 import { NutAnh, ThanhDieuHuong, type ManChinh } from './manHinh/DieuHuong.tsx';
 import { DuongDan } from './manHinh/DuongDan.tsx';
 import { LoDan } from './manHinh/LoDan.tsx';
@@ -137,6 +138,8 @@ export function UngDung() {
     />
   );
   const phuongThi = bang === 'phuong-thi' && <PhuongThi kho={kho} doiKho={doiKho} onDong={() => datBang(null)} />;
+  // chỉ tay lần đầu: phủ lên mọi màn chính
+  const chiTay = <ChiTay daXem={kho.daChiTay} bat={!!kho.nhanVat} onXem={(ids) => datKho((k) => ({ ...k, daChiTay: [...new Set([...k.daChiTay, ...ids])] }))} />;
 
   if (man === 'tu-tien') {
     return (
@@ -156,8 +159,11 @@ export function UngDung() {
         />
         {thanhDay}
         {bang === 'tui' && <TuiDan kho={kho} doiKho={doiKho} onDong={() => datBang(null)} />}
-        {bang === 'sao-luu' && <SaoLuu kho={kho} onNap={(k) => datKho(k)} onDong={() => datBang(null)} />}
+        {bang === 'sao-luu' && (
+          <SaoLuu kho={kho} onNap={(k) => datKho(k)} onDong={() => datBang(null)} onXemLaiHuongDan={() => datKho((k) => ({ ...k, daChiTay: [] }))} />
+        )}
         {phuongThi}
+        {chiTay}
       </div>
     );
   }
@@ -169,6 +175,7 @@ export function UngDung() {
         {thanhDay}
         {phuongThi}
         {theBao}
+        {chiTay}
       </div>
     );
   }
@@ -210,6 +217,7 @@ export function UngDung() {
       {phuongThi}
       {(bang === 'duong' || kho.duong) && <DuongDan kho={kho} doiKho={doiKho} onDong={() => datBang(null)} />}
       {theBao}
+      {chiTay}
     </div>
   );
 }

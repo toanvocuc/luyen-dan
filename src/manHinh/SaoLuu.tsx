@@ -4,7 +4,7 @@ import { dangKyCaiDatAm, datCaiDatAm, layCaiDatAm } from '../amThanh.ts';
 import { CANH_GIOI } from '../game/duLieu.ts';
 import { nhapMa, xuatMa, type Kho } from '../game/kho.ts';
 
-export function SaoLuu({ kho, onNap, onDong }: { kho: Kho; onNap: (k: Kho) => void; onDong: () => void }) {
+export function SaoLuu({ kho, onNap, onDong, onXemLaiHuongDan }: { kho: Kho; onNap: (k: Kho) => void; onDong: () => void; onXemLaiHuongDan?: () => void }) {
   const [maDan, datMaDan] = useState('');
   const [bao, datBao] = useState('');
   const am = useSyncExternalStore(dangKyCaiDatAm, layCaiDatAm);
@@ -44,6 +44,21 @@ export function SaoLuu({ kho, onNap, onDong }: { kho: Kho; onNap: (k: Kho) => vo
             Hiệu ứng: {am.hieuUng ? 'bật' : 'tắt'}
           </button>
         </div>
+
+        {onXemLaiHuongDan && kho.nhanVat && (
+          <>
+            <h3>Hướng dẫn</h3>
+            <button
+              className="nut-nho"
+              onClick={() => {
+                onXemLaiHuongDan();
+                datBao('Đã bật lại hướng dẫn: mỗi màn sẽ chỉ lại một lần khi ngươi mở tới.');
+              }}
+            >
+              Xem lại hướng dẫn
+            </button>
+          </>
+        )}
 
         <h3>Sao lưu</h3>
         <p className="chu-nho trai">Bản lưu nằm trong trình duyệt này. Muốn chơi tiếp trên máy khác hoặc địa chỉ web khác thì chép mã ở đây rồi dán vào bên đó.</p>
