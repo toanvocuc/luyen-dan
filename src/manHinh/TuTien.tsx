@@ -7,6 +7,7 @@ import type { NhanVat } from '../game/nhanVat.ts';
 import { dongHo, useBayGio } from './PhuongThi.tsx';
 import { BupBe } from './BupBe.tsx';
 import { dongThienMenh } from './ThienMenh.tsx';
+import { BAN_DO, duMau, duocVao } from '../game/kyNgo.ts';
 
 type Bang = null | 'hanh-trang' | 'thien-menh' | 'dot-pha' | 'chi-so';
 
@@ -33,6 +34,7 @@ export function TuTien({
   doiKho,
   onLuyenDan,
   onVuon,
+  onDuNgoan,
   onMonPhai,
   onCaiDat,
   onChoiLai,
@@ -42,6 +44,8 @@ export function TuTien({
   doiKho: (ham: (k: Kho) => Kho) => void;
   onLuyenDan: () => void;
   onVuon: () => void;
+  /** Ra bản đồ du ngoạn. */
+  onDuNgoan: () => void;
   /** Mở bảng đơn hàng của các tông môn. */
   onMonPhai: () => void;
   /** Mở bảng cài đặt (âm thanh, sao lưu). */
@@ -107,6 +111,15 @@ export function TuTien({
           </button>
         </span>
       </header>
+
+      <button
+        className="nut-nho nut-du-ngoan"
+        disabled={!duocVao(kho) || !duMau(kho, luc)}
+        onClick={onDuNgoan}
+        title={!duocVao(kho) ? 'Cần đạt Luyện Khí' : !duMau(kho, luc) ? 'Thương thế chưa lành' : BAN_DO.ten}
+      >
+        {!duocVao(kho) ? 'Du ngoạn · cần Luyện Khí' : !duMau(kho, luc) ? 'Du ngoạn · đang dưỡng thương' : 'Du ngoạn'}
+      </button>
 
       <div className="san-tu-luyen">
         <div className={`hao-quang ${day ? 'day' : ''}`} />

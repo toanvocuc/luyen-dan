@@ -62,6 +62,12 @@ export interface Kho {
   duong: { vien: VienDuong[] } | null;
   /** Phần tốc độ tu luyện được cộng vĩnh viễn nhờ uống đan đã dưỡng (0,1 = nhanh hơn 10%). */
   tocDoCong: number;
+  /** Thể lực du ngoạn: số điểm tại thời điểm `luc` (ms); từ đó tới giờ đã tự hồi thêm, xem theLucHienTai trong kyNgo.ts. */
+  theLuc: { diem: number; luc: number };
+  /** Bản đồ du ngoạn: điểm đang đứng, các điểm đã từng đặt chân tới, và kỳ (kyCho) mà mỗi điểm đã được giải quyết xong. */
+  banDo: { viTri: number; daDen: number[]; xong: Record<string, number> };
+  /** NPC: hảo cảm (0–100) và kỳ gần nhất đã trò chuyện / tỷ thí. */
+  npc: Record<string, { haoCam: number; kyNoi: number; kyTyThi: number }>;
 }
 
 /** Loại viên đan dưỡng được: thượng phẩm, cực phẩm, hoặc đan văn. */
@@ -144,6 +150,9 @@ export function khoMoi(nv: NhanVat | null = null): Kho {
     danChuyen: {},
     duong: null,
     tocDoCong: 0,
+    theLuc: { diem: 100, luc: 0 },
+    banDo: { viTri: 0, daDen: [0], xong: {} },
+    npc: {},
   };
 }
 
@@ -176,6 +185,9 @@ function buKho(k: Kho | null): Kho | null {
       mau: { ...moi.mau, ...k.mau },
       danChuyen: { ...k.danChuyen },
       duong: k.duong ?? null,
+      theLuc: { ...moi.theLuc, ...k.theLuc },
+      banDo: { ...moi.banDo, ...k.banDo },
+      npc: { ...k.npc },
   });
 }
 

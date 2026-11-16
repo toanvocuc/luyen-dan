@@ -476,6 +476,29 @@ export const LUAT = {
     tocDo: 0.004,
     tocDoToiDa: 1,
   },
+  /**
+   * Du ngoạn và kỳ ngộ (logic ở kyNgo.ts):
+   * - thể lực tối đa theLucToiDa, mỗi bước đi tốn theLucMoiBuoc, hồi 1 điểm mỗi giayHoiTheLuc giây đồng hồ thật;
+   * - mỗi kỳ (cùng nhịp đổi hàng của phường thị), mỗi điểm kỳ ngộ có coKyNgo cơ hội hiện dấu "?";
+   * - tỉ lệ thành của một lựa chọn: r = chỉ số người chơi / (chỉ số chuẩn của VÙNG — cảnh giới và tầng chuẩn của bản đồ — × muc[độ khó]),
+   *   tỉ lệ = r^mu / (r^mu + 1) (r = 1 là 50%, r = 2 là 89%), cộng (khí vận − 50) × khiVan, kẹp trong [tiLeMin, tiLeMax];
+   * - phần thưởng linh thạch = heSo × linhThachGoc × heSoCanhGioi^(cảnh giới của vùng);
+   * - máu dưới mauVao phần máu tối đa thì không du ngoạn được (thương thế chưa lành).
+   */
+  kyNgo: {
+    theLucToiDa: 100,
+    theLucMoiBuoc: 10,
+    giayHoiTheLuc: 60,
+    coKyNgo: 0.65,
+    muc: { de: 0.7, vua: 1, kho: 1.4, hiem: 1.9 },
+    mu: 3,
+    khiVan: 0.002,
+    tiLeMin: 0.05,
+    tiLeMax: 0.95,
+    linhThachGoc: 30,
+    heSoCanhGioi: 1.9,
+    mauVao: 0.3,
+  },
   don: {
     soDon: 5,
     choMoi: 30,

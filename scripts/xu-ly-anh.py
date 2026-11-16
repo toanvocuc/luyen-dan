@@ -289,7 +289,45 @@ def main():
                 shutil.copyfile(os.path.join(vao, ten), os.path.join(ra_am, ten))
                 print('ok am/' + ten)
 
+    xu_ly_ky_ngo()
     sys.exit(1 if loi else 0)
+
+
+def xu_ly_ky_ngo():
+    """Bản đồ và kỳ ngộ. Chạy riêng được: python -c "import importlib.util as u; ..." hoặc qua main.
+    - ban-do/nen-*.png: nền giấy -> jpg; ban-do/dau-*.png: dấu nhỏ (tách nền, 128); còn lại là địa điểm (tách nền, 384).
+    - ky-ngo/<sự kiện>-N.png: tranh kể chuyện vẽ trên giấy -> jpg, giữ nguyên nền; giay.png -> jpg;
+      khung.png và nv-*.png: tách nền (khung giữ 768, chân dung 512)."""
+    vao = os.path.join(GOC, 'ban-do')
+    if os.path.isdir(vao):
+        os.makedirs(os.path.join(RA, 'ban-do'), exist_ok=True)
+        for ten in sorted(os.listdir(vao)):
+            goc_ten, duoi = os.path.splitext(ten)
+            if duoi.lower() != '.png':
+                continue
+            im = Image.open(os.path.join(vao, ten))
+            if goc_ten.startswith('nen'):
+                thu_nho(im.convert('RGB'), 1280).save(os.path.join(RA, 'ban-do', goc_ten + '.jpg'), quality=85)
+                print('ok ban-do/' + goc_ten + '.jpg')
+                continue
+            im = thu_nho(cat_sat(tach_nen(im)), 128 if goc_ten.startswith('dau-') else 384)
+            im.save(os.path.join(RA, 'ban-do', ten), optimize=True)
+            print('ok ban-do/' + ten, im.size)
+    vao = os.path.join(GOC, 'ky-ngo')
+    if os.path.isdir(vao):
+        os.makedirs(os.path.join(RA, 'ky-ngo'), exist_ok=True)
+        for ten in sorted(os.listdir(vao)):
+            goc_ten, duoi = os.path.splitext(ten)
+            if duoi.lower() != '.png':
+                continue
+            im = Image.open(os.path.join(vao, ten))
+            if goc_ten == 'khung' or goc_ten.startswith('nv-'):
+                im = thu_nho(cat_sat(tach_nen(im)), 768 if goc_ten == 'khung' else 512)
+                im.save(os.path.join(RA, 'ky-ngo', ten), optimize=True)
+            else:
+                im = thu_nho(im.convert('RGB'), 512 if goc_ten == 'giay' else 800)
+                im.save(os.path.join(RA, 'ky-ngo', goc_ten + '.jpg'), quality=84)
+            print('ok ky-ngo/' + ten, im.size)
 
 
 if __name__ == '__main__':

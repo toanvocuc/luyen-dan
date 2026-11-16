@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { datNhac, phat } from './amThanh.ts';
 import { DAN_PHUONG, anhNen } from './game/duLieu.ts';
+import { vaoBanDo } from './game/kyNgo.ts';
 import { dsChuyen, khoMoi, lamMoiDon, luuKho, napKho, soVienHopDon, tuLuyen, type Kho } from './game/kho.ts';
+import { BanDo } from './manHinh/BanDo.tsx';
 import { DuongDan } from './manHinh/DuongDan.tsx';
 import { LoDan } from './manHinh/LoDan.tsx';
 import { PhuongThi } from './manHinh/PhuongThi.tsx';
@@ -11,8 +13,8 @@ import { TuiDan } from './manHinh/TuiDan.tsx';
 import { TuTien } from './manHinh/TuTien.tsx';
 import { VuonDuoc } from './manHinh/VuonDuoc.tsx';
 
-/** Luồng màn hình: mở đầu -> (lần đầu) thiên mệnh -> động phủ tu tiên <-> đan phòng / vườn dược. */
-type Man = 'mo-dau' | 'thien-menh' | 'tu-tien' | 'lo-dan' | 'vuon';
+/** Luồng màn hình: mở đầu -> (lần đầu) thiên mệnh -> động phủ tu tiên <-> đan phòng / vườn dược / bản đồ du ngoạn. */
+type Man = 'mo-dau' | 'thien-menh' | 'tu-tien' | 'lo-dan' | 'vuon' | 'ban-do';
 type Bang = null | 'tui' | 'don' | 'phuong-thi' | 'sao-luu' | 'duong';
 
 export function UngDung() {
@@ -79,6 +81,10 @@ export function UngDung() {
           doiKho={doiKho}
           onLuyenDan={() => datMan('lo-dan')}
           onVuon={() => datMan('vuon')}
+          onDuNgoan={() => {
+            datKho((k) => vaoBanDo(k));
+            datMan('ban-do');
+          }}
           onMonPhai={() => datBang('tui')}
           onCaiDat={() => datBang('sao-luu')}
           onChoiLai={() => {
@@ -88,6 +94,14 @@ export function UngDung() {
         />
         {bang === 'tui' && <TuiDan kho={kho} doiKho={doiKho} onDong={() => datBang(null)} />}
         {bang === 'sao-luu' && <SaoLuu kho={kho} onNap={(k) => datKho(k)} onDong={() => datBang(null)} />}
+      </div>
+    );
+  }
+
+  if (man === 'ban-do') {
+    return (
+      <div className="ung-dung nen-giay">
+        <BanDo kho={kho} doiKho={doiKho} onVe={() => datMan('tu-tien')} />
       </div>
     );
   }
