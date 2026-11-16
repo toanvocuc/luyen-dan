@@ -155,6 +155,7 @@ export const DANH_SACH_ANH: readonly string[] = [
   'hinh/ui/khung-bang.webp',
   'hinh/ui/khung-nut.webp',
   'hinh/ui/khung-ten.webp',
+  'hinh/ui/nut-dan-thu.webp',
   'hinh/ui/nut-dong-phu.webp',
   'hinh/ui/nut-du-ngoan.webp',
   'hinh/ui/nut-duong-dan.webp',

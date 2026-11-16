@@ -29,7 +29,6 @@ import {
   batDauMe,
   coTheToi,
   giuLua,
-  luyenNhanh,
   moLo,
   quaAp,
   rongVung,
@@ -125,14 +124,17 @@ export function LoDan({
   kho,
   doiKho,
   onDangLuyen,
+  chonSan,
 }: {
   kho: Kho;
   doiKho: (ham: (k: Kho) => Kho) => void;
+  /** Đan phương được chọn từ ngoài (Đan thư); `luot` đổi là chọn lại. */
+  chonSan?: { id: string; luot: number } | null;
   /** Báo cho màn cha biết đang luyện dở một mẻ (để khoá nút rời đan phòng). */
   onDangLuyen?: (dang: boolean) => void;
 }) {
   // mở đan phòng thì chọn sẵn đan phương đầu tiên của cảnh giới hiện tại
-  const [phuongId, datPhuongId] = useState(() => (DAN_PHUONG.find((p) => bacSo(p) === kho.tuVi.canhGioi) ?? DAN_PHUONG[0]).id);
+  const [phuongId, datPhuongId] = useState(() => chonSan?.id ?? (DAN_PHUONG.find((p) => bacSo(p) === kho.tuVi.canhGioi) ?? DAN_PHUONG[0]).id);
   const phuong = timDanPhuong(phuongId);
   const [tuoi, datTuoi] = useState<[Tuoi, Tuoi, Tuoi]>([0, 0, 0]);
   const [phuLieuId, datPhuLieuId] = useState<string | null>(null);
@@ -177,7 +179,6 @@ export function LoDan({
   const chuThieu = thieu.length
     ? `Thiếu ${thieu.map((t) => `${timDuocLieu(t.id).ten} ${TEN_TUOI_NGAN[t.tuoi]}`).join(', ')}`
     : 'Thiếu phụ liệu';
-  const daThongThao = (kho.thongThao[phuong.id] ?? 0) >= LUAT.thongThao;
 
   /**
    * Vì sao một đan phương còn khoá (null = đã mở): phải đạt cảnh giới của bậc đó,
@@ -387,6 +388,25 @@ export function LoDan({
     };
   }, [pha]);
 
+  // chọn đan phương từ ngoài (đang ở bước phối liệu mới đổi, đang luyện dở thì thôi)
+  useEffect(() => {
+    if (chonSan && pha === 'phoi') datPhuongId(chonSan.id);
+    // chỉ khi có lượt chọn mới
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chonSan?.luot]);
+
+  // mỗi lần tôi: lò giật (trượt, lệch) hoặc nảy sáng (thành, đại thành) một nhịp
+  useEffect(() => {
+    const c = canhRef.current;
+    if (!c || !baoToi) return;
+    const lop = baoToi.loai === 'thanh' || baoToi.loai === 'dai-thanh' ? 'lo-nay' : 'lo-giat';
+    c.classList.remove('lo-nay', 'lo-giat');
+    void c.offsetWidth; // ép trình duyệt chạy lại hoạt ảnh dù cùng một lớp
+    c.classList.add(lop);
+    const id = setTimeout(() => c.classList.remove(lop), 450);
+    return () => clearTimeout(id);
+  }, [baoToi]);
+
   // tiếng lửa chỉ cháy trong lúc khống hỏa
   useEffect(() => {
     if (pha !== 'lua') return;
@@ -417,17 +437,10 @@ export function LoDan({
     };
   }, [pha, ketQua]);
 
-  const khaiLo = (nhanh: boolean) => {
+  const khaiLo = () => {
     if (!duNguyenLieu || kho.loHu) return;
     doiKho((k) => truNguyenLieu(k, phuong.lieu, tuoi, phuLieuId));
-    let m = batDauMe(tuoi, phuLieu, nangCap);
-    if (nhanh) {
-      m = luyenNhanh(phuong, m, nangCap);
-      meRef.current = m;
-      datMe(m);
-      vaoToi(m);
-      return;
-    }
+    const m = batDauMe(tuoi, phuLieu, nangCap);
     meRef.current = m;
     datMe(m);
     datXungDot(0);
@@ -475,7 +488,9 @@ export function LoDan({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pha, phuongId, kho.duocLieu, kho.phuLieu]);
 
-  const giu = (dangGiu: boolean) => (e: React.PointerEvent<HTMLDivElement>) => {
+  const giu = (dangGiu: boolean) => (e: React.PointerEvent<HTMLElement>) => {
+    // bấm trúng nút (Tôi đan, Thu đan…) thì để nút tự lo, không tính là giữ lửa / tôi đan thêm lần nữa
+    if (dangGiu && (e.target as Element).closest('button')) return;
     if (pha === 'toi') {
       if (dangGiu) bamToi();
       return;
@@ -499,14 +514,16 @@ export function LoDan({
   const phanAp = me ? kep(me.apLo / LUAT.apNoLo, 0, 1) : 0;
 
   return (
-    <main className="lo-dan">
+    <main
+      className={`lo-dan ${pha === 'lua' || pha === 'toi' ? 'dang-luyen' : ''}`}
+      onPointerDown={giu(true)}
+      onPointerUp={giu(false)}
+      onPointerCancel={giu(false)}
+      onContextMenu={(e) => (pha === 'lua' || pha === 'toi') && e.preventDefault()}
+    >
       <div
         ref={canhRef}
         className={`canh pha-${pha} ${pha === 'mo' && ketQua?.noLo ? 'lo-no' : ''} ${coHieuUng ? (daBung ? `da-bung bung-${bacMe}` : 'cho-mo') : ''}`}
-        onPointerDown={giu(true)}
-        onPointerUp={giu(false)}
-        onPointerCancel={giu(false)}
-        onContextMenu={(e) => e.preventDefault()}
       >
         <div className="lua-tam" />
         <img
@@ -706,16 +723,9 @@ export function LoDan({
                   Sửa lò ({Math.min(kho.linhThach, LUAT.giaSuaLo)} linh thạch)
                 </button>
               ) : (
-                <>
-                  <button className="nut chinh" disabled={!duNguyenLieu} onClick={() => khaiLo(false)}>
-                    {duNguyenLieu ? 'Khai lò' : chuThieu}
-                  </button>
-                  {daThongThao && (
-                    <button className="nut" disabled={!duNguyenLieu} onClick={() => khaiLo(true)}>
-                      Luyện nhanh
-                    </button>
-                  )}
-                </>
+                <button className="nut chinh" disabled={!duNguyenLieu} onClick={khaiLo}>
+                  {duNguyenLieu ? 'Khai lò' : chuThieu}
+                </button>
               )}
             </div>
           </>

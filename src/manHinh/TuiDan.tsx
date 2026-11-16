@@ -1,12 +1,24 @@
 // Túi đan: giao đan theo đơn hàng của tông môn (trả đủ giá) hoặc bán lẻ ở phường thị (mất nửa giá).
 import { useState } from 'react';
 import { daHetLuotThu } from '../anhLoi.ts';
-import { DAN_PHUONG, LUAT, TEN_MOC, TEN_PHAM, TONG_MON, anhDan, giaBan, mocChuyen, timDanPhuong, timTongMon, type PhamThat } from '../game/duLieu.ts';
-import { banChuyen, banDan, banLe, dsChuyen, giaChuyen, giaTriTui, giaoDon, loiTheKho, soVienHopDon, thuongDon, tuChoiDon, vienSeGiao, type Kho } from '../game/kho.ts';
+import { DAN_PHUONG, LUAT, TEN_MOC, TEN_PHAM, TONG_MON, anhDan, bacSo, giaBan, mocChuyen, timDanPhuong, timTongMon, type PhamThat } from '../game/duLieu.ts';
+import { banChuyen, banDan, banLe, danDotPha, dsChuyen, giaChuyen, giaTriTui, giaoDon, loiTheKho, soVienHopDon, thuongDon, tuChoiDon, vienSeGiao, type Kho } from '../game/kho.ts';
 import { dongHo, useBayGio } from './PhuongThi.tsx';
 
 type Loai = PhamThat | 'dv';
 type Trang = 'don' | 'ban-le';
+/** Một dòng trong túi: viên thường (theo phẩm) hoặc viên đã dưỡng (có `bac` chuyển). */
+interface DongTui {
+  khoa: string;
+  id: string;
+  ten: string;
+  loai: Loai;
+  co: number;
+  gia: number;
+  bac?: number;
+  choDon: boolean;
+  dotPhaKe: boolean;
+}
 
 /** Huy hiệu tông môn: có ảnh public/hinh/ui/tong-<id>.webp thì dùng, chưa có thì hiện một chữ. */
 function HuyHieu({ id }: { id: string }) {
@@ -26,16 +38,40 @@ export function TuiDan({ kho, doiKho, onDong, trangDau = 'don' }: { kho: Kho; do
   const tongDanhVong = TONG_MON.reduce((s, t) => s + (kho.danhVong[t.id] ?? 0), 0);
 
   const chuyen = dsChuyen(kho);
-  const dong: { khoa: string; id: string; ten: string; loai: Loai; co: number; gia: number }[] = [];
+  // ---- túi thông minh: lọc theo loại / phẩm, sắp xếp, và đánh dấu viên nên giữ ----
+  const [loc, datLoc] = useState<'tat-ca' | 'uong' | 'dot-pha' | 'chuyen'>('tat-ca');
+  const [locPham, datLocPham] = useState<-1 | 0 | 1 | 2 | 3>(-1);
+  const [xep, datXep] = useState<'gia' | 'so' | 'bac'>('gia');
+  /** Viên này đang có tông môn đặt (đúng loại, phẩm đạt yêu cầu). */
+  const choDon = (id: string, loai: Loai) => kho.donHang.ds.some((d) => d && d.phuongId === id && (loai === 'dv' ? 3 : loai) >= d.pham);
+  const dotPhaKe = danDotPha(kho)?.id;
+  const tatCa: DongTui[] = [];
   for (const p of DAN_PHUONG) {
-    // phẩm cao đứng trước
     const dv = kho.danVan[p.id] ?? 0;
-    if (dv > 0) dong.push({ khoa: `${p.id}|dv`, id: p.id, ten: p.ten, loai: 'dv', co: dv, gia: giaBan(p, 3, true, heSo) });
+    if (dv > 0) tatCa.push({ khoa: `${p.id}|dv`, id: p.id, ten: p.ten, loai: 'dv', co: dv, gia: giaBan(p, 3, true, heSo), choDon: choDon(p.id, 'dv'), dotPhaKe: p.id === dotPhaKe });
     for (const ph of [3, 2, 1, 0] as PhamThat[]) {
       const co = kho.tuiDan[p.id][ph];
-      if (co > 0) dong.push({ khoa: `${p.id}|${ph}`, id: p.id, ten: p.ten, loai: ph, co, gia: giaBan(p, ph, false, heSo) });
+      if (co > 0) tatCa.push({ khoa: `${p.id}|${ph}`, id: p.id, ten: p.ten, loai: ph, co, gia: giaBan(p, ph, false, heSo), choDon: choDon(p.id, ph), dotPhaKe: p.id === dotPhaKe });
     }
   }
+  for (const c of chuyen) {
+    tatCa.push({ khoa: c.khoa, id: c.phuongId, ten: timDanPhuong(c.phuongId).ten, loai: c.loai, co: c.co, gia: giaChuyen(kho, c.phuongId, c.loai, c.bac), bac: c.bac, choDon: false, dotPhaKe: false });
+  }
+  const hien = tatCa
+    .filter((d) => {
+      const p = timDanPhuong(d.id);
+      if (loc === 'uong' && (!p.uong || d.bac)) return false;
+      if (loc === 'dot-pha' && (!p.dotPha || d.bac)) return false;
+      if (loc === 'chuyen' && !d.bac) return false;
+      if (locPham >= 0 && (d.loai === 'dv' ? 3 : d.loai) !== locPham) return false;
+      return true;
+    })
+    .sort((a, b) =>
+      xep === 'so' ? b.co - a.co || b.gia - a.gia : xep === 'bac' ? bacSo(timDanPhuong(b.id)) - bacSo(timDanPhuong(a.id)) || b.gia - a.gia : b.gia * (b.bac ? 1 : b.co) - a.gia * (a.bac ? 1 : a.co),
+    );
+  /** Hạ phẩm "thừa": không có đơn cần, không phải đan đột phá kế tiếp. */
+  const haThua = tatCa.filter((d) => d.loai === 0 && !d.bac && !d.choDon && !d.dotPhaKe);
+  const giaHaThua = haThua.reduce((s, d) => s + d.gia * d.co, 0);
 
   return (
     <div className="lop-phu" onClick={onDong}>
@@ -46,7 +82,7 @@ export function TuiDan({ kho, doiKho, onDong, trangDau = 'don' }: { kho: Kho; do
             Đơn hàng tông môn
           </button>
           <button className={`the nho ${trang === 'ban-le' ? 'chon' : ''}`} onClick={() => datTrang('ban-le')}>
-            Bán lẻ ({dong.reduce((s, d) => s + d.co, 0) + chuyen.reduce((s, c) => s + c.co, 0)})
+            Bán lẻ ({tatCa.reduce((s, d) => s + d.co, 0)})
           </button>
         </div>
 
@@ -119,58 +155,81 @@ export function TuiDan({ kho, doiKho, onDong, trangDau = 'don' }: { kho: Kho; do
             <p className="chu-nho">
               Bán lẻ ở phường thị chỉ được {Math.round(LUAT.heSoBan * 100)}% giá trị. Đã luyện {kho.thongKe.soMe} mẻ, nổ lò {kho.thongKe.noLo} lần.
             </p>
-            {chuyen.map((c) => {
-              const gia = giaChuyen(kho, c.phuongId, c.loai, c.bac);
-              const moc = mocChuyen(c.bac);
-              return (
-                <div key={c.khoa} className={`dong-tui dong-ban dong-chuyen moc-${moc}`}>
-                  <img src={anhDan(c.phuongId)} alt="" />
-                  <div className="than-dong">
-                    <b>
-                      {timDanPhuong(c.phuongId).ten} · {c.bac} chuyển{moc ? ` · ${TEN_MOC[moc]}` : ''}
-                    </b>
-                    <div className="hang-pham">
-                      <span className={c.loai === 'dv' ? 'pham-dv' : `pham-${c.loai}`}>
-                        {c.loai === 'dv' ? 'Đan văn' : TEN_PHAM[c.loai]} ×{c.co}
-                      </span>
-                      <span>{gia}/viên</span>
-                    </div>
-                  </div>
-                  <button className="nut-nho nut-ban" onClick={() => doiKho((k) => banChuyen(k, c.khoa, 1))}>
-                    Bán {gia}
-                  </button>
-                </div>
-              );
-            })}
-            {dong.length === 0 && chuyen.length === 0 && <p className="chu-nho">Chưa có viên đan nào. Hãy khai lò luyện một mẻ.</p>}
-            {dong.map((d) => {
+            <div className="hang-chon loc-tui">
+              {(
+                [
+                  ['tat-ca', 'Tất cả'],
+                  ['uong', 'Đan uống'],
+                  ['dot-pha', 'Đột phá'],
+                  ['chuyen', 'Đã dưỡng'],
+                ] as const
+              ).map(([id, ten]) => (
+                <button key={id} className={`the nho ${loc === id ? 'chon' : ''}`} onClick={() => datLoc(id)}>
+                  {ten}
+                </button>
+              ))}
+            </div>
+            <div className="hang-chon loc-tui">
+              {([-1, 0, 1, 2, 3] as const).map((ph) => (
+                <button key={ph} className={`the nho ${locPham === ph ? 'chon' : ''} ${ph >= 0 ? `pham-${ph}` : ''}`} onClick={() => datLocPham(ph)}>
+                  {ph < 0 ? 'Mọi phẩm' : ph === 3 ? 'Cực / văn' : TEN_PHAM[ph as PhamThat].replace(' phẩm', '')}
+                </button>
+              ))}
+            </div>
+            <div className="hang-chon loc-tui xep-tui">
+              <small>Xếp theo</small>
+              {(
+                [
+                  ['gia', 'Giá'],
+                  ['so', 'Số lượng'],
+                  ['bac', 'Bậc'],
+                ] as const
+              ).map(([id, ten]) => (
+                <button key={id} className={`the nho ${xep === id ? 'chon' : ''}`} onClick={() => datXep(id)}>
+                  {ten}
+                </button>
+              ))}
+            </div>
+            {hien.length === 0 && <p className="chu-nho">{tatCa.length ? 'Không có viên nào khớp bộ lọc.' : 'Chưa có viên đan nào. Hãy khai lò luyện một mẻ.'}</p>}
+            {hien.map((d) => {
               const n = Math.min(d.co, Math.max(1, soBan[d.khoa] ?? 1));
               const dat = (x: number) => datSoBan((c) => ({ ...c, [d.khoa]: Math.min(d.co, Math.max(1, x)) }));
+              const moc = d.bac ? mocChuyen(d.bac) : 0;
               return (
-                <div key={d.khoa} className="dong-tui dong-ban">
+                <div key={d.khoa} className={`dong-tui dong-ban ${d.bac ? `dong-chuyen moc-${moc}` : ''}`}>
                   <img src={anhDan(d.id)} alt="" />
                   <div className="than-dong">
-                    <b>{d.ten}</b>
+                    <b>
+                      {d.ten}
+                      {d.bac ? ` · ${d.bac} chuyển${moc ? ` · ${TEN_MOC[moc]}` : ''}` : ''}
+                    </b>
                     <div className="hang-pham">
                       <span className={d.loai === 'dv' ? 'pham-dv' : `pham-${d.loai}`}>
                         {d.loai === 'dv' ? 'Đan văn' : TEN_PHAM[d.loai]} ×{d.co}
                       </span>
                       <span>{d.gia}/viên</span>
+                      {d.choDon && <span className="nhan-tui don">Cần cho đơn</span>}
+                      {d.dotPhaKe && <span className="nhan-tui dot-pha">Để đột phá</span>}
                     </div>
                   </div>
-                  <span className="chinh-so">
-                    <button className="nut-nho" disabled={n <= 1} onClick={() => dat(n - 1)} aria-label="Bớt">
-                      −
-                    </button>
-                    <button className="so" onClick={() => dat(n >= d.co ? 1 : d.co)} title="Chạm để chọn tất cả">
-                      {n}
-                    </button>
-                    <button className="nut-nho" disabled={n >= d.co} onClick={() => dat(n + 1)} aria-label="Thêm">
-                      +
-                    </button>
-                  </span>
-                  <button className="nut-nho nut-ban" onClick={() => doiKho((k) => banLe(k, d.id, d.loai, n))}>
-                    Bán {d.gia * n}
+                  {!d.bac && (
+                    <span className="chinh-so">
+                      <button className="nut-nho" disabled={n <= 1} onClick={() => dat(n - 1)} aria-label="Bớt">
+                        −
+                      </button>
+                      <button className="so" onClick={() => dat(n >= d.co ? 1 : d.co)} title="Chạm để chọn tất cả">
+                        {n}
+                      </button>
+                      <button className="nut-nho" disabled={n >= d.co} onClick={() => dat(n + 1)} aria-label="Thêm">
+                        +
+                      </button>
+                    </span>
+                  )}
+                  <button
+                    className="nut-nho nut-ban"
+                    onClick={() => doiKho((k) => (d.bac ? banChuyen(k, d.khoa, 1) : banLe(k, d.id, d.loai, n)))}
+                  >
+                    Bán {d.bac ? d.gia : d.gia * n}
                   </button>
                 </div>
               );
@@ -179,6 +238,17 @@ export function TuiDan({ kho, doiKho, onDong, trangDau = 'don' }: { kho: Kho; do
         )}
 
         <div className="hang-nut">
+          {trang === 'ban-le' && giaHaThua > 0 && (
+            <button
+              className="nut-nho"
+              onClick={() => {
+                if (confirm(`Bán ${haThua.reduce((s, d) => s + d.co, 0)} viên hạ phẩm thừa lấy ${giaHaThua} linh thạch? (Giữ lại viên cần cho đơn và đan đột phá kế tiếp.)`))
+                  doiKho((k) => haThua.reduce((kk, d) => banLe(kk, d.id, d.loai, d.co), k));
+              }}
+            >
+              Bán hạ phẩm thừa ({giaHaThua})
+            </button>
+          )}
           {trang === 'ban-le' && tongGiaTri > 0 && (
             <button
               className="nut-nho nguy-hiem"

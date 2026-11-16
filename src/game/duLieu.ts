@@ -414,6 +414,9 @@ export const LUAT = {
   heSoTuViPhamNhan: 0.5,
   /** Từ Trúc Cơ trở lên, mỗi cảnh giới cần gấp bấy nhiêu lần tu vi của cảnh giới trước. */
   heSoTuViMoiCanhGioi: 1.5,
+  /** Từ cảnh giới tuViCaoCapTu (Kim Đan) trở lên, tu vi cần nhân thêm heSoTuViCaoCap — ba cảnh giới đầu giữ nhịp nhanh cho người mới. */
+  heSoTuViCaoCap: 2.5,
+  tuViCaoCapTu: 3,
 
   /**
    * Đột phá: tỉ lệ thành công theo phẩm viên đan [hạ, trung, thượng, cực]; đan văn chắc chắn thành.
@@ -422,10 +425,10 @@ export const LUAT = {
   dotPha: { tiLe: [0.5, 0.7, 0.85, 0.95], khiVan: 0.002, matTuVi: 0.3, congToiDa: 0.3 },
   /**
    * Đan độc: mỗi viên uống vào cộng moiVien[phẩm] điểm độc ([hạ, trung, thượng, cực, đan văn]) — phẩm càng cao càng ít độc
-   * nhưng không bao giờ hết hẳn. Thanh độc đầy ở `day`; viên nào làm vượt mức đó thì không uống được.
+   * nhưng không bao giờ hết hẳn. Vượt `day` vẫn uống được nhưng TRÚNG ĐỘC: mỗi điểm quá ngưỡng làm mọi chỉ số giảm giamMoiDiem (không dưới heSoToiThieu), độc tan thì hồi.
    * Độc tự tan giayMoiDiem giây một điểm theo đồng hồ thật, kể cả lúc tắt game.
    */
-  doc: { day: 100, moiVien: [12, 8, 4, 2, 1], giayMoiDiem: 30 },
+  doc: { day: 100, moiVien: [12, 8, 4, 2, 1], giayMoiDiem: 30, giamMoiDiem: 0.006, heSoToiThieu: 0.4 },
   /**
    * Chỉ số nhân vật. Phần gốc = goc × moiCanhGioi^cảnh giới × (1 + moiTang × (tầng − 1)), nhân hệ số bẩm sinh;
    * Khí huyết nhân thêm heSoMau. Đan cộng thêm một ít: mỗi viên cho lượng ghi ở đan phương × heSoPham[phẩm],
@@ -433,8 +436,13 @@ export const LUAT = {
    * Máu tự hồi hoiMau phần của máu tối đa mỗi giây (đồng hồ thật).
    */
   chiSo: { goc: 10, moiCanhGioi: 1.5, moiTang: 0.04, heSoMau: 10, heSoPham: [1, 1.5, 2.5, 4, 6], khangDuoc: 20, hoiMau: 0.002 },
-  /** Lợi thế luyện đan theo cảnh giới (thần thức mạnh dần): mỗi cảnh giới trên Luyện Khí cộng bấy nhiêu. */
-  canhGioi: { pham: 0.26, rongVung: 0.4 },
+  /**
+   * Lợi thế luyện đan theo cảnh giới (thần thức mạnh dần): mỗi cảnh giới trên Luyện Khí cộng `pham` vào phẩm, tới bacDayDu bậc
+   * (tức tới Kim Đan); trên đó mỗi cảnh giới chỉ cộng phamSau — kẻo cảnh giới cao ra thượng phẩm / đan văn quá dễ.
+   * Đan kiếp cũng mạnh dần: từ cảnh giới kiepTu trở lên, mỗi cảnh giới trừ kiepMoiCanhGioi vào cơ hội vượt kiếp (không dưới kiepToiThieu).
+   * Đã mô phỏng 2026-11-17: Đại Thừa tay giỏi, thuốc 1000 năm, lò Cửu Long, tôi tới +4 — thượng 57% -> 25%, đan văn 9,4% -> 1%.
+   */
+  canhGioi: { pham: 0.26, rongVung: 0.4, bacDayDu: 2, phamSau: 0.12, kiepTu: 3, kiepMoiCanhGioi: 0.04, kiepToiThieu: 0.15 },
 
   /**
    * Vườn dược: gieo một hạt giống, sau giay[0] giây thành thuốc 10 năm, giay[1] thành 100 năm, giay[2] thành 1000 năm
@@ -530,6 +538,8 @@ export const LUAT = {
      * (cùng nhịp tăng giá đan), mỗi lượt sau trong ngày đắt gấp `nhan`.
      */
     lamMoi: { luotMoiNgay: 5, gia: 150, nhan: 1.6, theoCanhGioi: 1.8 },
+    /** Mọi món mua ở phường thị (thuốc, hạt, đan, phụ liệu, lò) nhân thêm hệ số này. */
+    heSoGia: 1.3,
     /**
      * Đan bày bán: chỉ đan thường (không phải đan đột phá) cùng bậc với cảnh giới người chơi, cao nhất tới phẩm phamCao.
      * tiLe[phẩm] là cơ hội có hàng, soLuong[phẩm] là khoảng số viên; giá bằng giá trị gốc của viên đan nhân một số trong khoảng heSoGia.

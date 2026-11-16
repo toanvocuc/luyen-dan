@@ -11,8 +11,13 @@ export interface ThuongDan {
   dan?: { id: string; pham: PhamThat; so: number };
 }
 
+/** Chỗ để làm nhiệm vụ: chạm vào nhiệm vụ là đi thẳng tới đó. */
+export type NoiLam = 'lo-dan' | 'vuon' | 'phuong-thi' | 'ban-do' | 'tui-do' | 'don' | 'duong' | 'dong-phu';
+
 export interface NhiemVu {
   id: string;
+  /** Chạm vào nhiệm vụ thì mở chỗ này. */
+  den: NoiLam;
   ten: string;
   /** Chỉ chỗ: bấm vào đâu, làm gì. */
   goiY: string;
@@ -30,6 +35,7 @@ const coThuongPham = (k: Kho) =>
 export const NHIEM_VU: readonly NhiemVu[] = [
   {
     id: 'luyen-dau',
+    den: 'lo-dan',
     ten: 'Luyện mẻ đan đầu tiên',
     goiY: 'Bấm Đan phòng ở thanh dưới, chọn Dẫn Khí Đan rồi nhóm lửa. Giữ kim lửa nằm trong vùng hỏa hầu, tới lúc tôi đan thì bấm đúng nhịp.',
     dat: (k) => k.thongKe.soMe >= 1,
@@ -37,6 +43,7 @@ export const NHIEM_VU: readonly NhiemVu[] = [
   },
   {
     id: 'mua-hat',
+    den: 'phuong-thi',
     ten: 'Mua hạt giống ở phường thị',
     goiY: 'Bấm Phường thị ở thanh dưới, mua một hạt giống Linh Thảo.',
     dat: (k) => tong(k.hatGiong) > 0 || soCay(k) > 0,
@@ -44,6 +51,7 @@ export const NHIEM_VU: readonly NhiemVu[] = [
   },
   {
     id: 'gieo',
+    den: 'vuon',
     ten: 'Gieo hạt ở vườn dược',
     goiY: 'Bấm Vườn dược ở thanh dưới, chạm vào một ô đất trống rồi chọn hạt để gieo. Cây vẫn lớn khi ngươi tắt game.',
     dat: (k) => soCay(k) > 0,
@@ -51,6 +59,7 @@ export const NHIEM_VU: readonly NhiemVu[] = [
   },
   {
     id: 'dot-pha-1',
+    den: 'dong-phu',
     ten: 'Đột phá lên Luyện Khí',
     goiY: 'Ngồi ở động phủ cho tu vi đầy hết 3 tầng Phàm Nhân, rồi bấm Đột phá và dùng Dẫn Khí Đan. Phẩm đan càng cao càng dễ thành.',
     dat: (k) => k.tuVi.canhGioi >= 1,
@@ -58,6 +67,7 @@ export const NHIEM_VU: readonly NhiemVu[] = [
   },
   {
     id: 'tu-khi',
+    den: 'lo-dan',
     ten: 'Luyện thành Tụ Khí Đan',
     goiY: 'Lên Luyện Khí thì đan phòng mở thêm đan phương mới. Chọn Tụ Khí Đan và luyện một mẻ.',
     dat: (k) => (k.thongThao['tu-khi-dan'] ?? 0) >= 1,
@@ -65,6 +75,7 @@ export const NHIEM_VU: readonly NhiemVu[] = [
   },
   {
     id: 'uong',
+    den: 'tui-do',
     ten: 'Uống một viên đan',
     goiY: 'Bấm Túi đồ ở mép phải động phủ, uống một viên Tụ Khí Đan để tu luyện nhanh hơn một lúc. Uống nhiều quá thì đan độc tích lại, phải đợi tan.',
     dat: (k) => tong(k.daUong) > 0,
@@ -72,6 +83,7 @@ export const NHIEM_VU: readonly NhiemVu[] = [
   },
   {
     id: 'thu-hoach',
+    den: 'vuon',
     ten: 'Thu hoạch dược liệu',
     goiY: 'Vào Vườn dược, chạm vào cây đã chín để hái. Cây để càng lâu thì tuổi thuốc càng cao, luyện ra đan càng tốt.',
     xet: (truoc, sau) => soCay(sau) < soCay(truoc) && tongLieu(sau) > tongLieu(truoc),
@@ -79,6 +91,7 @@ export const NHIEM_VU: readonly NhiemVu[] = [
   },
   {
     id: 'don',
+    den: 'don',
     ten: 'Giao một đơn tông môn',
     goiY: 'Bấm Đơn hàng ở mép phải. Các tông môn đặt mua đan; giao đủ số viên thì được linh thạch và danh vọng.',
     dat: (k) => tong(k.danhVong) > 0,
@@ -86,6 +99,7 @@ export const NHIEM_VU: readonly NhiemVu[] = [
   },
   {
     id: 'du-ngoan',
+    den: 'ban-do',
     ten: 'Du ngoạn Thanh Vân sơn',
     goiY: 'Bấm Du ngoạn ở thanh dưới, rồi chạm một điểm kề bên để đi tới. Mỗi bước tốn thể lực, thể lực tự hồi theo thời gian.',
     dat: (k) => k.banDo.daDen.length > 1,
@@ -93,6 +107,7 @@ export const NHIEM_VU: readonly NhiemVu[] = [
   },
   {
     id: 'ky-ngo',
+    den: 'ban-do',
     ten: 'Vượt qua một kỳ ngộ',
     goiY: 'Tới điểm có dấu ? trên bản đồ. Mỗi lựa chọn ghi rõ tỉ lệ thành; tỉ lệ thấp thì chọn phương án Chắc chắn hoặc rút lui. Máu dưới một nửa thì về động phủ dưỡng thương, máu về 0 là mất hồn.',
     dat: (k) => Object.keys(k.banDo.xong).length > 0,
@@ -100,6 +115,7 @@ export const NHIEM_VU: readonly NhiemVu[] = [
   },
   {
     id: 'npc',
+    den: 'ban-do',
     ten: 'Làm quen một vị tu sĩ',
     goiY: 'Gặp Hạc Ông ở Đình Vọng Hồ hoặc Lâm Thanh Tuyết ở Thanh Vân Tông. Trò chuyện hay tặng đan đều tăng hảo cảm.',
     dat: (k) => (k.npc['lao-gia']?.haoCam ?? 0) > 0 || (k.npc['nu-tu']?.haoCam ?? 0) > 0,
@@ -107,6 +123,7 @@ export const NHIEM_VU: readonly NhiemVu[] = [
   },
   {
     id: 'thuong-pham',
+    den: 'lo-dan',
     ten: 'Luyện được một viên thượng phẩm',
     goiY: 'Giữ lửa trong vùng hỏa hầu thật lâu và tôi đan trúng tâm. Dược liệu tuổi cao và lò tốt cũng giúp ra phẩm cao.',
     dat: coThuongPham,
@@ -114,6 +131,7 @@ export const NHIEM_VU: readonly NhiemVu[] = [
   },
   {
     id: 'duong',
+    den: 'duong',
     ten: 'Dưỡng đan một lần',
     goiY: 'Ở đan phòng bấm Dưỡng đan ở mép phải, đặt viên thượng phẩm vào để nâng chuyển. Đan càng nhiều chuyển, uống vào càng mạnh.',
     dat: (k) => k.duong !== null || Object.keys(k.danChuyen).length > 0,
@@ -121,6 +139,7 @@ export const NHIEM_VU: readonly NhiemVu[] = [
   },
   {
     id: 'truc-co',
+    den: 'lo-dan',
     ten: 'Đột phá lên Trúc Cơ',
     goiY: 'Tu luyện viên mãn Luyện Khí, luyện Trúc Cơ Đan rồi đột phá. Phẩm đan càng cao, tỉ lệ thành càng lớn.',
     dat: (k) => k.tuVi.canhGioi >= 2,

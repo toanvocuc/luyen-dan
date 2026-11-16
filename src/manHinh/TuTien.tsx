@@ -2,14 +2,14 @@
 import { useState } from 'react';
 import { phat } from '../amThanh.ts';
 import { CANH_GIOI, CHI_SO, DAN_PHUONG, DUOC_LIEU, LUAT, PHU_LIEU, TEN_MOC, TEN_PHAM, TEN_TUOI_NGAN, anhDan, anhDuocLieu, mocChuyen, timDanPhuong, type PhamThat } from '../game/duLieu.ts';
-import { chiSo, chiSoDan, danDotPha, docHienTai, dotPha, dsChuyen, duocLucChuyen, mauHienTai, mauToiDa, soTang, tiLeDotPha, tocDoTuVi, tuViCan, uongChuyen, uongDan, vienMan, xemUong, xemUongChuyen, type Kho } from '../game/kho.ts';
+import { chiSo, chiSoDan, heSoTrungDoc, danDotPha, docHienTai, dotPha, dsChuyen, duocLucChuyen, mauHienTai, mauToiDa, soTang, tiLeDotPha, tocDoTuVi, tuViCan, uongChuyen, uongDan, vienMan, xemUong, xemUongChuyen, type Kho } from '../game/kho.ts';
 import type { NhanVat } from '../game/nhanVat.ts';
 import { dongHo, useBayGio } from './PhuongThi.tsx';
 import { BupBe } from './BupBe.tsx';
 import { dongThienMenh } from './ThienMenh.tsx';
 import { giayKhoaMatHon, giayYeuMatHon } from '../game/kyNgo.ts';
 import { NutAnh } from './DieuHuong.tsx';
-import { NHIEM_VU, chuThuong, nhanThuongDan, nhiemVuNay } from '../game/danDuong.ts';
+import { NHIEM_VU, chuThuong, nhanThuongDan, nhiemVuNay, type NoiLam } from '../game/danDuong.ts';
 
 type Bang = null | 'hanh-trang' | 'thien-menh' | 'dot-pha' | 'chi-so';
 
@@ -18,6 +18,7 @@ export function TuTien({
   nhanVat,
   doiKho,
   donDu,
+  onDiToi,
   onDanThu,
   onLuyenDan,
   onMonPhai,
@@ -31,6 +32,8 @@ export function TuTien({
   donDu: number;
   /** Mở sổ tay đan dược. */
   onDanThu: () => void;
+  /** Đi tới chỗ làm nhiệm vụ (màn khác hoặc bảng của màn cha). */
+  onDiToi: (noi: NoiLam) => void;
   onLuyenDan: () => void;
   /** Mở bảng đơn hàng của các tông môn. */
   onMonPhai: () => void;
@@ -62,8 +65,15 @@ export function TuTien({
   const docNay = docHienTai(kho, luc);
   const yeuMatHon = giayYeuMatHon(kho, luc);
   const nhiemVu = nhiemVuNay(kho);
-  /** Gợi ý của nhiệm vụ đang mở hay thu gọn. */
-  const [moGoiY, datMoGoiY] = useState(true);
+  /** Thẻ nhiệm vụ đang mở hay thu gọn thành cuộn thư (mặc định thu gọn để không che màn). */
+  const [moNhiemVu, datMoNhiemVu] = useState(false);
+  const diToi = (noi: NoiLam) => {
+    datMoNhiemVu(false);
+    if (noi === 'tui-do') datBang('hanh-trang');
+    else if (noi === 'dong-phu') {
+      if (day && danCan) datBang('dot-pha');
+    } else onDiToi(noi);
+  };
   /** Số viên muốn uống của từng dòng trong hành trang (khoá = id đan | phẩm); chưa chỉnh thì là 1. */
   const [soUong, datSoUong] = useState<Record<string, number>>({});
   // mỗi loại đan ở mỗi phẩm là một dòng, phẩm cao đứng trước
@@ -109,27 +119,38 @@ export function TuTien({
       </div>
 
       {nhiemVu && (
+        <div className="cot-nut trai nut-nhiem-vu">
+          <NutAnh anh="nhiem-vu" ten="Nhiệm vụ" chu="卷" dang={moNhiemVu} cham={kho.danDuong.xong} onClick={() => datMoNhiemVu((x) => !x)} />
+        </div>
+      )}
+      {nhiemVu && moNhiemVu && (
         <section className={`the-nhiem-vu ${kho.danDuong.xong ? 'xong' : ''}`}>
-          <button className="dau-nhiem-vu" onClick={() => datMoGoiY((x) => !x)} aria-expanded={moGoiY}>
+          <button className="dong-nhiem-vu" onClick={() => datMoNhiemVu(false)} aria-label="Thu gọn">
+            ×
+          </button>
+          <button className="dau-nhiem-vu" onClick={() => !kho.danDuong.xong && diToi(nhiemVu.den)}>
             <small>
               Dẫn đường {kho.danDuong.buoc + 1}/{NHIEM_VU.length}
             </small>
             <b>{nhiemVu.ten}</b>
-            <i>{kho.danDuong.xong ? '✓' : moGoiY ? '▴' : '▾'}</i>
+            {!kho.danDuong.xong && <span className="goi-y-nhiem-vu">{nhiemVu.goiY}</span>}
           </button>
           {kho.danDuong.xong ? (
             <button
               className="nut-nho nut-nhan-thuong"
               onClick={() => {
                 phat('linh-thach');
-                datMoGoiY(true);
                 doiKho(nhanThuongDan);
               }}
             >
               Nhận: {chuThuong(nhiemVu.thuong)}
             </button>
           ) : (
-            moGoiY && <p className="goi-y-nhiem-vu">{nhiemVu.goiY}</p>
+            nhiemVu.den !== 'dong-phu' && (
+              <button className="nut-nho nut-di-toi" onClick={() => diToi(nhiemVu.den)}>
+                Đi làm ›
+              </button>
+            )
           )}
         </section>
       )}
@@ -159,6 +180,11 @@ export function TuTien({
               {Math.round(docNay)}/{LUAT.doc.day}
             </b>
           </div>
+        )}
+        {heSoTrungDoc(docNay) < 1 && (
+          <p className="chu-nho bao-mat-hon">
+            Trúng độc: mọi chỉ số chỉ còn {Math.round(heSoTrungDoc(docNay) * 100)}%. Độc tự tan {Math.round(3600 / LUAT.doc.giayMoiDiem)} điểm mỗi giờ.
+          </p>
         )}
         {yeuMatHon > 0 && (
           <p className="chu-nho bao-mat-hon">
@@ -339,7 +365,7 @@ export function TuTien({
 
             <h3>Đan dược</h3>
             <p className="chu-nho trai">
-              Đan độc {Math.round(docNay)}/{LUAT.doc.day} — tự tan {Math.round(3600 / LUAT.doc.giayMoiDiem)} điểm mỗi giờ. Đan phẩm càng cao càng ít độc.
+              Đan độc {Math.round(docNay)}/{LUAT.doc.day} — tự tan {Math.round(3600 / LUAT.doc.giayMoiDiem)} điểm mỗi giờ. Đan phẩm càng cao càng ít độc. Vượt {LUAT.doc.day} vẫn uống được nhưng sẽ trúng độc, mọi chỉ số giảm cho tới khi độc tan.
             </p>
             {dongDan.length === 0 && danDaDuong.length === 0 && <p className="chu-nho trai">Chưa có viên đan nào.</p>}
             {danDaDuong.map((c) => {

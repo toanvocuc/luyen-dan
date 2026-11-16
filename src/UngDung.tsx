@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { datNhac, phat } from './amThanh.ts';
 import { DAN_PHUONG, anhNen } from './game/duLieu.ts';
-import { danhDauXong, nhiemVuNay, vuaXong } from './game/danDuong.ts';
-import { vaoBanDo } from './game/kyNgo.ts';
+import { danhDauXong, nhiemVuNay, vuaXong, type NoiLam } from './game/danDuong.ts';
+import { lyDoKhongDi, vaoBanDo } from './game/kyNgo.ts';
 import { taiCot, taiNgam } from './taiTruoc.ts';
 import { dsChuyen, khoMoi, lamMoiDon, luuKho, napKho, soVienHopDon, tuLuyen, type Kho } from './game/kho.ts';
 import { BanDo } from './manHinh/BanDo.tsx';
@@ -27,6 +27,8 @@ export function UngDung() {
   const [man, datMan] = useState<Man>('mo-dau');
   const [bang, datBang] = useState<Bang>(null);
   const [dangLuyen, datDangLuyen] = useState(false);
+  /** Đan phương chọn sẵn khi mở đan phòng từ Đan thư. */
+  const [chonSan, datChonSan] = useState<{ id: string; luot: number } | null>(null);
 
   useEffect(() => luuKho(kho), [kho]);
 
@@ -139,7 +141,33 @@ export function UngDung() {
     />
   );
   const phuongThi = bang === 'phuong-thi' && <PhuongThi kho={kho} doiKho={doiKho} onDong={() => datBang(null)} />;
-  const danThu = bang === 'dan-thu' && <DanThu kho={kho} onDong={() => datBang(null)} />;
+  // Đan thư: "Luyện đan này" -> sang đan phòng với đúng đan phương đó
+  const danThu = bang === 'dan-thu' && (
+    <DanThu
+      kho={kho}
+      onDong={() => datBang(null)}
+      onLuyen={(id) => {
+        datBang(null);
+        datChonSan((c) => ({ id, luot: (c?.luot ?? 0) + 1 }));
+        datMan('lo-dan');
+      }}
+    />
+  );
+  /** Chạm nhiệm vụ: mở đúng chỗ cần làm. */
+  const diToi = (noi: NoiLam) => {
+    if (noi === 'phuong-thi') return datBang('phuong-thi');
+    if (noi === 'don') return datBang('tui');
+    if (noi === 'ban-do') {
+      if (lyDoKhongDi(kho)) return;
+      datKho((k) => vaoBanDo(k));
+      return datMan('ban-do');
+    }
+    if (noi === 'duong') {
+      datMan('lo-dan');
+      return datBang('duong');
+    }
+    if (noi === 'lo-dan' || noi === 'vuon') datMan(noi);
+  };
   // chỉ tay lần đầu: phủ lên mọi màn chính
   const chiTay = <ChiTay daXem={kho.daChiTay} bat={!!kho.nhanVat} onXem={(ids) => datKho((k) => ({ ...k, daChiTay: [...new Set([...k.daChiTay, ...ids])] }))} />;
 
@@ -152,6 +180,7 @@ export function UngDung() {
           doiKho={doiKho}
           donDu={donDu}
           onDanThu={() => datBang('dan-thu')}
+          onDiToi={diToi}
           onLuyenDan={() => datMan('lo-dan')}
           onMonPhai={() => datBang('tui')}
           onCaiDat={() => datBang('sao-luu')}
@@ -214,7 +243,7 @@ export function UngDung() {
         </div>
       )}
 
-      {oVuon ? <VuonDuoc kho={kho} doiKho={doiKho} /> : <LoDan kho={kho} doiKho={doiKho} onDangLuyen={datDangLuyen} />}
+      {oVuon ? <VuonDuoc kho={kho} doiKho={doiKho} /> : <LoDan kho={kho} doiKho={doiKho} onDangLuyen={datDangLuyen} chonSan={chonSan} />}
 
       {thanhDay}
       {bang === 'tui' && <TuiDan kho={kho} doiKho={doiKho} onDong={() => datBang(null)} trangDau="ban-le" />}

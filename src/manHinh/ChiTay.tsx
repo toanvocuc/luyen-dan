@@ -46,7 +46,7 @@ export const LUOT_CHI_TAY: readonly LuotChiTay[] = [
     buoc: [
       {
         chon: '.lop-phu .dong-uong',
-        chu: 'Uống đan để tu luyện nhanh hơn hoặc tăng chỉ số. Mỗi viên thêm chút đan độc; độc đầy thì phải đợi tan mới uống tiếp. Đan phẩm cao ít độc hơn.',
+        chu: 'Uống đan để tu luyện nhanh hơn hoặc tăng chỉ số. Mỗi viên thêm chút đan độc; độc vượt 100 thì trúng độc, mọi chỉ số giảm cho tới khi độc tan. Đan phẩm cao ít độc hơn.',
       },
     ],
   },
@@ -74,7 +74,7 @@ export const LUOT_CHI_TAY: readonly LuotChiTay[] = [
     nen: true,
     cho: '.tu-tien .dau-tu-tien',
     buoc: [
-      { chon: '.the-nhiem-vu', chu: 'Đây là nhiệm vụ dẫn đường. Làm lần lượt từng việc, xong việc nào thì quay lại đây nhận thưởng. Chạm vào tiêu đề để ẩn hoặc hiện cách làm.' },
+      { chon: '.tu-tien .nut-nhiem-vu', chu: 'Cuộn thư nhiệm vụ dẫn đường. Chạm để xem việc cần làm; chạm vào nhiệm vụ là đi thẳng tới chỗ làm. Chấm đỏ là đã xong, về đây nhận thưởng.' },
       {
         chon: '.bang.day.tu-vi',
         chu: 'Tu vi tự tăng mỗi giây, kể cả khi tắt game. Đầy thanh thì lên tầng; tới tầng cuối thì cần đan đột phá để bước lên cảnh giới mới.',

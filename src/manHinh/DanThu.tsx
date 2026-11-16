@@ -38,7 +38,7 @@ function chuLieu(p: DanPhuong): string {
   return p.tuoiToiThieu ? `${ds} (thuốc từ ${TEN_TUOI_NGAN[p.tuoiToiThieu]} trở lên)` : ds;
 }
 
-function TheDan({ kho, p }: { kho: Kho; p: DanPhuong }) {
+function TheDan({ kho, p, onLuyen }: { kho: Kho; p: DanPhuong; onLuyen?: (id: string) => void }) {
   const i = DAN_PHUONG.indexOf(p);
   const khoa = lyDoKhoaPhuong(kho, i);
   const da = kho.thongThao[p.id] ?? 0;
@@ -100,11 +100,16 @@ function TheDan({ kho, p }: { kho: Kho; p: DanPhuong }) {
       <p className="dong-dan">
         <em>Giá bán</em> hạ phẩm {giaBan(p, 0)} · thượng phẩm {giaBan(p, 2)} linh thạch
       </p>
+      {onLuyen && (
+        <button className="nut-nho nut-luyen-dan-thu" disabled={!!khoa} onClick={() => onLuyen(p.id)}>
+          {khoa ? khoa : 'Luyện đan này ›'}
+        </button>
+      )}
     </div>
   );
 }
 
-export function DanThu({ kho, onDong }: { kho: Kho; onDong: () => void }) {
+export function DanThu({ kho, onDong, onLuyen }: { kho: Kho; onDong: () => void; onLuyen?: (id: string) => void }) {
   const [loc, datLoc] = useState<'uong' | 'dot-pha'>('uong');
   const ds = DAN_PHUONG.filter((p) => (loc === 'uong' ? !!p.uong : !!p.dotPha));
   return (
@@ -121,7 +126,7 @@ export function DanThu({ kho, onDong }: { kho: Kho; onDong: () => void }) {
           </button>
         </div>
         {ds.map((p) => (
-          <TheDan key={p.id} kho={kho} p={p} />
+          <TheDan key={p.id} kho={kho} p={p} onLuyen={onLuyen} />
         ))}
         <div className="hang-nut">
           <button className="nut-nho" onClick={onDong}>

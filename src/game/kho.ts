@@ -317,8 +317,10 @@ export function nhanKetQua(k: Kho, phuongId: string, kq: KetQua): Kho {
 // ---------- phường thị ----------
 
 /** Giá mua một phần dược liệu, đã tính lợi thế của nhân vật (giới diện, xuất thân). */
-export const giaMua = (k: Kho, id: string, tuoi: Tuoi) => Math.max(1, Math.round(timDuocLieu(id).gia[tuoi] * loiThe(k.nhanVat).heSoMua));
-export const giaMuaPhuLieu = (k: Kho, id: string) => Math.max(1, Math.round((timPhuLieu(id)?.gia ?? 0) * loiThe(k.nhanVat).heSoMua));
+/** Hệ số giá mọi món mua ở phường thị: lợi thế mua của nhân vật × hệ số chung của chợ. */
+const heSoCho = (k: Kho) => loiThe(k.nhanVat).heSoMua * LUAT.cho.heSoGia;
+export const giaMua = (k: Kho, id: string, tuoi: Tuoi) => Math.max(1, Math.round(timDuocLieu(id).gia[tuoi] * heSoCho(k)));
+export const giaMuaPhuLieu = (k: Kho, id: string) => Math.max(1, Math.round((timPhuLieu(id)?.gia ?? 0) * heSoCho(k)));
 
 // Hàng của phường thị đổi theo kỳ (LUAT.cho.gioDoiHang giờ một lần). Hàng mỗi kỳ được quay từ số kỳ và tên nhân vật,
 // nên trong một kỳ nó không đổi dù nạp lại trang, và mỗi nhân vật gặp một chợ khác nhau.
@@ -432,7 +434,7 @@ export function giaMuaDan(k: Kho, id: string, pham: PhamThat, luc = Date.now()):
   const ky = kyCho(luc);
   const [a, b] = LUAT.cho.dan.heSoGia;
   const hs = a + ((bam(`${k.nhanVat?.ten ?? ''}|${ky}|${lanCho(k, ky)}|${id}|${pham}`) % 1000) / 1000) * (b - a);
-  return Math.max(1, Math.round(timDanPhuong(id).giaGoc * HE_SO_GIA[pham] * hs * loiThe(k.nhanVat).heSoMua));
+  return Math.max(1, Math.round(timDanPhuong(id).giaGoc * HE_SO_GIA[pham] * hs * heSoCho(k)));
 }
 export function muaDan(k: Kho, id: string, pham: PhamThat, luc = Date.now()): Kho {
   const gia = giaMuaDan(k, id, pham, luc);
@@ -452,7 +454,7 @@ export function muaDuocLieu(k: Kho, id: string, tuoi: Tuoi, luc = Date.now()): K
   return { ...k, linhThach: k.linhThach - gia, duocLieu: { ...k.duocLieu, [id]: c }, cho: ghiDaMua(k, khoa, luc) };
 }
 
-export const giaMuaHat = (k: Kho, id: string) => Math.max(1, Math.round(giaHatGiong(timDuocLieu(id), k.tuVi.canhGioi) * loiThe(k.nhanVat).heSoMua));
+export const giaMuaHat = (k: Kho, id: string) => Math.max(1, Math.round(giaHatGiong(timDuocLieu(id), k.tuVi.canhGioi) * heSoCho(k)));
 export function muaHatGiong(k: Kho, id: string, luc = Date.now()): Kho {
   const gia = giaMuaHat(k, id);
   const khoa = khoaHat(id);
@@ -757,10 +759,13 @@ export function tuChoiDon(k: Kho, viTri: number, luc = Date.now()): Kho {
 
 // ---------- lò đan ----------
 
+/** Giá mua một lò ở phường thị. */
+export const giaLo = (id: string) => Math.round(timLoDan(id).gia * LUAT.cho.heSoGia);
 export function muaLo(k: Kho, id: string): Kho {
   const lo = timLoDan(id);
-  if (lo.id !== id || k.loDan.co.includes(id) || k.linhThach < lo.gia) return k;
-  return { ...k, linhThach: k.linhThach - lo.gia, loDan: { dung: id, co: [...k.loDan.co, id] } };
+  const gia = giaLo(id);
+  if (lo.id !== id || k.loDan.co.includes(id) || k.linhThach < gia) return k;
+  return { ...k, linhThach: k.linhThach - gia, loDan: { dung: id, co: [...k.loDan.co, id] } };
 }
 export function dungLo(k: Kho, id: string): Kho {
   return k.loDan.co.includes(id) ? { ...k, loDan: { ...k.loDan, dung: id } } : k;
@@ -829,7 +834,8 @@ export function nhanTroCap(k: Kho): Kho {
 export const soTang = (canhGioi: number) => (canhGioi === 0 ? LUAT.soTangPhamNhan : LUAT.soTang);
 /** Điểm tu vi cần để vượt một tầng ở một cảnh giới. */
 export function tuViCan(tang: number, canhGioi: number): number {
-  const heSo = canhGioi === 0 ? LUAT.heSoTuViPhamNhan : LUAT.heSoTuViMoiCanhGioi ** Math.max(0, canhGioi - 1);
+  const heSo =
+    (canhGioi === 0 ? LUAT.heSoTuViPhamNhan : LUAT.heSoTuViMoiCanhGioi ** Math.max(0, canhGioi - 1)) * (canhGioi >= LUAT.tuViCaoCapTu ? LUAT.heSoTuViCaoCap : 1);
   return Math.round(tang * LUAT.tuViMoiTang * heSo);
 }
 /** Đã viên mãn tầng cuối chưa (phải dùng đan đột phá mới lên tiếp được). */
@@ -859,18 +865,26 @@ export function tuLuyen(k: Kho, giay: number): Kho {
 }
 
 /** Lợi thế luyện đan của người chơi: bẩm sinh (thiên mệnh), cộng phần do cảnh giới mang lại, cộng tính chất của lò đang dùng. */
+/** Phần phẩm cộng nhờ cảnh giới (bac = số cảnh giới trên Luyện Khí). */
+const phamTheoCanhGioi = (bac: number) => {
+  const c = LUAT.canhGioi;
+  return c.pham * Math.min(bac, c.bacDayDu) + c.phamSau * Math.max(0, bac - c.bacDayDu);
+};
 export function loiTheKho(k: Kho): LoiThe {
   const goc = loiThe(k.nhanVat);
   const bac = Math.max(0, k.tuVi.canhGioi - 1);
   const lo = timLoDan(k.loDan.dung);
   return {
     ...goc,
-    phamCong: goc.phamCong + bac * LUAT.canhGioi.pham + (lo.phamCong ?? 0),
+    phamCong: goc.phamCong + phamTheoCanhGioi(bac) + (lo.phamCong ?? 0),
     rongVung: goc.rongVung + bac * LUAT.canhGioi.rongVung + (lo.rongVung ?? 0),
     heSoAp: goc.heSoAp * (lo.heSoAp ?? 1),
     xanh: goc.xanh + (lo.xanh ?? 0),
     heSoQuet: goc.heSoQuet * (lo.heSoQuet ?? 1),
-    vuotKiep: Math.min(0.95, goc.vuotKiep + (lo.vuotKiep ?? 0)),
+    vuotKiep: Math.max(
+      Math.min(goc.vuotKiep, LUAT.canhGioi.kiepToiThieu),
+      Math.min(0.95, goc.vuotKiep + (lo.vuotKiep ?? 0) - LUAT.canhGioi.kiepMoiCanhGioi * Math.max(0, k.tuVi.canhGioi - LUAT.canhGioi.kiepTu)),
+    ),
     soVien: goc.soVien + (lo.soVien ?? 0),
   };
 }
@@ -902,7 +916,12 @@ export const chiSoDan = (k: Kho, cs: ChiSo) => (k.chiSoCong[cs] ?? 0) * (cs === 
 export const dangMatHon = (k: Kho, luc = Date.now()) => (k.matHon ?? 0) > 0 && !k.matHonNhe && luc - k.matHon < LUAT.kyNgo.matHon.yeuGiay * 1000;
 /** Giá trị một chỉ số (làm tròn xuống). Đang mất hồn thì chỉ còn LUAT.kyNgo.matHon.heSo phần. */
 export const chiSo = (k: Kho, cs: ChiSo, luc = Date.now()) =>
-  Math.floor((chiSoGoc(k, cs) + chiSoDan(k, cs)) * (dangMatHon(k, luc) ? LUAT.kyNgo.matHon.heSo : 1));
+  Math.floor((chiSoGoc(k, cs) + chiSoDan(k, cs)) * (dangMatHon(k, luc) ? LUAT.kyNgo.matHon.heSo : 1) * heSoTrungDoc(docHienTai(k, luc)));
+/** Đan độc quá ngưỡng thì mọi chỉ số chỉ còn bấy nhiêu phần (1 = chưa trúng độc). */
+export function heSoTrungDoc(doc: number): number {
+  const qua = doc - LUAT.doc.day;
+  return qua > 0 ? Math.max(LUAT.doc.heSoToiThieu, 1 - qua * LUAT.doc.giamMoiDiem) : 1;
+}
 
 /** Uống `soLuong` viên thì mỗi chỉ số được cộng bao nhiêu (đơn vị thô, chưa nhân heSoMau), đã tính nhờn thuốc. */
 function chiSoKhiUong(k: Kho, p: DanPhuong, loai: PhamThat | 'dv', soLuong: number): Partial<Record<ChiSo, number>> {
@@ -986,7 +1005,8 @@ export function xemUong(k: Kho, phuongId: string, loai: PhamThat | 'dv', soLuong
     .join(', ');
   if (chuChiSo) moTa += ` · ${chuChiSo}`;
   if (co < soLuong) lyDo = 'Không đủ viên';
-  else if (docSau > LUAT.doc.day + 0.0001) lyDo = 'Đan độc sẽ vượt ngưỡng chịu đựng';
+  // quá ngưỡng vẫn uống được, nhưng báo trước sẽ trúng độc
+  if (docSau > LUAT.doc.day + 0.0001) moTa += ` · Trúng độc: chỉ số còn ${Math.round(heSoTrungDoc(docSau) * 100)}%`;
   return { duoc: !lyDo, lyDo, docThem, docSau, moTa };
 }
 
@@ -1062,7 +1082,6 @@ export function xemUongChuyen(k: Kho, khoa: string, luc = Date.now()): XemUongCh
   const docNay = docHienTai(k, luc);
   if (!p?.uong) return { duoc: false, coTacDungChinh: false, lyDo: p?.dotPha ? 'Đan đột phá, dùng ở nút Đột phá' : 'Đan này không uống được', docThem: 0, docSau: docNay, moTa: '' };
   const goc = xemUong(themMotVien(k, phuongId, loai), phuongId, loai, 1, luc);
-  const quaDoc = goc.docSau > LUAT.doc.day + 0.0001;
   const hs = duocLucChuyen(loai, bac);
   const them = chiSoKhiUong(k, p, loai, 1);
   const phan: string[] = [];
@@ -1075,7 +1094,7 @@ export function xemUongChuyen(k: Kho, khoa: string, luc = Date.now()): XemUongCh
   if (goc.duoc) phan.push(goc.moTa.split(' · ')[0]);
   let lyDo: string | undefined;
   if ((k.danChuyen[khoa] ?? 0) < 1) lyDo = 'Không đủ viên';
-  else if (quaDoc) lyDo = 'Đan độc sẽ vượt ngưỡng chịu đựng';
+  if (goc.docSau > LUAT.doc.day + 0.0001) phan.push(`Trúng độc: chỉ số còn ${Math.round(heSoTrungDoc(goc.docSau) * 100)}%`);
   return { duoc: !lyDo, coTacDungChinh: goc.duoc, lyDo, docThem: goc.docThem, docSau: goc.docSau, moTa: phan.join(' · ') };
 }
 

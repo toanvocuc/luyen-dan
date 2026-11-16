@@ -23,6 +23,7 @@ import {
   muaDuocLieu,
   muaHatGiong,
   muaLo,
+  giaLo,
   muaPhuLieu,
   nhanTroCap,
   type Kho,
@@ -208,8 +209,8 @@ export function PhuongThi({ kho, doiKho, onDong }: { kho: Kho; doiKho: (ham: (k:
                     Dùng
                   </button>
                 ) : (
-                  <button className="nut-nho" disabled={kho.linhThach < lo.gia} onClick={() => doiKho((k) => muaLo(k, lo.id))}>
-                    {lo.gia}
+                  <button className="nut-nho" disabled={kho.linhThach < giaLo(lo.id)} onClick={() => doiKho((k) => muaLo(k, lo.id))}>
+                    {giaLo(lo.id)}
                   </button>
                 )}
               </div>

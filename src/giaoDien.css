@@ -3813,3 +3813,142 @@ button.bien-ten:active {
   font-size: 11px;
   font-weight: 700;
 }
+
+/* ================= lò sống động lúc luyện ================= */
+/* đang luyện: cả màn đan phòng nhận nhấn giữ, không cho cuộn / chọn chữ */
+.lo-dan.dang-luyen,
+.lo-dan.dang-luyen .bang.day {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+/* khống hỏa: lò lắc lư, lửa càng nóng lắc càng mạnh (dùng rotate/translate riêng để không đè transform định vị) */
+.canh.pha-lua .lo {
+  animation: lo-soi 0.24s ease-in-out infinite alternate;
+}
+.canh.pha-lua.bao-dong .lo {
+  animation: rung-nhe 0.18s linear infinite, lo-soi 0.12s ease-in-out infinite alternate;
+}
+@keyframes lo-soi {
+  from {
+    rotate: calc(var(--lua) * -1.8deg);
+    translate: calc(var(--lua) * -1.5px) 0;
+  }
+  to {
+    rotate: calc(var(--lua) * 1.8deg);
+    translate: calc(var(--lua) * 1.5px) calc(var(--lua) * -3px);
+  }
+}
+/* tôi đan: lò thở nhẹ; mỗi lần bấm thì giật hoặc nảy */
+.canh.pha-toi .lo {
+  animation: lo-tho 1.4s ease-in-out infinite;
+}
+.canh.pha-toi.lo-giat .lo {
+  animation: lo-giat 0.42s ease-out, lo-tho 1.4s ease-in-out infinite;
+}
+.canh.pha-toi.lo-nay .lo {
+  animation: lo-nay 0.42s ease-out, lo-tho 1.4s ease-in-out infinite;
+}
+@keyframes lo-tho {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -4px; }
+}
+@keyframes lo-giat {
+  0%, 100% { rotate: 0deg; scale: 1; }
+  15% { rotate: -4deg; scale: 1.02; }
+  35% { rotate: 3.5deg; }
+  55% { rotate: -2.5deg; }
+  75% { rotate: 1.5deg; }
+}
+@keyframes lo-nay {
+  0%, 100% { scale: 1; filter: drop-shadow(0 14px 14px rgba(0, 0, 0, 0.6)); }
+  30% { scale: 1.07; filter: brightness(1.35) drop-shadow(0 0 22px rgba(255, 226, 150, 0.9)); }
+}
+
+/* ---- cuộn thư nhiệm vụ (thu gọn mặc định) ---- */
+.tu-tien .cot-nut.trai {
+  left: 8px;
+  right: auto;
+  top: calc(max(10px, env(safe-area-inset-top)) + 92px);
+}
+.tu-tien .the-nhiem-vu {
+  position: absolute;
+  top: calc(max(10px, env(safe-area-inset-top)) + 92px);
+  left: 66px;
+  margin: 0;
+  width: min(62%, 300px);
+  max-width: none;
+  z-index: 7;
+  padding-right: 26px;
+}
+.dong-nhiem-vu {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #c9a96a;
+  font-size: 18px;
+  line-height: 1;
+}
+.dau-nhiem-vu .goi-y-nhiem-vu {
+  display: block;
+  grid-column: 1 / -1;
+  margin-top: 3px;
+}
+.nut-di-toi {
+  margin-top: 6px;
+  width: 100%;
+}
+.nut-luyen-dan-thu {
+  margin-top: 8px;
+  width: 100%;
+}
+
+/* ---- túi đan: lọc, xếp, nhãn ---- */
+.loc-tui {
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 4px 0;
+}
+.loc-tui .the.nho {
+  padding: 3px 8px;
+  font-size: 12px;
+}
+.xep-tui small {
+  align-self: center;
+  margin-right: 2px;
+  font-size: 11px;
+  color: var(--chu-mo);
+}
+.nhan-tui {
+  padding: 0 5px;
+  border-radius: 3px;
+  font-size: 10.5px;
+  line-height: 1.6;
+}
+.nhan-tui.don {
+  background: rgba(233, 196, 106, 0.18);
+  color: #f0c66a;
+}
+.nhan-tui.dot-pha {
+  background: rgba(120, 200, 255, 0.16);
+  color: #9fd4ff;
+}
+
+/* nút tròn: ảnh chưa tải xong thì ẩn hẳn (không lộ hình vỡ), hiện chữ thay thế trong khung vẽ tạm */
+.mat-nut img.an-anh {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+.mat-nut.chua-anh {
+  border: 1.5px solid var(--dong);
+  background: radial-gradient(circle at 50% 35%, #26383a, #0c1517 75%);
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.7), 0 3px 8px rgba(0, 0, 0, 0.6);
+  border-radius: 50%;
+}

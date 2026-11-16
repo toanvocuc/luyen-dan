@@ -33,10 +33,22 @@ export function NutAnh({
   onClick: () => void;
 }) {
   const [coAnh, datCoAnh] = useState(true);
+  // ảnh chưa tải xong (hoặc đang thử tải lại) thì hiện chữ thay thế, không bao giờ để lộ hình vỡ
+  const [daTai, datDaTai] = useState(false);
   return (
     <button className={`nut-tron ${dang ? 'dang' : ''}`} disabled={khoa} onClick={onClick} aria-current={dang ? 'page' : undefined}>
-      <span className="mat-nut">
-        {coAnh ? <img src={`./hinh/ui/nut-${anh}.webp`} alt="" draggable={false} onError={(e) => daHetLuotThu(e.currentTarget) && datCoAnh(false)} /> : <b>{chu}</b>}
+      <span className={`mat-nut ${coAnh && daTai ? '' : 'chua-anh'}`}>
+        {(!coAnh || !daTai) && <b>{chu}</b>}
+        {coAnh && (
+          <img
+            className={daTai ? '' : 'an-anh'}
+            src={`./hinh/ui/nut-${anh}.webp`}
+            alt=""
+            draggable={false}
+            onLoad={() => datDaTai(true)}
+            onError={(e) => daHetLuotThu(e.currentTarget) && datCoAnh(false)}
+          />
+        )}
         {so > 0 ? <i className="cham-so">{so > 9 ? '9+' : so}</i> : cham ? <i className="cham-so trong" /> : null}
       </span>
       <span className="ten-nut">{ten}</span>
@@ -45,8 +57,8 @@ export function NutAnh({
   );
 }
 
-/** Có cây trong vườn hái được chưa. */
-export const coCayChin = (k: Kho, luc = Date.now()) => k.vuon.o.some((o) => o && giaiDoan(o, luc) >= 1);
+/** Có cây nào đã lên 1000 năm (hết lớn, nên hái) chưa — chỉ lúc đó mới chấm đỏ, kẻo chấm đỏ suốt ngày. */
+export const coCayChin = (k: Kho, luc = Date.now()) => k.vuon.o.some((o) => o && giaiDoan(o, luc) >= 3);
 
 export function ThanhDieuHuong({ man, kho, onChon, onPhuongThi }: { man: ManChinh; kho: Kho; onChon: (m: ManChinh) => void; onPhuongThi: () => void }) {
   const khongDi = lyDoKhongDi(kho);
