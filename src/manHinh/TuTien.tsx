@@ -1,5 +1,6 @@
 // Động phủ: nhân vật ngồi tu luyện, tu vi tự tăng; từ đây mở hành trang, xem thiên mệnh, sang đan phòng.
 import { useState } from 'react';
+import { QUA, tacDungQua } from '../game/quaMoDau.ts';
 import { phat } from '../amThanh.ts';
 import { CANH_GIOI, CHI_SO, DAN_PHUONG, DUOC_LIEU, LUAT, PHU_LIEU, TEN_MOC, TEN_PHAM, TEN_TUOI_NGAN, anhDan, anhDuocLieu, mocChuyen, timDanPhuong, type PhamThat } from '../game/duLieu.ts';
 import { chiSo, chiSoDan, heSoTrungDoc, danDotPha, docHienTai, dotPha, dsChuyen, duocLucChuyen, mauHienTai, mauToiDa, soTang, tiLeDotPha, tocDoTuVi, tuViCan, uongChuyen, uongDan, vienMan, xemUong, xemUongChuyen, type Kho } from '../game/kho.ts';
@@ -362,6 +363,34 @@ export function TuTien({
           <div className="bang tam" onClick={(e) => e.stopPropagation()}>
             <h2>Hành trang</h2>
             <p className="chu-nho">{kho.linhThach} linh thạch</p>
+
+            {(kho.quaMoDau || kho.trung) && (
+              <>
+                <h3>Bảo vật</h3>
+                {kho.quaMoDau && kho.quaMoDau.loai !== 'linh-thu' && (
+                  <div className="dong-tui">
+                    <img src={`./hinh/mo-dau/${QUA[kho.quaMoDau.loai].anh}.webp`} alt="" />
+                    <div className="than-dong">
+                      <b>{QUA[kho.quaMoDau.loai].ten} (đã dung hợp)</b>
+                      <div className="hang-pham">
+                        <span>{tacDungQua(kho.quaMoDau.loai, kho.quaMoDau.nhe).join(' · ')}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {kho.trung && (
+                  <div className="dong-tui">
+                    <img src="./hinh/mo-dau/dan-linh-thu.webp" alt="" />
+                    <div className="than-dong">
+                      <b>Trứng Dực Quang Thần Thú</b>
+                      <div className="hang-pham">
+                        <span>Linh khí của trứng: tu luyện nhanh +{Math.round(LUAT.qua.trung.tocDo * 100)}%. Trứng sẽ nở khi thần thú giáng thế.</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
 
             <h3>Đan dược</h3>
             <p className="chu-nho trai">

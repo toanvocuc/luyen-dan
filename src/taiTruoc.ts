@@ -50,6 +50,7 @@ export function anhCot(k: Kho): string[] {
   return DANH_SACH_ANH.filter(
     (d) =>
       d.startsWith('hinh/ui/') ||
+      d.startsWith('hinh/mo-dau/') ||
       d.startsWith('hinh/hieu-ung/') ||
       d.startsWith('hinh/nen/') ||
       d.startsWith(thuMucNv) ||

@@ -14,7 +14,7 @@ import sys
 from collections import deque
 
 import numpy as np
-from PIL import Image, ImageFilter
+from PIL import Image, ImageDraw, ImageFilter
 
 GOC = os.path.join(os.path.dirname(__file__), '..', 'Hinh_anh')
 RA = os.path.join(os.path.dirname(__file__), '..', 'public', 'hinh')
@@ -309,6 +309,7 @@ def main():
                 print('ok am/' + ten)
 
     xu_ly_ky_ngo()
+    xu_ly_mo_dau()
     sys.exit(1 if loi else 0)
 
 
@@ -327,6 +328,47 @@ def noi_dai(im: Image.Image, ti_le: float) -> Image.Image:
         t = np.linspace(0, 1, chong, dtype=np.float32)[:, None, None]
         ra[cao - h:h] = a[h - chong:] * (1 - t) + a[:chong] * t
     return Image.fromarray(ra.round().clip(0, 255).astype(np.uint8), 'RGB')
+
+
+def va_dau_sao(im: Image.Image, tam: tuple[int, int], r: int, den: bool = False) -> Image.Image:
+    """Xoá dấu ✦ Gemini in ở góc: tô đen (nền đen) hoặc vá bằng mảng nền ngay bên trái, mép hoà mềm."""
+    im = im.convert('RGB').copy()
+    x, y = tam
+    hop = (x - r, y - r, x + r, y + r)
+    if den:
+        im.paste((0, 0, 0), hop)
+        return im
+    manh = im.crop((x - 3 * r, y - r, x - r, y + r))
+    mat = Image.new('L', manh.size, 0)
+    ImageDraw.Draw(mat).ellipse((2, 2, manh.width - 2, manh.height - 2), fill=255)
+    im.paste(manh, (x - r, y - r), mat.filter(ImageFilter.GaussianBlur(3)))
+    return im
+
+
+def xu_ly_mo_dau():
+    """Đoạn mở đầu + màn tiêu đề: Hinh_anh/mo-dau -> public/hinh/mo-dau (rồi chạy doi-webp.py).
+    canh-dan-lao, man-tieu-de: tranh giữ nền (vá dấu ✦); logo: nền đen (tô đen dấu ✦, game dùng mix-blend screen); dan-*: tách nền."""
+    vao = os.path.join(GOC, 'mo-dau')
+    if not os.path.isdir(vao):
+        return
+    ra = os.path.join(RA, 'mo-dau')
+    os.makedirs(ra, exist_ok=True)
+    dau = {'canh-dan-lao': ((482, 934), 22, False), 'man-tieu-de': ((487, 939), 18, False), 'logo': ((934, 482), 26, True)}
+    for ten in sorted(os.listdir(vao)):
+        goc_ten, duoi = os.path.splitext(ten)
+        if duoi.lower() != '.png':
+            continue
+        im = Image.open(os.path.join(vao, ten))
+        if goc_ten.startswith('dan-'):
+            im = thu_nho(cat_sat(tach_nen(im)), 384)
+            im.save(os.path.join(ra, ten), optimize=True)
+        else:
+            if goc_ten in dau:
+                tam, r, den = dau[goc_ten]
+                im = va_dau_sao(im, tam, r, den)
+            im = thu_nho(im.convert('RGB'), 1280)
+            im.save(os.path.join(ra, goc_ten + '.jpg'), quality=88)
+        print('ok mo-dau/' + ten, im.size)
 
 
 def xu_ly_ky_ngo():

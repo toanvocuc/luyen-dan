@@ -414,6 +414,15 @@ export const LUAT = {
   heSoTuViPhamNhan: 0.5,
   /** Từ Trúc Cơ trở lên, mỗi cảnh giới cần gấp bấy nhiêu lần tu vi của cảnh giới trước. */
   heSoTuViMoiCanhGioi: 1.5,
+  /**
+   * Quà của Đan Lão ở đoạn mở đầu (xem game/quaMoDau.ts). Bản "Nhe" dành cho người chơi đã có nhân vật từ trước.
+   * Đã mô phỏng 2026-11-17 (tay khá, tôi +4): luyenThan đầy đủ cho thu nhập mỗi mẻ ×1,66–1,69, bản nhẹ ×1,16–1,18.
+   */
+  qua: {
+    leThan: { chiSo: 2, chiSoNhe: 1.2, hoiMau: 2, khoaMatHonGiay: 1800 },
+    luyenThan: { pham: 0.3, rongVung: 2, ban: 1.2, phamNhe: 0.1, banNhe: 1.05 },
+    trung: { tocDo: 0.2 },
+  },
   /** Từ cảnh giới tuViCaoCapTu (Kim Đan) trở lên, tu vi cần nhân thêm heSoTuViCaoCap — ba cảnh giới đầu giữ nhịp nhanh cho người mới. */
   heSoTuViCaoCap: 2.5,
   tuViCaoCapTu: 3,

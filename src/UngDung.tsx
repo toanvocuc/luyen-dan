@@ -6,6 +6,8 @@ import { lyDoKhongDi, vaoBanDo } from './game/kyNgo.ts';
 import { taiCot, taiNgam } from './taiTruoc.ts';
 import { dsChuyen, khoMoi, lamMoiDon, luuKho, napKho, soVienHopDon, tuLuyen, type Kho } from './game/kho.ts';
 import { BanDo } from './manHinh/BanDo.tsx';
+import { KhoiDau } from './manHinh/KhoiDau.tsx';
+import { nhanQua, type LoaiQua } from './game/quaMoDau.ts';
 import { ChiTay } from './manHinh/ChiTay.tsx';
 import { NutAnh, ThanhDieuHuong, type ManChinh } from './manHinh/DieuHuong.tsx';
 import { DanThu } from './manHinh/DanThu.tsx';
@@ -19,7 +21,7 @@ import { TuTien } from './manHinh/TuTien.tsx';
 import { VuonDuoc } from './manHinh/VuonDuoc.tsx';
 
 /** Luồng màn hình: mở đầu -> (lần đầu) thiên mệnh -> động phủ tu tiên <-> đan phòng / vườn dược / bản đồ du ngoạn. */
-type Man = 'mo-dau' | 'thien-menh' | 'tu-tien' | 'lo-dan' | 'vuon' | 'ban-do';
+type Man = 'mo-dau' | 'khoi-dau' | 'thien-menh' | 'tu-tien' | 'lo-dan' | 'vuon' | 'ban-do';
 type Bang = null | 'tui' | 'don' | 'phuong-thi' | 'sao-luu' | 'duong' | 'dan-thu';
 
 export function UngDung() {
@@ -27,6 +29,8 @@ export function UngDung() {
   const [man, datMan] = useState<Man>('mo-dau');
   const [bang, datBang] = useState<Bang>(null);
   const [dangLuyen, datDangLuyen] = useState(false);
+  /** Quà người chơi mới chọn ở đoạn mở đầu, chờ tạo xong nhân vật ở màn thiên mệnh. */
+  const [quaCho, datQuaCho] = useState<LoaiQua | null>(null);
   /** Đan phương chọn sẵn khi mở đan phòng từ Đan thư. */
   const [chonSan, datChonSan] = useState<{ id: string; luot: number } | null>(null);
 
@@ -104,8 +108,28 @@ export function UngDung() {
   if (man === 'mo-dau') {
     return (
       <div className="ung-dung toi">
-        <ManMoDau daCoNhanVat={coNhanVat} tienDo={tienDo} onVao={() => datMan(coNhanVat ? 'tu-tien' : 'thien-menh')} onSaoLuu={() => datBang('sao-luu')} />
+        <ManMoDau daCoNhanVat={coNhanVat} tienDo={tienDo} onVao={() => datMan(!coNhanVat || !kho.quaMoDau ? 'khoi-dau' : 'tu-tien')} onSaoLuu={() => datBang('sao-luu')} />
         {bang === 'sao-luu' && <SaoLuu kho={kho} onNap={(k) => datKho(k)} onDong={() => datBang(null)} />}
+      </div>
+    );
+  }
+
+  // đoạn mở đầu: người chơi mới chọn quà rồi sang thiên mệnh; người chơi cũ chưa nhận quà thì nhận bản nhẹ rồi vào động phủ
+  if (man === 'khoi-dau') {
+    return (
+      <div className="ung-dung toi">
+        <KhoiDau
+          cu={coNhanVat}
+          onXong={(loai) => {
+            if (coNhanVat) {
+              datKho((k) => nhanQua(k, loai, true));
+              datMan('tu-tien');
+            } else {
+              datQuaCho(loai);
+              datMan('thien-menh');
+            }
+          }}
+        />
       </div>
     );
   }
@@ -115,7 +139,8 @@ export function UngDung() {
       <div className="ung-dung toi">
         <ManThienMenh
           onXong={(nv) => {
-            datKho(khoMoi(nv));
+            datKho(quaCho ? nhanQua(khoMoi(nv), quaCho, false) : khoMoi(nv));
+            datQuaCho(null);
             datMan('tu-tien');
           }}
         />

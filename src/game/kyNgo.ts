@@ -1,7 +1,7 @@
 // Du ngoạn và kỳ ngộ: bản đồ điểm nối đường, thể lực, sự kiện thử chỉ số, NPC. Thuần tính toán, không dính giao diện.
 // Số cân bằng nằm ở LUAT.kyNgo (duLieu.ts); dữ liệu bản đồ, sự kiện và NPC nằm ngay trong file này.
 import { CHI_SO, DAN_PHUONG, DUOC_LIEU, LUAT, TEN_PHAM, bacSo, timDanPhuong, type ChiSo, type PhamThat, type Tuoi } from './duLieu.ts';
-import { chiSo, dangMatHon, kyCho, mauHienTai, mauToiDa, tuLuyen, tuViCan, type Kho } from './kho.ts';
+import { chiSo, coLeThanDay, dangMatHon, kyCho, mauHienTai, mauToiDa, tuLuyen, tuViCan, type Kho } from './kho.ts';
 
 // ---------- dữ liệu ----------
 
@@ -884,7 +884,7 @@ export const duMau = (k: Kho, luc = Date.now()) => mauHienTai(k, luc) >= mauToiD
 /** Còn bao nhiêu giây nữa mới hết bị cấm du ngoạn vì mất hồn (0 = không bị cấm). */
 export function giayKhoaMatHon(k: Kho, luc = Date.now()): number {
   if (!(k.matHon > 0)) return 0;
-  const khoa = k.matHonNhe ? LUAT.kyNgo.matHon.khoaGiayLanDau : LUAT.kyNgo.matHon.khoaGiay;
+  const khoa = k.matHonNhe ? LUAT.kyNgo.matHon.khoaGiayLanDau : coLeThanDay(k) ? Math.min(LUAT.kyNgo.matHon.khoaGiay, LUAT.qua.leThan.khoaMatHonGiay) : LUAT.kyNgo.matHon.khoaGiay;
   return Math.max(0, Math.ceil((k.matHon + khoa * 1000 - luc) / 1000));
 }
 /** Còn bao nhiêu giây nữa thì chỉ số hồi lại như cũ (0 = không mất hồn). */

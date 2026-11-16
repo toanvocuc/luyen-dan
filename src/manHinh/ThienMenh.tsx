@@ -31,12 +31,9 @@ export function ManMoDau({
   const dangTai = tienDo < 1;
   return (
     <>
-      <button className="man-mo-dau" disabled={dangTai} onClick={onVao}>
-        <span className="an-tu-tien">
-          <i />
-          <b>丹</b>
-        </span>
-        <h1>Luyện Đan</h1>
+      <button className="man-mo-dau tieu-de" disabled={dangTai} onClick={onVao}>
+        <img className="nen-tieu-de" src="./hinh/mo-dau/man-tieu-de.webp" alt="" draggable={false} />
+        <img className="logo-tieu-de" src="./hinh/mo-dau/logo.webp" alt="Heaven's Furnace" draggable={false} />
         {dangTai ? (
           <span className="dang-tai">
             <span className="thanh-tai">
@@ -45,7 +42,7 @@ export function ManMoDau({
             <small>Đang chuẩn bị đan lô… {Math.round(tienDo * 100)}%</small>
           </span>
         ) : (
-          <p>{daCoNhanVat ? 'Chạm để trở về động phủ' : 'Chạm để khai mở thiên mệnh'}</p>
+          <p>{daCoNhanVat ? 'Chạm để trở về động phủ' : 'Chạm để bắt đầu'}</p>
         )}
       </button>
       <button className="nut-nho nut-sao-luu" onClick={onSaoLuu}>
