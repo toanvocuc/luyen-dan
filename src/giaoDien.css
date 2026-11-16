@@ -2824,8 +2824,8 @@ button.bien-ten:active {
 .than-vien .tia-quay {
   aspect-ratio: 1;
   background: color-mix(in srgb, var(--mau) 72%, #fff);
-  -webkit-mask: url(./hinh/hieu-ung/vong.png) center / contain no-repeat;
-  mask: url(./hinh/hieu-ung/vong.png) center / contain no-repeat;
+  -webkit-mask: url('/hinh/hieu-ung/vong.png') center / contain no-repeat;
+  mask: url('/hinh/hieu-ung/vong.png') center / contain no-repeat;
   animation: quay-tron 9s linear infinite;
 }
 .than-vien .vong-quay {
@@ -2835,8 +2835,8 @@ button.bien-ten:active {
 .than-vien .tia-quay {
   width: 150%;
   opacity: 0.5;
-  -webkit-mask-image: url(./hinh/hieu-ung/tia.png);
-  mask-image: url(./hinh/hieu-ung/tia.png);
+  -webkit-mask-image: url('/hinh/hieu-ung/tia.png');
+  mask-image: url('/hinh/hieu-ung/tia.png');
   animation-duration: 16s;
   animation-direction: reverse;
 }
@@ -3248,7 +3248,7 @@ button.bien-ten:active {
   /* khung cắt chín ô: góc và viền giữ nguyên tỉ lệ, chỉ phần giấy ở giữa giãn theo nội dung (số đo lấy từ khung.png 551×768) */
   border-style: solid;
   border-width: 80px 42px 58px 40px;
-  border-image: url(./hinh/ky-ngo/khung.png) 141 79 106 75 fill / 80px 42px 58px 40px stretch;
+  border-image: url('/hinh/ky-ngo/khung.png') 141 79 106 75 fill / 80px 42px 58px 40px stretch;
   animation: man-duong-hien 0.25s ease-out;
 }
 .ruot-ky-ngo {
