@@ -95,8 +95,27 @@ def vung_ngoai_tron(dac: np.ndarray) -> np.ndarray:
     return (xx - cx) ** 2 + (yy - cy) ** 2 > (r + 1) ** 2
 
 
-def tach_nen(im: Image.Image, tron: bool = False) -> Image.Image:
+def nen_giay(im: Image.Image) -> bool:
+    """Ảnh có nền màu giấy (Gemini không vẽ nền trắng như dặn) không: xét dải 6px quanh mép."""
     a = np.asarray(im.convert('RGB')).astype(np.float32) / 255.0
+    mep = np.concatenate([a[:6].reshape(-1, 3), a[-6:].reshape(-1, 3), a[:, :6].reshape(-1, 3), a[:, -6:].reshape(-1, 3)])
+    return float(np.median(mep.min(axis=1))) < 0.95
+
+
+def anh_nen_giay(im: Image.Image) -> np.ndarray:
+    """Ước lượng màu giấy tại từng điểm (nền loang từ kem sang trắng): lấy điểm sáng nhất quanh đó rồi làm mịn."""
+    w, h = im.size
+    nho = im.convert('RGB').resize((max(1, w // 8), max(1, h // 8)), Image.BILINEAR)
+    nho = nho.filter(ImageFilter.MaxFilter(15)).filter(ImageFilter.GaussianBlur(6))
+    return np.asarray(nho.resize((w, h), Image.BILINEAR)).astype(np.float32) / 255.0
+
+
+def tach_nen(im: Image.Image, tron: bool = False, giay: bool = False) -> Image.Image:
+    a = np.asarray(im.convert('RGB')).astype(np.float32) / 255.0
+    goc = a
+    if giay:
+        # nền giấy: chia cho màu giấy để giấy thành trắng tuyệt đối, rồi tách như thường; bên trong vật giữ màu gốc
+        a = np.clip(a / np.maximum(anh_nen_giay(im), 0.3), 0, 1)
     # độ đục nếu coi nền là trắng tuyệt đối
     alpha = 1.0 - a.min(axis=2)
     dac = alpha > 0.45  # điểm "đặc" của vật thể (viền đậm, thân vật)
@@ -137,7 +156,7 @@ def tach_nen(im: Image.Image, tron: bool = False) -> Image.Image:
     alpha_ra[alpha_ra < 0.02] = 0.0
     an_toan = np.maximum(alpha_ra, 1e-3)[..., None]
     mau_go = np.clip((a - (1.0 - an_toan)) / an_toan, 0, 1)
-    mau = np.where(ngoai[..., None], mau_go, a)
+    mau = np.where(ngoai[..., None], mau_go, goc)
     ra = np.dstack([mau, alpha_ra[..., None]])
     return Image.fromarray((ra * 255).round().astype(np.uint8), 'RGBA')
 
@@ -322,7 +341,7 @@ def xu_ly_ky_ngo():
                 continue
             im = Image.open(os.path.join(vao, ten))
             if goc_ten == 'khung' or goc_ten.startswith('nv-'):
-                im = thu_nho(cat_sat(tach_nen(im)), 768 if goc_ten == 'khung' else 512)
+                im = thu_nho(cat_sat(tach_nen(im, giay=goc_ten.startswith('nv-') and nen_giay(im))), 768 if goc_ten == 'khung' else 512)
                 im.save(os.path.join(RA, 'ky-ngo', ten), optimize=True)
             else:
                 im = thu_nho(im.convert('RGB'), 512 if goc_ten == 'giay' else 800)

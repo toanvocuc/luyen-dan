@@ -3429,3 +3429,18 @@ button.bien-ten:active {
 .bao-mat-hon {
   color: #ff9a86;
 }
+
+/* chân dung nhân vật trong kỳ ngộ: nép bên phải lời kể */
+.loi-ke .nv-ke {
+  float: right;
+  width: 30%;
+  max-height: 150px;
+  object-fit: contain;
+  object-position: bottom;
+  margin: 2px 0 4px 8px;
+}
+.loi-ke:has(.nv-ke)::after {
+  content: '';
+  display: block;
+  clear: both;
+}

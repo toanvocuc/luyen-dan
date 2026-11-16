@@ -65,7 +65,13 @@ export interface Kho {
   /** Thể lực du ngoạn: số điểm tại thời điểm `luc` (ms); từ đó tới giờ đã tự hồi thêm, xem theLucHienTai trong kyNgo.ts. */
   theLuc: { diem: number; luc: number };
   /** Bản đồ du ngoạn: điểm đang đứng, các điểm đã từng đặt chân tới, và kỳ (kyCho) mà mỗi điểm đã được giải quyết xong. */
-  banDo: { viTri: number; daDen: number[]; xong: Record<string, number> };
+  banDo: {
+    viTri: number;
+    daDen: number[];
+    xong: Record<string, number>;
+    /** Kỳ ngộ nhiều bước đang dở: ở điểm nào, kỳ nào, sự kiện nào, bước nào. */
+    dangKe?: { diem: number; ky: number; sk: string; buoc: string } | null;
+  };
   /** NPC: hảo cảm (0–100) và kỳ gần nhất đã trò chuyện / tỷ thí. */
   npc: Record<string, { haoCam: number; kyNoi: number; kyTyThi: number }>;
   /** Thời điểm (ms) bị mất hồn gần nhất — máu về 0 trong kỳ ngộ; 0 = chưa từng. Xem LUAT.kyNgo.matHon. */

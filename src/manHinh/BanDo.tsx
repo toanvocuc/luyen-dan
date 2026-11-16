@@ -10,6 +10,7 @@ import {
   KIEM_TY_THI,
   NPC,
   TEN_MUC,
+  canhTai,
   chonLuaChon,
   coTheTyThi,
   daThay,
@@ -23,12 +24,12 @@ import {
   haoCamTang,
   keNhau,
   npcCua,
-  suKienTai,
   tangDan,
   tenChiSo,
   theLucHienTai,
   tiLeKiem,
   timDiem,
+  timNhanVat,
   troChuyen,
   tyThi,
   xetCan,
@@ -46,7 +47,7 @@ const mauTiLe = (x: number) => (x >= 0.6 ? 'cao' : x >= 0.3 ? 'vua' : 'thap');
 type Mo =
   | null
   | { loai: 'su-kien'; id: number }
-  | { loai: 'ket-qua'; tieuDe: string; anh: string | null; kq: KetQuaKyNgo }
+  | { loai: 'ket-qua'; diem: number; tieuDe: string; anh: string | null; kq: KetQuaKyNgo }
   | { loai: 'npc'; id: string; loi: string; ketQua?: { chu: string; nhan: string[]; mat: string[] } }
   | { loai: 'tang'; id: string }
   | { loai: 'linh-dia'; id: number; nhan?: string[] };
@@ -112,7 +113,7 @@ export function BanDo({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho) 
   /** Tới một điểm (hoặc chạm lại điểm đang đứng) thì mở thứ đang chờ ở đó. */
   const moTai = (k: Kho, id: number) => {
     const d = timDiem(id);
-    if (suKienTai(k, id)) datMo({ loai: 'su-kien', id });
+    if (canhTai(k, id)) datMo({ loai: 'su-kien', id });
     else if (d.loai === 'npc' && d.npc) datMo({ loai: 'npc', id: d.npc, loi: `${NPC[d.npc].ten} gật đầu chào ngươi.` });
     else if (d.loai === 'linh-dia' && !daXongKy(k, id)) datMo({ loai: 'linh-dia', id });
     else datMo(null);
@@ -128,7 +129,8 @@ export function BanDo({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho) 
     moTai(sau, id);
   };
 
-  const sk = mo?.loai === 'su-kien' ? suKienTai(kho, mo.id, luc) : null;
+  const canh = mo?.loai === 'su-kien' ? canhTai(kho, mo.id, luc) : null;
+  const nvKe = canh?.sk.nv ? timNhanVat(canh.sk.nv) : null;
 
   return (
     <div className="man-ban-do">
@@ -173,7 +175,7 @@ export function BanDo({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho) 
           </svg>
           {BAN_DO.diem.map((d) => {
             const thay = daThay(kho, d.id);
-            const coSk = thay && !!suKienTai(kho, d.id, luc);
+            const coSk = thay && !!canhTai(kho, d.id, luc);
             const ke = keNhau(viTri, d.id);
             return (
               <button
@@ -195,11 +197,14 @@ export function BanDo({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho) 
       </div>
 
       {/* ---- sự kiện ---- */}
-      {mo?.loai === 'su-kien' && sk && (
-        <KhungKe tieuDe={sk.ten} anh={anhKe(`${sk.anh}-1`)}>
-          <p className="loi-ke">{sk.mo}</p>
+      {mo?.loai === 'su-kien' && canh && (
+        <KhungKe tieuDe={canh.sk.ten} anh={anhKe(`${canh.sk.anh}-${canh.anh}`)}>
+          <p className="loi-ke">
+            {nvKe && <img className="nv-ke" src={anhNv(nvKe.anh)} alt={nvKe.ten} draggable={false} />}
+            {canh.mo}
+          </p>
           <div className="day-lua-chon">
-            {sk.luaChon.map((lc, i) => {
+            {canh.luaChon.map((lc, i) => {
               const can = xetCan(kho, lc.can);
               const tile = lc.kiem ? tiLeKiem(kho, lc.kiem) : null;
               return (
@@ -212,7 +217,7 @@ export function BanDo({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho) 
                     if (!r) return;
                     doiKho(() => r.kho);
                     phat(r.kq.coKiem ? (r.kq.thanh ? 'toi-trung' : 'toi-truot') : 'nut-bam');
-                    datMo({ loai: 'ket-qua', tieuDe: sk.ten, anh: anhKe(`${sk.anh}-${r.kq.ketCuc.anh}`), kq: r.kq });
+                    datMo({ loai: 'ket-qua', diem: mo.id, tieuDe: canh.sk.ten, anh: anhKe(`${canh.sk.anh}-${r.kq.ketCuc.anh}`), kq: r.kq });
                   }}
                 >
                   <b>{lc.chu}</b>
@@ -248,6 +253,10 @@ export function BanDo({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho) 
                 Về động phủ
               </button>
             </>
+          ) : mo.kq.tiep ? (
+            <button className="nut-ke chinh" onClick={() => datMo({ loai: 'su-kien', id: mo.diem })}>
+              Tiếp tục ›
+            </button>
           ) : (
             <button className="nut-ke chinh" onClick={() => datMo(null)}>
               Xác định
