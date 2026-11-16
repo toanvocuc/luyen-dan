@@ -500,7 +500,8 @@ export const LUAT = {
     linhThachGoc: 30,
     heSoCanhGioi: 1.9,
     mauVao: 0.3,
-    matHon: { khoaGiay: 3600, yeuGiay: 10800, heSo: 0.5 },
+    // lần mất hồn ĐẦU TIÊN chỉ khoá khoaGiayLanDau giây và không giảm chỉ số (người mới chưa biết luật); từ lần hai phạt đủ
+    matHon: { khoaGiay: 3600, yeuGiay: 10800, heSo: 0.5, khoaGiayLanDau: 600 },
   },
   don: {
     soDon: 5,

@@ -94,7 +94,7 @@ export const NHIEM_VU: readonly NhiemVu[] = [
   {
     id: 'ky-ngo',
     ten: 'Vượt qua một kỳ ngộ',
-    goiY: 'Tới điểm có dấu ? trên bản đồ. Mỗi lựa chọn ghi rõ tỉ lệ thành theo chỉ số của ngươi; thua thì mất máu.',
+    goiY: 'Tới điểm có dấu ? trên bản đồ. Mỗi lựa chọn ghi rõ tỉ lệ thành; tỉ lệ thấp thì chọn phương án Chắc chắn hoặc rút lui. Máu dưới một nửa thì về động phủ dưỡng thương, máu về 0 là mất hồn.',
     dat: (k) => Object.keys(k.banDo.xong).length > 0,
     thuong: { dan: { id: 'hoi-xuan-dan', pham: 1, so: 1 } },
   },

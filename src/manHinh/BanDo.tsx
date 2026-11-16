@@ -242,10 +242,18 @@ export function BanDo({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho) 
           <DanhSachNhanMat nhan={mo.kq.nhan} mat={mo.kq.mat} />
           {mo.kq.trongThuong ? (
             <>
-              <p className="loi-ke nguy">
-                Ngươi ngã gục, hồn phách rời khỏi thân xác. Khi tỉnh lại đã nằm trong động phủ: {Math.round(LUAT.kyNgo.matHon.khoaGiay / 3600)} giờ tới không thể du ngoạn, và
-                trong {Math.round(LUAT.kyNgo.matHon.yeuGiay / 3600)} giờ mọi chỉ số chỉ còn một nửa.
-              </p>
+              {mo.kq.matHonNhe ? (
+                <p className="loi-ke nguy">
+                  Ngươi ngã gục, hồn phách rời khỏi thân xác. Đây là lần đầu nên hồn về nhập xác nhanh: chỉ cần tĩnh dưỡng {Math.round(LUAT.kyNgo.matHon.khoaGiayLanDau / 60)} phút ở
+                  động phủ, chỉ số không bị ảnh hưởng. Từ lần sau, mất hồn sẽ khoá du ngoạn {Math.round(LUAT.kyNgo.matHon.khoaGiay / 3600)} giờ và mọi chỉ số chỉ còn một nửa trong{' '}
+                  {Math.round(LUAT.kyNgo.matHon.yeuGiay / 3600)} giờ. Tỉ lệ thấp thì nên chọn phương án chắc chắn hoặc rút lui.
+                </p>
+              ) : (
+                <p className="loi-ke nguy">
+                  Ngươi ngã gục, hồn phách rời khỏi thân xác. Khi tỉnh lại đã nằm trong động phủ: {Math.round(LUAT.kyNgo.matHon.khoaGiay / 3600)} giờ tới không thể du ngoạn, và
+                  trong {Math.round(LUAT.kyNgo.matHon.yeuGiay / 3600)} giờ mọi chỉ số chỉ còn một nửa.
+                </p>
+              )}
               <button className="nut-ke chinh" onClick={onVe}>
                 Về động phủ
               </button>

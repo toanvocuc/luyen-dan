@@ -865,7 +865,8 @@ export const duMau = (k: Kho, luc = Date.now()) => mauHienTai(k, luc) >= mauToiD
 /** Còn bao nhiêu giây nữa mới hết bị cấm du ngoạn vì mất hồn (0 = không bị cấm). */
 export function giayKhoaMatHon(k: Kho, luc = Date.now()): number {
   if (!(k.matHon > 0)) return 0;
-  return Math.max(0, Math.ceil((k.matHon + LUAT.kyNgo.matHon.khoaGiay * 1000 - luc) / 1000));
+  const khoa = k.matHonNhe ? LUAT.kyNgo.matHon.khoaGiayLanDau : LUAT.kyNgo.matHon.khoaGiay;
+  return Math.max(0, Math.ceil((k.matHon + khoa * 1000 - luc) / 1000));
 }
 /** Còn bao nhiêu giây nữa thì chỉ số hồi lại như cũ (0 = không mất hồn). */
 export function giayYeuMatHon(k: Kho, luc = Date.now()): number {
@@ -988,6 +989,8 @@ export interface KetQuaKyNgo {
   trongThuong: boolean;
   /** Kỳ ngộ còn bước tiếp theo. */
   tiep: boolean;
+  /** Mất hồn lần này là lần nhẹ (lần đầu tiên). */
+  matHonNhe: boolean;
 }
 
 /** Phần thưởng theo cấp của vùng (không theo người chơi), để không cày vùng thấp lấy thưởng to. */
@@ -1104,10 +1107,11 @@ export function chonLuaChon(k: Kho, id: number, i: number, rng: () => number = M
   if (tiep) kho = { ...kho, banDo: { ...kho.banDo, dangKe: { diem: id, ky: kyCho(luc), sk: sk.id, buoc: ketCuc.tiep! } } };
   if (trongThuong) {
     // mất hồn: bị đưa về cổng vùng; máu tính lại theo máu tối đa đã bị giảm, để hồi đều từ 0
-    kho = { ...kho, matHon: luc, banDo: { ...kho.banDo, viTri: 0 } };
+    const nhe = (kho.soLanMatHon ?? 0) === 0;
+    kho = { ...kho, matHon: luc, matHonNhe: nhe, soLanMatHon: (kho.soLanMatHon ?? 0) + 1, banDo: { ...kho.banDo, viTri: 0 } };
     kho = { ...kho, mau: { thieu: mauToiDa(kho), luc } };
   }
-  return { kho, kq: { thanh, coKiem: !!lc.kiem, ketCuc, nhan, mat, trongThuong, tiep } };
+  return { kho, kq: { thanh, coKiem: !!lc.kiem, ketCuc, nhan, mat, trongThuong, tiep, matHonNhe: trongThuong && kho.matHonNhe } };
 }
 
 // ---------- linh địa ----------

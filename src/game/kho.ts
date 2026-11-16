@@ -76,6 +76,10 @@ export interface Kho {
   npc: Record<string, { haoCam: number; kyNoi: number; kyTyThi: number }>;
   /** Thời điểm (ms) bị mất hồn gần nhất — máu về 0 trong kỳ ngộ; 0 = chưa từng. Xem LUAT.kyNgo.matHon. */
   matHon: number;
+  /** Lần mất hồn gần nhất là lần nhẹ (lần đầu tiên): khoá ngắn, không giảm chỉ số. */
+  matHonNhe: boolean;
+  /** Đã mất hồn bao nhiêu lần từ trước tới giờ. */
+  soLanMatHon: number;
   /** Nhiệm vụ dẫn đường (danDuong.ts): đang ở nhiệm vụ thứ mấy, và nhiệm vụ đó đã xong chờ nhận thưởng chưa. */
   danDuong: { buoc: number; xong: boolean };
 }
@@ -164,6 +168,8 @@ export function khoMoi(nv: NhanVat | null = null): Kho {
     banDo: { viTri: 0, daDen: [0], xong: {} },
     npc: {},
     matHon: 0,
+    matHonNhe: false,
+    soLanMatHon: 0,
     danDuong: { buoc: 0, xong: false },
   };
 }
@@ -201,6 +207,8 @@ function buKho(k: Kho | null): Kho | null {
       banDo: { ...moi.banDo, ...k.banDo },
       npc: { ...k.npc },
       matHon: k.matHon ?? 0,
+      matHonNhe: k.matHonNhe ?? false,
+      soLanMatHon: k.soLanMatHon ?? ((k.matHon ?? 0) > 0 ? 1 : 0),
       danDuong: { ...moi.danDuong, ...k.danDuong },
   });
 }
@@ -887,7 +895,7 @@ export function chiSoGoc(k: Kho, cs: ChiSo): number {
 /** Phần được cộng nhờ uống đan. */
 export const chiSoDan = (k: Kho, cs: ChiSo) => (k.chiSoCong[cs] ?? 0) * (cs === 'khiHuyet' ? LUAT.chiSo.heSoMau : 1);
 /** Đang trong thời gian mất hồn (mọi chỉ số bị giảm). */
-export const dangMatHon = (k: Kho, luc = Date.now()) => (k.matHon ?? 0) > 0 && luc - k.matHon < LUAT.kyNgo.matHon.yeuGiay * 1000;
+export const dangMatHon = (k: Kho, luc = Date.now()) => (k.matHon ?? 0) > 0 && !k.matHonNhe && luc - k.matHon < LUAT.kyNgo.matHon.yeuGiay * 1000;
 /** Giá trị một chỉ số (làm tròn xuống). Đang mất hồn thì chỉ còn LUAT.kyNgo.matHon.heSo phần. */
 export const chiSo = (k: Kho, cs: ChiSo, luc = Date.now()) =>
   Math.floor((chiSoGoc(k, cs) + chiSoDan(k, cs)) * (dangMatHon(k, luc) ? LUAT.kyNgo.matHon.heSo : 1));
