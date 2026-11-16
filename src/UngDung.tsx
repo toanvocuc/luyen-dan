@@ -5,6 +5,7 @@ import { danhDauXong, nhiemVuNay, vuaXong } from './game/danDuong.ts';
 import { vaoBanDo } from './game/kyNgo.ts';
 import { dsChuyen, khoMoi, lamMoiDon, luuKho, napKho, soVienHopDon, tuLuyen, type Kho } from './game/kho.ts';
 import { BanDo } from './manHinh/BanDo.tsx';
+import { NutAnh, ThanhDieuHuong, type ManChinh } from './manHinh/DieuHuong.tsx';
 import { DuongDan } from './manHinh/DuongDan.tsx';
 import { LoDan } from './manHinh/LoDan.tsx';
 import { PhuongThi } from './manHinh/PhuongThi.tsx';
@@ -102,19 +103,34 @@ export function UngDung() {
     );
   }
 
+  /** Số đơn tông môn đang đủ đan để giao. */
+  const donDu = kho.donHang.ds.filter((d) => d && soVienHopDon(kho, d) >= d.soLuong).length;
+  // thanh nút đáy dùng chung cho mọi màn chính; đang luyện dở một mẻ thì ẩn để không bỏ lò giữa chừng
+  const coDay = !dangLuyen;
+  const thanhDay = coDay && (
+    <ThanhDieuHuong
+      man={man as ManChinh}
+      kho={kho}
+      onChon={(m) => {
+        datBang(null);
+        if (m === man) return;
+        if (m === 'ban-do') datKho((k) => vaoBanDo(k));
+        datMan(m);
+      }}
+      onPhuongThi={() => datBang('phuong-thi')}
+    />
+  );
+  const phuongThi = bang === 'phuong-thi' && <PhuongThi kho={kho} doiKho={doiKho} onDong={() => datBang(null)} />;
+
   if (man === 'tu-tien') {
     return (
-      <div className="ung-dung" style={{ backgroundImage: anhNen('dong-phu', kho.tuVi.canhGioi) }}>
+      <div className={`ung-dung ${coDay ? 'co-day' : ''}`} style={{ backgroundImage: anhNen('dong-phu', kho.tuVi.canhGioi) }}>
         <TuTien
           kho={kho}
           nhanVat={kho.nhanVat}
           doiKho={doiKho}
+          donDu={donDu}
           onLuyenDan={() => datMan('lo-dan')}
-          onVuon={() => datMan('vuon')}
-          onDuNgoan={() => {
-            datKho((k) => vaoBanDo(k));
-            datMan('ban-do');
-          }}
           onMonPhai={() => datBang('tui')}
           onCaiDat={() => datBang('sao-luu')}
           onChoiLai={() => {
@@ -122,16 +138,20 @@ export function UngDung() {
             datMan('mo-dau');
           }}
         />
+        {thanhDay}
         {bang === 'tui' && <TuiDan kho={kho} doiKho={doiKho} onDong={() => datBang(null)} />}
         {bang === 'sao-luu' && <SaoLuu kho={kho} onNap={(k) => datKho(k)} onDong={() => datBang(null)} />}
+        {phuongThi}
       </div>
     );
   }
 
   if (man === 'ban-do') {
     return (
-      <div className="ung-dung nen-giay">
+      <div className="ung-dung nen-giay co-day">
         <BanDo kho={kho} doiKho={doiKho} onVe={() => datMan('tu-tien')} />
+        {thanhDay}
+        {phuongThi}
         {theBao}
       </div>
     );
@@ -142,51 +162,36 @@ export function UngDung() {
     return s + t[0] + t[1] + t[2] + t[3] + (kho.danVan[p.id] ?? 0);
   }, dsChuyen(kho).reduce((s, c) => s + c.co, 0));
   const oVuon = man === 'vuon';
-  /** Số đơn tông môn đang đủ đan để giao. */
-  const donDu = kho.donHang.ds.filter((d) => d && soVienHopDon(kho, d) >= d.soLuong).length;
 
   return (
-    <div className="ung-dung" style={{ backgroundImage: oVuon ? 'url(./hinh/nen/vuon.jpg)' : anhNen('dan-phong', kho.tuVi.canhGioi) }}>
+    <div className={`ung-dung ${coDay ? 'co-day' : ''}`} style={{ backgroundImage: oVuon ? 'url(./hinh/nen/vuon.jpg)' : anhNen('dan-phong', kho.tuVi.canhGioi) }}>
+      {/* thanh trên chỉ để thông tin; việc riêng của đan phòng là cột nút tròn ở mép phải */}
       <header className="thanh-tren">
-        <span className="nhom-nut">
-          <button className="nut-nho" disabled={dangLuyen} onClick={() => datMan('tu-tien')} title={dangLuyen ? 'Đang luyện dở một mẻ' : 'Về động phủ'}>
-            ‹ Động phủ
-          </button>
-          <span className="linh-thach">
-            <i className="cham-linh-thach" />
-            {kho.linhThach}
-          </span>
-        </span>
-        <span className="nhom-nut">
-          <button className="nut-nho" onClick={() => datBang('phuong-thi')}>
-            Phường thị
-          </button>
-          {!oVuon && (
-            <button className="nut-nho" onClick={() => datBang('tui')}>
-              Túi đan ({tongDan})
-            </button>
-          )}
+        <b className="ten-man">{oVuon ? 'Vườn dược' : 'Đan phòng'}</b>
+        <span className="linh-thach">
+          <i className="cham-linh-thach" />
+          {kho.linhThach}
         </span>
       </header>
-      {/* thanh trên đã chật nên nút đơn hàng và dưỡng đan nằm riêng ngay bên dưới; đang luyện dở thì ẩn nút dưỡng */}
-      {!oVuon && (
-        <div className="nut-duong-noi">
-          <button className={`nut-nho ${donDu ? 'co-don' : ''}`} onClick={() => datBang('don')}>
-            Đơn tông môn{donDu ? ` (${donDu})` : ''}
-          </button>
-          {!dangLuyen && (
-            <button className="nut-nho" onClick={() => datBang('duong')}>
-              Dưỡng đan
-            </button>
-          )}
+      {!oVuon && !dangLuyen && (
+        <div className="cot-nut">
+          <NutAnh anh="tui-dan" ten="Túi đan" chu="囊" so={tongDan} onClick={() => datBang('tui')} />
+          <NutAnh anh="mon-phai" ten="Đơn hàng" chu="門" so={donDu} onClick={() => datBang('don')} />
+        </div>
+      )}
+      {/* màn thấp chỉ đủ chỗ hai nút mỗi bên trên bảng phối liệu, nên Dưỡng đan nằm bên trái */}
+      {!oVuon && !dangLuyen && (
+        <div className="cot-nut trai">
+          <NutAnh anh="duong-dan" ten="Dưỡng đan" chu="養" onClick={() => datBang('duong')} />
         </div>
       )}
 
       {oVuon ? <VuonDuoc kho={kho} doiKho={doiKho} /> : <LoDan kho={kho} doiKho={doiKho} onDangLuyen={datDangLuyen} />}
 
+      {thanhDay}
       {bang === 'tui' && <TuiDan kho={kho} doiKho={doiKho} onDong={() => datBang(null)} trangDau="ban-le" />}
       {bang === 'don' && <TuiDan kho={kho} doiKho={doiKho} onDong={() => datBang(null)} />}
-      {bang === 'phuong-thi' && <PhuongThi kho={kho} doiKho={doiKho} onDong={() => datBang(null)} />}
+      {phuongThi}
       {(bang === 'duong' || kho.duong) && <DuongDan kho={kho} doiKho={doiKho} onDong={() => datBang(null)} />}
       {theBao}
     </div>

@@ -3543,3 +3543,104 @@ button.bien-ten:active {
   8%, 85% { opacity: 1; transform: translate(-50%, 0); }
   100% { opacity: 0; transform: translate(-50%, -6px); }
 }
+
+/* ================= điều hướng chung: thanh nút đáy + cột nút mép phải ================= */
+.ung-dung {
+  --cao-day: calc(66px + env(safe-area-inset-bottom));
+}
+/* có thanh đáy thì các màn chính chừa chỗ ở dưới */
+.ung-dung.co-day > .tu-tien,
+.ung-dung.co-day > .lo-dan,
+.ung-dung.co-day > .vuon,
+.ung-dung.co-day > .man-ban-do {
+  bottom: var(--cao-day);
+}
+.thanh-dieu-huong {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 8;
+  height: var(--cao-day);
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  align-items: center;
+  padding: 2px 4px env(safe-area-inset-bottom);
+  background: linear-gradient(#1a2729, #0a1213);
+  border-top: 1px solid var(--dong-toi);
+  box-shadow: 0 -4px 14px rgba(0, 0, 0, 0.55);
+}
+.thanh-dieu-huong .mat-nut {
+  width: 42px;
+  transition: transform 0.15s;
+}
+.thanh-dieu-huong .nut-tron:not(.dang) .mat-nut {
+  opacity: 0.82;
+}
+.thanh-dieu-huong .nut-tron.dang .mat-nut {
+  transform: translateY(-3px) scale(1.1);
+  filter: drop-shadow(0 0 8px rgba(240, 185, 58, 0.8));
+}
+.thanh-dieu-huong .nut-tron.dang .ten-nut {
+  color: #ffe2a0;
+}
+.thanh-dieu-huong .ten-nut {
+  font-size: 11px;
+}
+.cot-nut {
+  position: absolute;
+  top: calc(max(8px, env(safe-area-inset-top)) + 56px);
+  right: 8px;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.cot-nut .mat-nut {
+  width: 48px;
+}
+.cot-nut .ten-nut {
+  font-size: 11px;
+}
+.mat-nut {
+  position: relative;
+}
+.cham-so {
+  position: absolute;
+  top: -2px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: #d23a2a;
+  color: #fff;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+  box-shadow: 0 0 0 2px #0b1416;
+}
+.cham-so.trong {
+  min-width: 12px;
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  top: 0;
+  right: 0;
+}
+.thanh-tren .ten-man {
+  font-size: 17px;
+  letter-spacing: 0.04em;
+  color: #fff3d0;
+  text-shadow: 0 1px 4px #000;
+}
+.dau-ban-do > b {
+  grid-column: 1 / -1;
+  justify-self: center;
+}
+.cot-nut.trai {
+  left: 8px;
+  right: auto;
+}

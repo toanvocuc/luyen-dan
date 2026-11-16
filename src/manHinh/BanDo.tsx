@@ -135,9 +135,6 @@ export function BanDo({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho) 
   return (
     <div className="man-ban-do">
       <header className="dau-ban-do">
-        <button className="nut-nho" onClick={onVe}>
-          ‹ Động phủ
-        </button>
         <b>{BAN_DO.ten}</b>
         <div className="chi-so-ban-do">
           <span className="thanh-nho the-luc" title="Thể lực">
