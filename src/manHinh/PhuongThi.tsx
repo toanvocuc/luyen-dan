@@ -1,5 +1,6 @@
 // Phường thị: mua dược liệu, hạt giống, phụ liệu và lò đan. Hàng đổi theo kỳ, mỗi món có số lượng giới hạn.
 import { useEffect, useState } from 'react';
+import { daHetLuotThu } from '../anhLoi.ts';
 import { CANH_GIOI, DUOC_LIEU, LO_DAN, LUAT, PHU_LIEU, TEN_PHAM_NGAN, TEN_TUOI_NGAN, anhDan, anhDuocLieu, anhLoDan, type PhamThat, type Tuoi } from '../game/duLieu.ts';
 import {
   bacDanCho,
@@ -187,7 +188,11 @@ export function PhuongThi({ kho, doiKho, onDong }: { kho: Kho; doiKho: (ham: (k:
                   alt=""
                   onError={(e) => {
                     // lò chưa có ảnh riêng thì dùng ảnh lò mặc định
-                    if (!e.currentTarget.src.endsWith('/lo-dan.webp')) e.currentTarget.src = './hinh/lo-dan.webp';
+                    if (daHetLuotThu(e.currentTarget) && !e.currentTarget.src.includes('/lo-dan.webp')) {
+                    e.currentTarget.dataset.thu = '0';
+                    e.currentTarget.dataset.het = '';
+                    e.currentTarget.src = './hinh/lo-dan.webp';
+                  }
                   }}
                 />
                 <div className="than-dong">

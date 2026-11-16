@@ -1,5 +1,6 @@
 // Túi đan: giao đan theo đơn hàng của tông môn (trả đủ giá) hoặc bán lẻ ở phường thị (mất nửa giá).
 import { useState } from 'react';
+import { daHetLuotThu } from '../anhLoi.ts';
 import { DAN_PHUONG, LUAT, TEN_MOC, TEN_PHAM, TONG_MON, anhDan, giaBan, mocChuyen, timDanPhuong, timTongMon, type PhamThat } from '../game/duLieu.ts';
 import { banChuyen, banDan, banLe, dsChuyen, giaChuyen, giaTriTui, giaoDon, loiTheKho, soVienHopDon, thuongDon, tuChoiDon, vienSeGiao, type Kho } from '../game/kho.ts';
 import { dongHo, useBayGio } from './PhuongThi.tsx';
@@ -11,7 +12,7 @@ type Trang = 'don' | 'ban-le';
 function HuyHieu({ id }: { id: string }) {
   const [coAnh, datCoAnh] = useState(true);
   return (
-    <span className="huy-hieu">{coAnh ? <img src={`./hinh/ui/tong-${id}.webp`} alt="" onError={() => datCoAnh(false)} /> : <b>{timTongMon(id).chu}</b>}</span>
+    <span className="huy-hieu">{coAnh ? <img src={`./hinh/ui/tong-${id}.webp`} alt="" onError={(e) => daHetLuotThu(e.currentTarget) && datCoAnh(false)} /> : <b>{timTongMon(id).chu}</b>}</span>
   );
 }
 

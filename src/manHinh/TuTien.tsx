@@ -18,6 +18,7 @@ export function TuTien({
   nhanVat,
   doiKho,
   donDu,
+  onDanThu,
   onLuyenDan,
   onMonPhai,
   onCaiDat,
@@ -28,6 +29,8 @@ export function TuTien({
   doiKho: (ham: (k: Kho) => Kho) => void;
   /** Số đơn tông môn đang đủ đan để giao (chấm đỏ trên nút Đơn hàng). */
   donDu: number;
+  /** Mở sổ tay đan dược. */
+  onDanThu: () => void;
   onLuyenDan: () => void;
   /** Mở bảng đơn hàng của các tông môn. */
   onMonPhai: () => void;
@@ -102,6 +105,7 @@ export function TuTien({
       <div className="cot-nut">
         <NutAnh anh="tui-do" ten="Túi đồ" chu="囊" onClick={() => datBang('hanh-trang')} />
         <NutAnh anh="mon-phai" ten="Đơn hàng" chu="門" so={donDu} onClick={onMonPhai} />
+        <NutAnh anh="dan-thu" ten="Đan thư" chu="書" onClick={onDanThu} />
       </div>
 
       {nhiemVu && (

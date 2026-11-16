@@ -412,7 +412,7 @@ export function luotLamMoiCon(k: Kho, luc = Date.now()): number {
 /** Giá của lượt đổi hàng kế tiếp trong ngày. */
 export function giaLamMoi(k: Kho, luc = Date.now()): number {
   const m = LUAT.cho.lamMoi;
-  return Math.round(m.gia * m.nhan ** (m.luotMoiNgay - luotLamMoiCon(k, luc)));
+  return Math.round(m.gia * m.theoCanhGioi ** k.tuVi.canhGioi * m.nhan ** (m.luotMoiNgay - luotLamMoiCon(k, luc)));
 }
 /** Trả linh thạch để phường thị đổi hàng ngay (kể cả những món đã mua hết cũng có lại theo lượt hàng mới). */
 export function lamMoiCho(k: Kho, luc = Date.now()): Kho {
@@ -452,7 +452,7 @@ export function muaDuocLieu(k: Kho, id: string, tuoi: Tuoi, luc = Date.now()): K
   return { ...k, linhThach: k.linhThach - gia, duocLieu: { ...k.duocLieu, [id]: c }, cho: ghiDaMua(k, khoa, luc) };
 }
 
-export const giaMuaHat = (k: Kho, id: string) => Math.max(1, Math.round(giaHatGiong(timDuocLieu(id)) * loiThe(k.nhanVat).heSoMua));
+export const giaMuaHat = (k: Kho, id: string) => Math.max(1, Math.round(giaHatGiong(timDuocLieu(id), k.tuVi.canhGioi) * loiThe(k.nhanVat).heSoMua));
 export function muaHatGiong(k: Kho, id: string, luc = Date.now()): Kho {
   const gia = giaMuaHat(k, id);
   const khoa = khoaHat(id);
@@ -1142,4 +1142,18 @@ export function dotPha(k: Kho, pham: PhamThat, danVan: boolean, r: number): { kh
     ? { canhGioi: k.tuVi.canhGioi + 1, tang: 1, diem: 0 }
     : { ...k.tuVi, diem: Math.floor(k.tuVi.diem * (1 - LUAT.dotPha.matTuVi)) };
   return { thanh, kho: { ...k, tuVi, congDotPha: 0, tuiDan: { ...k.tuiDan, [p.id]: tui }, danVan: { ...k.danVan, [p.id]: dv } } };
+}
+
+/** Số mẻ đan phương đứng trước (cùng bậc) phải luyện thành thì mới mở đan phương kế tiếp. */
+export const ME_DE_MO_KHOA = 3;
+/**
+ * Vì sao đan phương thứ `i` (trong DAN_PHUONG) còn khoá; null = đã mở. Phải đạt cảnh giới của bậc đó,
+ * và trong cùng một bậc thì phải luyện thành vài mẻ đan đứng trước.
+ */
+export function lyDoKhoaPhuong(k: Kho, i: number): string | null {
+  const p = DAN_PHUONG[i];
+  if (k.tuVi.canhGioi < bacSo(p)) return `Cần đạt ${p.bac}`;
+  const truoc = DAN_PHUONG[i - 1];
+  if (truoc && truoc.bac === p.bac && (k.thongThao[truoc.id] ?? 0) < ME_DE_MO_KHOA) return `Cần ${ME_DE_MO_KHOA} mẻ ${truoc.ten}`;
+  return null;
 }

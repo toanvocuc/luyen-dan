@@ -1,5 +1,6 @@
 // Màn hình lò đan: phối liệu -> khống hỏa -> tôi đan (dừng con lắc đúng khoảng xanh) -> mở lò.
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { daHetLuotThu } from '../anhLoi.ts';
 import { batLua, datLua, phat, tatLua } from '../amThanh.ts';
 import {
   CAC_BAC,
@@ -23,7 +24,7 @@ import {
   type DanPhuong,
   type Tuoi,
 } from '../game/duLieu.ts';
-import { loiTheKho, duLieu, nhanKetQua, suaLo, thieuGi, truNguyenLieu, type Kho } from '../game/kho.ts';
+import { loiTheKho, duLieu, lyDoKhoaPhuong, nhanKetQua, suaLo, thieuGi, truNguyenLieu, type Kho } from '../game/kho.ts';
 import {
   batDauMe,
   coTheToi,
@@ -48,7 +49,6 @@ import { ThanhTiLe, doanPham } from './ThanhTiLe.tsx';
 type Pha = 'phoi' | 'lua' | 'toi' | 'mo';
 
 /** Số mẻ phải luyện thành ở đan phương trước thì mới mở đan phương kế. */
-const ME_DE_MO_KHOA = 3;
 /** Nhãn ngắn của tuổi thuốc trên nút chọn. */
 const TEN_TUOI_SO = ['10', '100', '1000'] as const;
 /** Con lắc đứng yên bấy nhiêu mili giây sau mỗi lần bấm để người chơi kịp thấy mình dừng ở đâu. */
@@ -183,13 +183,7 @@ export function LoDan({
    * Vì sao một đan phương còn khoá (null = đã mở): phải đạt cảnh giới của bậc đó,
    * và trong cùng một bậc thì phải luyện thành vài mẻ đan đứng trước.
    */
-  const lyDoKhoa = (i: number): string | null => {
-    const p = DAN_PHUONG[i];
-    if (kho.tuVi.canhGioi < bacSo(p)) return `Cần đạt ${p.bac}`;
-    const truoc = DAN_PHUONG[i - 1];
-    if (truoc && truoc.bac === p.bac && (kho.thongThao[truoc.id] ?? 0) < ME_DE_MO_KHOA) return `Cần ${ME_DE_MO_KHOA} mẻ ${truoc.ten}`;
-    return null;
-  };
+  const lyDoKhoa = (i: number): string | null => lyDoKhoaPhuong(kho, i);
   // bảng chọn chỉ bày các bậc đã tới và bậc kế tiếp (để thấy trước mục tiêu), không bày cả 13 bậc
   const bacThay = CAC_BAC.filter((b) => CANH_GIOI.indexOf(b) <= kho.tuVi.canhGioi + 1);
 
@@ -523,7 +517,11 @@ export function LoDan({
           draggable={false}
           onError={(e) => {
             // lò chưa có ảnh riêng thì dùng ảnh lò mặc định
-            if (!e.currentTarget.src.endsWith('/lo-dan.webp')) e.currentTarget.src = './hinh/lo-dan.webp';
+            if (daHetLuotThu(e.currentTarget) && !e.currentTarget.src.includes('/lo-dan.webp')) {
+                    e.currentTarget.dataset.thu = '0';
+                    e.currentTarget.dataset.het = '';
+                    e.currentTarget.src = './hinh/lo-dan.webp';
+                  }
           }}
         />
 

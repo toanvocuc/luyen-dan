@@ -34,7 +34,8 @@ export const DUOC_LIEU: readonly DuocLieu[] = [
 ];
 export const anhDuocLieu = (id: string) => `./hinh/duoc-lieu/${id}.webp`;
 /** Giá một hạt giống ở phường thị (chưa tính lợi thế mua bán của nhân vật). */
-export const giaHatGiong = (d: DuocLieu) => d.gia[0] * LUAT.vuon.heSoGiaHat;
+/** Giá một hạt giống: bội số giá thuốc 100 năm, tăng theo cảnh giới cùng nhịp với giá đan (để cảnh giới cao vẫn thấy đắt). */
+export const giaHatGiong = (d: DuocLieu, canhGioi = 0) => d.gia[1] * LUAT.vuon.heSoGiaHat * LUAT.vuon.giaHatTheoCanhGioi ** canhGioi;
 
 /** Năm chỉ số của nhân vật. Kỳ ngộ sau này sẽ so các chỉ số này để định thành bại. */
 export const CHI_SO = [
@@ -440,7 +441,7 @@ export const LUAT = {
    * (tính theo đồng hồ thật, kể cả lúc tắt game). Hái lúc nào được thuốc tuổi lúc đó, mỗi ô sanLuong phần,
    * có themTiLe cơ hội được thêm một phần (khí vận lệch khỏi 50 thì cộng/trừ themKhiVan mỗi điểm).
    */
-  vuon: { giay: [180, 1200, 7200], sanLuong: 2, themTiLe: 0.3, themKhiVan: 0.004, soODau: 3, soOToiDa: 9, giaO: 200, giaONhan: 2, heSoGiaHat: 3 },
+  vuon: { giay: [180, 1200, 7200], sanLuong: 2, themTiLe: 0.3, themKhiVan: 0.004, soODau: 3, soOToiDa: 9, giaO: 200, giaONhan: 2, heSoGiaHat: 2, giaHatTheoCanhGioi: 1.6 },
 
   /**
    * Đơn hàng tông môn: luôn có soDon chỗ. Mỗi đơn đòi một loại đan từ một phẩm trở lên (phamTiLe là xác suất của từng phẩm),
@@ -524,8 +525,11 @@ export const LUAT = {
     hatSoLuong: [2, 5],
     luonCo: ['linh-thao', 'chu-qua'],
     luonCoSoLuong: 12,
-    /** Trả linh thạch để đổi hàng ngay: mỗi ngày luotMoiNgay lượt, lượt đầu giá `gia`, mỗi lượt sau trong ngày đắt gấp `nhan`. */
-    lamMoi: { luotMoiNgay: 5, gia: 100, nhan: 1.5 },
+    /**
+     * Trả linh thạch để đổi hàng ngay: mỗi ngày luotMoiNgay lượt, lượt đầu giá `gia` × theoCanhGioi^cảnh giới
+     * (cùng nhịp tăng giá đan), mỗi lượt sau trong ngày đắt gấp `nhan`.
+     */
+    lamMoi: { luotMoiNgay: 5, gia: 150, nhan: 1.6, theoCanhGioi: 1.8 },
     /**
      * Đan bày bán: chỉ đan thường (không phải đan đột phá) cùng bậc với cảnh giới người chơi, cao nhất tới phẩm phamCao.
      * tiLe[phẩm] là cơ hội có hàng, soLuong[phẩm] là khoảng số viên; giá bằng giá trị gốc của viên đan nhân một số trong khoảng heSoGia.

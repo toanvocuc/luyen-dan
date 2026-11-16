@@ -8,6 +8,7 @@ import { dsChuyen, khoMoi, lamMoiDon, luuKho, napKho, soVienHopDon, tuLuyen, typ
 import { BanDo } from './manHinh/BanDo.tsx';
 import { ChiTay } from './manHinh/ChiTay.tsx';
 import { NutAnh, ThanhDieuHuong, type ManChinh } from './manHinh/DieuHuong.tsx';
+import { DanThu } from './manHinh/DanThu.tsx';
 import { DuongDan } from './manHinh/DuongDan.tsx';
 import { LoDan } from './manHinh/LoDan.tsx';
 import { PhuongThi } from './manHinh/PhuongThi.tsx';
@@ -19,7 +20,7 @@ import { VuonDuoc } from './manHinh/VuonDuoc.tsx';
 
 /** Luồng màn hình: mở đầu -> (lần đầu) thiên mệnh -> động phủ tu tiên <-> đan phòng / vườn dược / bản đồ du ngoạn. */
 type Man = 'mo-dau' | 'thien-menh' | 'tu-tien' | 'lo-dan' | 'vuon' | 'ban-do';
-type Bang = null | 'tui' | 'don' | 'phuong-thi' | 'sao-luu' | 'duong';
+type Bang = null | 'tui' | 'don' | 'phuong-thi' | 'sao-luu' | 'duong' | 'dan-thu';
 
 export function UngDung() {
   const [kho, datKho] = useState<Kho>(napKho);
@@ -138,6 +139,7 @@ export function UngDung() {
     />
   );
   const phuongThi = bang === 'phuong-thi' && <PhuongThi kho={kho} doiKho={doiKho} onDong={() => datBang(null)} />;
+  const danThu = bang === 'dan-thu' && <DanThu kho={kho} onDong={() => datBang(null)} />;
   // chỉ tay lần đầu: phủ lên mọi màn chính
   const chiTay = <ChiTay daXem={kho.daChiTay} bat={!!kho.nhanVat} onXem={(ids) => datKho((k) => ({ ...k, daChiTay: [...new Set([...k.daChiTay, ...ids])] }))} />;
 
@@ -149,6 +151,7 @@ export function UngDung() {
           nhanVat={kho.nhanVat}
           doiKho={doiKho}
           donDu={donDu}
+          onDanThu={() => datBang('dan-thu')}
           onLuyenDan={() => datMan('lo-dan')}
           onMonPhai={() => datBang('tui')}
           onCaiDat={() => datBang('sao-luu')}
@@ -163,6 +166,7 @@ export function UngDung() {
           <SaoLuu kho={kho} onNap={(k) => datKho(k)} onDong={() => datBang(null)} onXemLaiHuongDan={() => datKho((k) => ({ ...k, daChiTay: [] }))} />
         )}
         {phuongThi}
+        {danThu}
         {chiTay}
       </div>
     );
@@ -206,6 +210,7 @@ export function UngDung() {
       {!oVuon && !dangLuyen && (
         <div className="cot-nut trai">
           <NutAnh anh="duong-dan" ten="Dưỡng đan" chu="養" onClick={() => datBang('duong')} />
+          <NutAnh anh="dan-thu" ten="Đan thư" chu="書" onClick={() => datBang('dan-thu')} />
         </div>
       )}
 
@@ -215,6 +220,7 @@ export function UngDung() {
       {bang === 'tui' && <TuiDan kho={kho} doiKho={doiKho} onDong={() => datBang(null)} trangDau="ban-le" />}
       {bang === 'don' && <TuiDan kho={kho} doiKho={doiKho} onDong={() => datBang(null)} />}
       {phuongThi}
+      {danThu}
       {(bang === 'duong' || kho.duong) && <DuongDan kho={kho} doiKho={doiKho} onDong={() => datBang(null)} />}
       {theBao}
       {chiTay}

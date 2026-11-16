@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { giaiDoan, type Kho } from '../game/kho.ts';
 import { lyDoKhongDi } from '../game/kyNgo.ts';
+import { daHetLuotThu } from '../anhLoi.ts';
 
 /** Màn chính đi được từ thanh đáy. */
 export type ManChinh = 'tu-tien' | 'lo-dan' | 'vuon' | 'ban-do';
@@ -35,7 +36,7 @@ export function NutAnh({
   return (
     <button className={`nut-tron ${dang ? 'dang' : ''}`} disabled={khoa} onClick={onClick} aria-current={dang ? 'page' : undefined}>
       <span className="mat-nut">
-        {coAnh ? <img src={`./hinh/ui/nut-${anh}.webp`} alt="" draggable={false} onError={() => datCoAnh(false)} /> : <b>{chu}</b>}
+        {coAnh ? <img src={`./hinh/ui/nut-${anh}.webp`} alt="" draggable={false} onError={(e) => daHetLuotThu(e.currentTarget) && datCoAnh(false)} /> : <b>{chu}</b>}
         {so > 0 ? <i className="cham-so">{so > 9 ? '9+' : so}</i> : cham ? <i className="cham-so trong" /> : null}
       </span>
       <span className="ten-nut">{ten}</span>
