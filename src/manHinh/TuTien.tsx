@@ -2,8 +2,8 @@
 import { useState } from 'react';
 import { QUA, tacDungQua } from '../game/quaMoDau.ts';
 import { phat } from '../amThanh.ts';
-import { CANH_GIOI, CHI_SO, DAN_PHUONG, DUOC_LIEU, LUAT, PHU_LIEU, TEN_MOC, TEN_PHAM, TEN_TUOI_NGAN, anhDan, anhDuocLieu, mocChuyen, timDanPhuong, type PhamThat } from '../game/duLieu.ts';
-import { chiSo, chiSoDan, heSoTrungDoc, danDotPha, docHienTai, dotPha, dsChuyen, duocLucChuyen, mauHienTai, mauToiDa, soTang, tiLeDotPha, tocDoTuVi, tuViCan, uongChuyen, uongDan, vienMan, xemUong, xemUongChuyen, type Kho } from '../game/kho.ts';
+import { CANH_GIOI, CHI_SO, DAN_DUOC, timDanDuoc, timTongMon, DAN_PHUONG, DUOC_LIEU, LUAT, PHU_LIEU, TEN_MOC, TEN_PHAM, TEN_TUOI_NGAN, anhDan, anhDuocLieu, mocChuyen, timDanPhuong, type PhamThat } from '../game/duLieu.ts';
+import { chiSo, chiSoDan, giayTauHoa, heSoTrungDoc, luaChonDotPha, thieuDotPha, yeuCauDotPha, danDotPha, docHienTai, dotPha, dsChuyen, duocLucChuyen, mauHienTai, mauToiDa, soTang, tocDoTuVi, tuViCan, uongChuyen, uongDan, vienMan, xemUong, xemUongChuyen, type Kho } from '../game/kho.ts';
 import type { NhanVat } from '../game/nhanVat.ts';
 import { dongHo, useBayGio } from './PhuongThi.tsx';
 import { BupBe } from './BupBe.tsx';
@@ -21,6 +21,7 @@ export function TuTien({
   donDu,
   onDiToi,
   onDanThu,
+  onTangBao,
   onLuyenDan,
   onMonPhai,
   onCaiDat,
@@ -35,6 +36,8 @@ export function TuTien({
   onDanThu: () => void;
   /** Đi tới chỗ làm nhiệm vụ (màn khác hoặc bảng của màn cha). */
   onDiToi: (noi: NoiLam) => void;
+  /** Mở Tàng Bảo Các (đổi danh vọng lấy dẫn dược). */
+  onTangBao: () => void;
   onLuyenDan: () => void;
   /** Mở bảng đơn hàng của các tông môn. */
   onMonPhai: () => void;
@@ -45,7 +48,7 @@ export function TuTien({
   const [bang, datBang] = useState<Bang>(null);
   const can = tuViCan(kho.tuVi.tang, kho.tuVi.canhGioi);
   /** Kết quả lần đột phá vừa rồi, để dựng cảnh báo tin; bấm vào là tắt. */
-  const [ketQuaDotPha, datKetQuaDotPha] = useState<null | { thanh: boolean; ten: string; luot: number }>(null);
+  const [ketQuaDotPha, datKetQuaDotPha] = useState<null | { thanh: boolean; ten: string; luot: number; giuLai: number; hoDao: boolean; dai: boolean }>(null);
   const danCan = danDotPha(kho);
   const phamNhan = kho.tuVi.canhGioi === 0;
 
@@ -56,7 +59,7 @@ export function TuTien({
     doiKho(() => kq.kho);
     phat(kq.thanh ? 'dot-pha' : 'toi-truot');
     datBang(null);
-    datKetQuaDotPha({ thanh: kq.thanh, ten: CANH_GIOI[kho.tuVi.canhGioi + 1], luot: Date.now() });
+    datKetQuaDotPha({ thanh: kq.thanh, ten: CANH_GIOI[kho.tuVi.canhGioi + 1], luot: Date.now(), giuLai: kq.giuLai, hoDao: kq.hoDao, dai: yeuCauDotPha(kho).dai });
   };
   const day = vienMan(kho);
   const tocDo = tocDoTuVi(kho);
@@ -117,6 +120,7 @@ export function TuTien({
         <NutAnh anh="tui-do" ten="Túi đồ" chu="囊" onClick={() => datBang('hanh-trang')} />
         <NutAnh anh="mon-phai" ten="Đơn hàng" chu="門" so={donDu} onClick={onMonPhai} />
         <NutAnh anh="dan-thu" ten="Đan thư" chu="書" onClick={onDanThu} />
+        <NutAnh anh="tang-bao-cac" ten="Tàng Bảo" chu="寶" onClick={onTangBao} />
       </div>
 
       {nhiemVu && (
@@ -182,6 +186,7 @@ export function TuTien({
             </b>
           </div>
         )}
+        {giayTauHoa(kho, luc) > 0 && <p className="chu-nho bao-mat-hon">Tẩu hỏa: tu luyện chỉ còn một nửa, còn {dongHo(giayTauHoa(kho, luc))}.</p>}
         {heSoTrungDoc(docNay) < 1 && (
           <p className="chu-nho bao-mat-hon">
             Trúng độc: mọi chỉ số chỉ còn {Math.round(heSoTrungDoc(docNay) * 100)}%. Độc tự tan {Math.round(3600 / LUAT.doc.giayMoiDiem)} điểm mỗi giờ.
@@ -211,64 +216,78 @@ export function TuTien({
         )}
       </section>
 
-      {bang === 'dot-pha' && danCan && (
-        <div className="lop-phu" onClick={() => datBang(null)}>
-          <div className="bang tam" onClick={(e) => e.stopPropagation()}>
-            <h2>Đột phá lên {CANH_GIOI[kho.tuVi.canhGioi + 1]}</h2>
-            <p className="chu-nho">
-              Chọn một viên {danCan.ten} để dùng. Phẩm càng cao càng dễ thành. Thất bại thì mất viên đan và hao {Math.round(LUAT.dotPha.matTuVi * 100)}% tu vi của tầng này.
-            </p>
-            {kho.tuiDan[danCan.id].every((n) => n < 1) && (kho.danVan[danCan.id] ?? 0) < 1 && (
-              <p className="chu-nho trai">Chưa có viên {danCan.ten} nào. Hãy sang đan phòng luyện một mẻ.</p>
-            )}
-            {([3, 2, 1, 0] as PhamThat[]).map((ph) => {
-              const co = kho.tuiDan[danCan.id][ph];
-              if (co < 1) return null;
-              return (
-                <div key={ph} className="dong-tui">
+      {bang === 'dot-pha' && danCan && (() => {
+        const yc = yeuCauDotPha(kho);
+        const ds = luaChonDotPha(kho);
+        const thieu = thieuDotPha(kho);
+        const duDan = ds.some((o) => o.du);
+        const c = LUAT.daiDotPha;
+        const matTuVi = yc.dai ? Math.min(c.matTuViToiDa, LUAT.dotPha.matTuVi + c.matTuViThem * (yc.dich - c.tu)) : LUAT.dotPha.matTuVi;
+        return (
+          <div className="lop-phu" onClick={() => datBang(null)}>
+            <div className="bang tam bang-dot-pha" onClick={(e) => e.stopPropagation()}>
+              <h2>Đột phá lên {CANH_GIOI[yc.dich]}</h2>
+              {yc.dai ? (
+                <ul className="dieu-kien-dp">
+                  <li className={duDan ? 'du' : 'thieu'}>
+                    {yc.soVien} viên {danCan.ten} cùng một phẩm, từ {TEN_PHAM[yc.phamToiThieu].toLowerCase()} trở lên
+                  </li>
+                  {yc.danDuoc.map((id) => (
+                    <li key={id} className={(kho.danDuoc[id] ?? 0) >= 1 ? 'du' : 'thieu'}>
+                      <img src={`./hinh/nguyen-lieu/${id}.webp`} alt="" />1 {timDanDuoc(id).ten} ({timTongMon(timDanDuoc(id).tongMon).ten}) · có {kho.danDuoc[id] ?? 0}
+                    </li>
+                  ))}
+                  <li className={kho.linhThach >= yc.phi ? 'du' : 'thieu'}>Phí lập trận hộ pháp: {yc.phi} linh thạch</li>
+                  <li className={kho.hoDao ? 'du' : 'tuy'}>{kho.hoDao ? 'Đã uống Hộ Đạo Đan' : 'Hộ Đạo Đan (không bắt buộc): uống trước để thất bại vẫn giữ nửa số đan'}</li>
+                </ul>
+              ) : (
+                <p className="chu-nho">Chọn một viên {danCan.ten} để dùng. Phẩm càng cao càng dễ thành.</p>
+              )}
+              <p className="chu-nho canh-bao-dp">
+                {yc.dai
+                  ? `Thất bại: mất hết đan, dẫn dược và phí; hao ${Math.round(matTuVi * 100)}% tu vi${kho.hoDao ? ' (Hộ Đạo Đan: giữ nửa số đan, không hao tu vi)' : ''}; tẩu hỏa ${Math.round(c.tauHoaGiay / 60)} phút.`
+                  : `Thất bại thì mất viên đan và hao ${Math.round(LUAT.dotPha.matTuVi * 100)}% tu vi của tầng này.`}
+              </p>
+              {ds.length === 0 && <p className="chu-nho trai">Chưa có viên {danCan.ten} nào đủ phẩm. Hãy sang đan phòng luyện thêm.</p>}
+              {ds.map((o) => (
+                <div key={String(o.loai)} className="dong-tui">
                   <img src={anhDan(danCan.id)} alt="" />
                   <div className="than-dong">
-                    <b className={`pham-${ph}`}>
-                      {TEN_PHAM[ph]} ×{co}
+                    <b className={o.loai === 'dv' ? 'pham-dv' : `pham-${o.loai}`}>
+                      {o.loai === 'dv' ? 'Đan văn' : TEN_PHAM[o.loai]} ×{o.co}
                     </b>
                     <div className="hang-pham">
-                      <span>Thành công {Math.round(tiLeDotPha(kho, ph, false) * 100)}%</span>
+                      <span>
+                        Thành công {Math.round(o.tiLe * 100)}%{o.chuyen ? ` (+${Math.round(o.chuyen * c.moiChuyen * 100)}% nhờ đan đã dưỡng)` : ''}
+                      </span>
                     </div>
                   </div>
-                  <button className="nut-nho" onClick={() => thuDotPha(ph, false)}>
-                    Dùng
+                  <button className="nut-nho" disabled={!o.du || thieu.length > 0} onClick={() => thuDotPha(o.loai === 'dv' ? 3 : o.loai, o.loai === 'dv')}>
+                    {!o.du ? `Cần ${yc.soVien}` : thieu.length ? 'Thiếu đồ' : 'Đột phá'}
                   </button>
                 </div>
-              );
-            })}
-            {(kho.danVan[danCan.id] ?? 0) > 0 && (
-              <div className="dong-tui">
-                <img src={anhDan(danCan.id)} alt="" />
-                <div className="than-dong">
-                  <b className="pham-dv">Đan văn ×{kho.danVan[danCan.id]}</b>
-                  <div className="hang-pham">
-                    <span>Thành công 100%</span>
-                  </div>
-                </div>
-                <button className="nut-nho" onClick={() => thuDotPha(3, true)}>
-                  Dùng
+              ))}
+              {thieu.length > 0 && <p className="chu-nho trai thieu-dp">Còn thiếu: {thieu.join(', ')}. Dẫn dược đổi bằng danh vọng ở Tàng Bảo Các.</p>}
+              <div className="hang-nut">
+                <button className="nut-nho" onClick={onLuyenDan}>
+                  Đan phòng
+                </button>
+                {yc.dai && (
+                  <button className="nut-nho" onClick={onTangBao}>
+                    Tàng Bảo Các
+                  </button>
+                )}
+                <button className="nut-nho" onClick={() => datBang(null)}>
+                  Đóng
                 </button>
               </div>
-            )}
-            <div className="hang-nut">
-              <button className="nut-nho" onClick={onLuyenDan}>
-                Sang đan phòng
-              </button>
-              <button className="nut-nho" onClick={() => datBang(null)}>
-                Đóng
-              </button>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {ketQuaDotPha && (
-        <div key={ketQuaDotPha.luot} className={`canh-dot-pha ${ketQuaDotPha.thanh ? 'thanh' : 'bai'}`} onClick={() => datKetQuaDotPha(null)}>
+        <div key={ketQuaDotPha.luot} className={`canh-dot-pha ${ketQuaDotPha.thanh ? 'thanh' : 'bai'} ${ketQuaDotPha.dai ? 'thien-kiep' : ''}`} onClick={() => datKetQuaDotPha(null)}>
           {ketQuaDotPha.thanh && (
             <>
               <i className="dp-tia" />
@@ -279,7 +298,15 @@ export function TuTien({
           <div className="dp-chu">
             <small>{ketQuaDotPha.thanh ? 'Đột phá thành công' : 'Đột phá thất bại'}</small>
             <b>{ketQuaDotPha.thanh ? ketQuaDotPha.ten : 'Linh khí tán loạn'}</b>
-            <span>{ketQuaDotPha.thanh ? 'Chạm để tiếp tục' : `Viên đan đã tan, tu vi hao ${Math.round(LUAT.dotPha.matTuVi * 100)}%. Chạm để tiếp tục.`}</span>
+            <span>
+              {ketQuaDotPha.thanh
+                ? 'Chạm để tiếp tục'
+                : ketQuaDotPha.dai
+                  ? ketQuaDotPha.hoDao
+                    ? `Dẫn dược đã tan, nhưng Hộ Đạo Đan giữ lại ${ketQuaDotPha.giuLai} viên đan và tu vi vẹn nguyên. Chạm để tiếp tục.`
+                    : 'Đan dược và dẫn dược đều đã tan, tu vi hao tổn. Chạm để tiếp tục.'
+                  : `Viên đan đã tan, tu vi hao ${Math.round(LUAT.dotPha.matTuVi * 100)}%. Chạm để tiếp tục.`}
+            </span>
           </div>
         </div>
       )}
@@ -389,6 +416,25 @@ export function TuTien({
                     </div>
                   </div>
                 )}
+              </>
+            )}
+
+            {DAN_DUOC.some((d) => (kho.danDuoc[d.id] ?? 0) > 0) && (
+              <>
+                <h3>Dẫn dược</h3>
+                {DAN_DUOC.filter((d) => (kho.danDuoc[d.id] ?? 0) > 0).map((d) => (
+                  <div key={d.id} className="dong-tui">
+                    <img src={`./hinh/nguyen-lieu/${d.id}.webp`} alt="" />
+                    <div className="than-dong">
+                      <b>
+                        {d.ten} ×{kho.danDuoc[d.id]}
+                      </b>
+                      <div className="hang-pham">
+                        <span>{d.moTa}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </>
             )}
 

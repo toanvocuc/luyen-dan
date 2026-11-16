@@ -1,12 +1,12 @@
 // Túi đan: giao đan theo đơn hàng của tông môn (trả đủ giá) hoặc bán lẻ ở phường thị (mất nửa giá).
 import { useState } from 'react';
 import { daHetLuotThu } from '../anhLoi.ts';
-import { DAN_PHUONG, LUAT, TEN_MOC, TEN_PHAM, TONG_MON, anhDan, bacSo, giaBan, mocChuyen, timDanPhuong, timTongMon, type PhamThat } from '../game/duLieu.ts';
-import { banChuyen, banDan, banLe, danDotPha, dsChuyen, giaChuyen, giaTriTui, giaoDon, loiTheKho, soVienHopDon, thuongDon, tuChoiDon, vienSeGiao, type Kho } from '../game/kho.ts';
+import { DAN_DUOC, DAN_PHUONG, LUAT, TEN_MOC, TEN_PHAM, TONG_MON, anhDan, bacSo, giaBan, mocChuyen, timDanPhuong, timTongMon, type PhamThat } from '../game/duLieu.ts';
+import { banChuyen, banDan, banLe, danDotPha, doiDanDuoc, dsChuyen, giaDanDuoc, yeuCauDotPha, giaChuyen, giaTriTui, giaoDon, loiTheKho, soVienHopDon, thuongDon, tuChoiDon, vienSeGiao, type Kho } from '../game/kho.ts';
 import { dongHo, useBayGio } from './PhuongThi.tsx';
 
 type Loai = PhamThat | 'dv';
-type Trang = 'don' | 'ban-le';
+type Trang = 'don' | 'ban-le' | 'tang-bao';
 /** Một dòng trong túi: viên thường (theo phẩm) hoặc viên đã dưỡng (có `bac` chuyển). */
 interface DongTui {
   khoa: string;
@@ -81,6 +81,9 @@ export function TuiDan({ kho, doiKho, onDong, trangDau = 'don' }: { kho: Kho; do
           <button className={`the nho ${trang === 'don' ? 'chon' : ''}`} onClick={() => datTrang('don')}>
             Đơn hàng tông môn
           </button>
+          <button className={`the nho ${trang === 'tang-bao' ? 'chon' : ''}`} onClick={() => datTrang('tang-bao')}>
+            Tàng Bảo Các
+          </button>
           <button className={`the nho ${trang === 'ban-le' ? 'chon' : ''}`} onClick={() => datTrang('ban-le')}>
             Bán lẻ ({tatCa.reduce((s, d) => s + d.co, 0)})
           </button>
@@ -144,6 +147,38 @@ export function TuiDan({ kho, doiKho, onDong, trangDau = 'don' }: { kho: Kho; do
                       Từ chối
                     </button>
                   </span>
+                </div>
+              );
+            })}
+          </>
+        )}
+
+        {trang === 'tang-bao' && (
+          <>
+            <p className="chu-nho">
+              Tàng Bảo Các các tông môn: đổi danh vọng lấy dẫn dược, thứ bắt buộc khi đột phá từ Kim Đan trở lên. Muốn có danh vọng của tông môn nào thì giao đơn cho tông môn đó.
+            </p>
+            {DAN_DUOC.map((d) => {
+              const gia = giaDanDuoc(kho);
+              const co = kho.danhVong[d.tongMon] ?? 0;
+              const can = yeuCauDotPha(kho).danDuoc.includes(d.id);
+              return (
+                <div key={d.id} className={`dong-tui dong-ban ${can ? 'can-dot-pha' : ''}`}>
+                  <img src={`./hinh/nguyen-lieu/${d.id}.webp`} alt="" />
+                  <div className="than-dong">
+                    <b>
+                      {d.ten} ×{kho.danDuoc[d.id] ?? 0}
+                    </b>
+                    <div className="hang-pham">
+                      <span>
+                        {timTongMon(d.tongMon).ten} · danh vọng {co}
+                      </span>
+                      {can && <span className="nhan-tui dot-pha">Cần cho đột phá</span>}
+                    </div>
+                  </div>
+                  <button className="nut-nho nut-ban" disabled={co < gia} onClick={() => doiKho((k) => doiDanDuoc(k, d.id))}>
+                    Đổi {gia} DV
+                  </button>
                 </div>
               );
             })}

@@ -1,7 +1,7 @@
 // Đan thư: sổ tay mọi đan phương — luyện bằng gì, uống được gì theo từng phẩm, cộng chỉ số nào, độc bao nhiêu, dùng đột phá ra sao.
 // Đan chưa mở vẫn xem được (để người chơi biết đường mà nhắm tới).
 import { useState } from 'react';
-import { CANH_GIOI, CHI_SO, DAN_PHUONG, LUAT, TEN_TUOI_NGAN, anhDan, giaBan, timDuocLieu, type DanPhuong, type TacDung } from '../game/duLieu.ts';
+import { CANH_GIOI, CHI_SO, DAN_DUOC_DOT_PHA, DAN_PHUONG, LUAT, timDanDuoc, TEN_TUOI_NGAN, anhDan, giaBan, timDuocLieu, type DanPhuong, type TacDung } from '../game/duLieu.ts';
 import { lyDoKhoaPhuong, type Kho } from '../game/kho.ts';
 
 const TEN_MUC = ['Hạ', 'Trung', 'Thượng', 'Cực', 'Đan văn'] as const;
@@ -18,6 +18,8 @@ function chuTacDung(td: TacDung, v: number): string {
       return `+${v} tư chất`;
     case 'hoi-mau':
       return `hồi ${pt(v)} máu`;
+    case 'ho-dao':
+      return 'hộ đạo một lần đột phá';
     default:
       return `+${pt(v)} đột phá lần tới`;
   }
@@ -28,6 +30,7 @@ const TEN_LOAI: Record<TacDung['loai'], string> = {
   'tu-chat': 'Tăng tư chất vĩnh viễn',
   'hoi-mau': 'Hồi máu',
   'dot-pha': 'Tĩnh tâm trước khi đột phá',
+  'ho-dao': 'Hộ đạo cho lần đột phá tới',
 };
 
 /** Dược liệu: gộp vị trùng (Linh Thảo ×2). */
@@ -68,7 +71,18 @@ function TheDan({ kho, p, onLuyen }: { kho: Kho; p: DanPhuong; onLuyen?: (id: st
       </p>
       {p.dotPha && (
         <p className="dong-dan">
-          <em>Đột phá</em> Dùng ở nút Đột phá để lên <b>{CANH_GIOI[p.dotPha]}</b>. Tỉ lệ thành: {LUAT.dotPha.tiLe.map((t, j) => `${TEN_MUC[j]} ${Math.round(t * 100)}%`).join(' · ')} · Đan văn 100%.
+          <em>Đột phá</em> Dùng ở nút Đột phá để lên <b>{CANH_GIOI[p.dotPha]}</b>.{' '}
+          {p.dotPha >= LUAT.daiDotPha.tu ? (
+            <>
+              Cần {LUAT.daiDotPha.soVien[Math.min(LUAT.daiDotPha.soVien.length - 1, p.dotPha - LUAT.daiDotPha.tu)]} viên cùng phẩm từ{' '}
+              {TEN_MUC[LUAT.daiDotPha.phamToiThieu[Math.min(LUAT.daiDotPha.phamToiThieu.length - 1, p.dotPha - LUAT.daiDotPha.tu)]].toLowerCase()} trở lên, dẫn dược{' '}
+              {(DAN_DUOC_DOT_PHA[p.dotPha] ?? []).map((id) => timDanDuoc(id).ten).join(' + ')} và phí lập trận{' '}
+              {Math.round(LUAT.daiDotPha.phiGoc * LUAT.daiDotPha.phiNhan ** (p.dotPha - LUAT.daiDotPha.tu))} linh thạch. Tỉ lệ gốc giảm{' '}
+              {Math.round(LUAT.daiDotPha.giamMoiCanhGioi * (p.dotPha - 2) * 100)}%.
+            </>
+          ) : (
+            <>Tỉ lệ thành: {LUAT.dotPha.tiLe.map((t, j) => `${TEN_MUC[j]} ${Math.round(t * 100)}%`).join(' · ')} · Đan văn 100%.</>
+          )}
         </p>
       )}
       {p.uong && (

@@ -1,5 +1,5 @@
 // Trạng thái lâu dài của người chơi (linh thạch, dược liệu, túi đan…) + lưu vào trình duyệt.
-import { CANH_GIOI, CHI_SO, DAN_PHUONG, DUOC_LIEU, HE_SO_DAN_VAN, HE_SO_GIA, LUAT, NANG_CAP_GOC, TONG_MON, bacSo, giaBan, giaHatGiong, heSoChuyen, laDanThat, timDanPhuong, timDuocLieu, timLoDan, timPhuLieu, type ChiSo, type DanPhuong, type LoiThe, type NangCap, type PhamThat, type Tuoi } from './duLieu.ts';
+import { CANH_GIOI, CHI_SO, DAN_DUOC_DOT_PHA, DAN_PHUONG, DUOC_LIEU, timDanDuoc, HE_SO_DAN_VAN, HE_SO_GIA, LUAT, NANG_CAP_GOC, TONG_MON, bacSo, giaBan, giaHatGiong, heSoChuyen, laDanThat, timDanPhuong, timDuocLieu, timLoDan, timPhuLieu, type ChiSo, type DanPhuong, type LoiThe, type NangCap, type PhamThat, type Tuoi } from './duLieu.ts';
 import type { KetQua } from './luyenDan.ts';
 import { loiThe, timXuatThan, type NhanVat } from './nhanVat.ts';
 import type { QuaMoDau } from './quaMoDau.ts';
@@ -91,6 +91,14 @@ export interface Kho {
   quaMoDau: QuaMoDau | null;
   /** Trứng Dực Quang Thần Thú (quà Linh Thú Thần Đan): lúc nhận; null = không có. */
   trung: { luc: number } | null;
+  /** Dẫn dược tông môn đang có (id -> số phần). */
+  danDuoc: Record<string, number>;
+  /** Đã uống Hộ Đạo Đan cho lần đột phá tới. */
+  hoDao: boolean;
+  /** Lúc (ms) bị tẩu hỏa gần nhất (đột phá đại cảnh giới thất bại); 0 = chưa. */
+  tauHoa: number;
+  /** Thẻ trạng thái đang chờ người chơi bấm "Đã hiểu" (tự gây ra: tẩu hỏa, trúng độc, mất hồn). */
+  thongBao: { loai: 'tau-hoa' | 'trung-doc' | 'mat-hon'; luc: number } | null;
 }
 
 /** Loại viên đan dưỡng được: thượng phẩm, cực phẩm, hoặc đan văn. */
@@ -183,6 +191,10 @@ export function khoMoi(nv: NhanVat | null = null): Kho {
     daChiTay: [],
     quaMoDau: null,
     trung: null,
+    danDuoc: {},
+    hoDao: false,
+    tauHoa: 0,
+    thongBao: null,
   };
 }
 
@@ -225,6 +237,10 @@ function buKho(k: Kho | null): Kho | null {
       daChiTay: [...(k.daChiTay ?? [])],
       quaMoDau: k.quaMoDau ?? null,
       trung: k.trung ?? null,
+      danDuoc: { ...k.danDuoc },
+      hoDao: k.hoDao ?? false,
+      tauHoa: k.tauHoa ?? 0,
+      thongBao: k.thongBao ?? null,
   });
 }
 
@@ -853,7 +869,11 @@ export function tuViCan(tang: number, canhGioi: number): number {
 export const vienMan = (k: Kho) => k.tuVi.tang >= soTang(k.tuVi.canhGioi) && k.tuVi.diem >= tuViCan(k.tuVi.tang, k.tuVi.canhGioi);
 
 /** Tu vi mỗi giây khi không có đan trợ lực (linh căn quyết định). */
-export const tocDoGoc = (k: Kho) => LUAT.tuViMoiGiay * loiThe(k.nhanVat).tocDoTuLuyen * (1 + (k.tocDoCong ?? 0)) * (k.trung ? 1 + LUAT.qua.trung.tocDo : 1);
+export const tocDoGoc = (k: Kho, luc = Date.now()) =>
+  LUAT.tuViMoiGiay * loiThe(k.nhanVat).tocDoTuLuyen * (1 + (k.tocDoCong ?? 0)) * (k.trung ? 1 + LUAT.qua.trung.tocDo : 1) * (dangTauHoa(k, luc) ? LUAT.daiDotPha.tauHoaHeSo : 1);
+/** Còn bao nhiêu giây tẩu hỏa (0 = không). */
+export const giayTauHoa = (k: Kho, luc = Date.now()) => Math.max(0, Math.ceil(((k.tauHoa ?? 0) + LUAT.daiDotPha.tauHoaGiay * 1000 - luc) / 1000));
+export const dangTauHoa = (k: Kho, luc = Date.now()) => (k.tauHoa ?? 0) > 0 && giayTauHoa(k, luc) > 0;
 /** Tu vi mỗi giây ngay lúc này, đã tính phần tăng tốc nhờ đan. */
 export const tocDoTuVi = (k: Kho) => tocDoGoc(k) * (1 + (k.tangToc.giay > 0 ? k.tangToc.nhan : 0));
 
@@ -1017,6 +1037,10 @@ export function xemUong(k: Kho, phuongId: string, loai: PhamThat | 'dv', soLuong
     const toiDa = mauToiDa(k);
     const thieu = toiDa - mauHienTai(k, luc);
     moTa = thieu > 0 ? `Hồi ${Math.min(thieu, Math.round(toiDa * Math.min(1, v * soLuong)))} máu` : 'Máu đang đầy';
+  } else if (td.loai === 'ho-dao') {
+    moTa = 'Hộ đạo cho lần đột phá tới: thất bại vẫn giữ một nửa số đan, không hao tu vi';
+    if (k.hoDao) lyDo = 'Đã được hộ đạo, đợi lần đột phá tới';
+    else if (soLuong > 1) lyDo = 'Mỗi lần chỉ cần một viên';
   } else {
     const con = LUAT.dotPha.congToiDa - k.congDotPha;
     moTa = `Lần đột phá tới +${Math.round(Math.min(con, v * soLuong) * 100)}% thành công (đang +${Math.round(k.congDotPha * 100)}%, tối đa +${Math.round(LUAT.dotPha.congToiDa * 100)}%)`;
@@ -1049,6 +1073,8 @@ export function uongDan(k: Kho, phuongId: string, loai: PhamThat | 'dv', soLuong
   let moi: Kho = {
     ...k,
     doc: { diem: xem.docSau, luc },
+    // vừa vượt ngưỡng độc: hiện thẻ trúng độc
+    thongBao: docHienTai(k, luc) <= LUAT.doc.day && xem.docSau > LUAT.doc.day ? { loai: 'trung-doc', luc } : k.thongBao,
     chiSoCong,
     daUong: { ...k.daUong, [phuongId]: (k.daUong[phuongId] ?? 0) + soLuong },
     mau: { thieu: thieuNay, luc },
@@ -1071,6 +1097,8 @@ export function uongDan(k: Kho, phuongId: string, loai: PhamThat | 'dv', soLuong
     moi.nhanVat = { ...k.nhanVat, tuChat: Math.min(100, k.nhanVat.tuChat + v * soLuong) };
   } else if (td.loai === 'hoi-mau') {
     moi.mau = { thieu: Math.max(0, thieuNay - mauToiDa(k) * Math.min(1, v * soLuong)), luc };
+  } else if (td.loai === 'ho-dao') {
+    moi.hoDao = true;
   } else {
     moi.congDotPha = Math.min(LUAT.dotPha.congToiDa, k.congDotPha + v * soLuong);
   }
@@ -1157,10 +1185,88 @@ export const danDotPha = (k: Kho): DanPhuong | null =>
   k.tuVi.canhGioi + 1 < CANH_GIOI.length ? DAN_PHUONG.find((p) => p.dotPha === k.tuVi.canhGioi + 1) ?? null : null;
 
 /** Tỉ lệ đột phá thành công nếu dùng một viên phẩm này. */
-export function tiLeDotPha(k: Kho, pham: PhamThat, danVan: boolean): number {
+export function tiLeDotPha(k: Kho, pham: PhamThat, danVan: boolean, congChuyen = 0): number {
   if (danVan) return 1;
   const kv = ((k.nhanVat?.khiVan ?? 50) - 50) * LUAT.dotPha.khiVan;
-  return Math.min(0.99, Math.max(0.05, LUAT.dotPha.tiLe[pham] + kv + k.congDotPha));
+  const dich = k.tuVi.canhGioi + 1;
+  const giam = dich >= LUAT.daiDotPha.tu ? LUAT.daiDotPha.giamMoiCanhGioi * (dich - 2) : 0;
+  return Math.min(0.99, Math.max(0.05, LUAT.dotPha.tiLe[pham] + kv + k.congDotPha - giam + congChuyen));
+}
+
+// ---------- đột phá đại cảnh giới ----------
+
+const oBang = <T,>(bang: readonly T[], i: number) => bang[Math.max(0, Math.min(bang.length - 1, i))];
+/** Điều kiện của lần đột phá kế tiếp. `dai` = theo luật đại cảnh giới (Kim Đan trở lên). */
+export function yeuCauDotPha(k: Kho) {
+  const p = danDotPha(k);
+  const dich = k.tuVi.canhGioi + 1;
+  const c = LUAT.daiDotPha;
+  const dai = dich >= c.tu;
+  const i = dich - c.tu;
+  return {
+    p,
+    dich,
+    dai,
+    soVien: dai ? oBang(c.soVien, i) : 1,
+    phamToiThieu: (dai ? oBang(c.phamToiThieu, i) : 0) as PhamThat,
+    danDuoc: dai ? [...(DAN_DUOC_DOT_PHA[dich] ?? [])] : [],
+    phi: dai ? Math.round(c.phiGoc * c.phiNhan ** i) : 0,
+  };
+}
+/** Các viên (theo phẩm) dùng được cho lần đột phá tới: viên đã dưỡng đứng trước (chuyển cao trước), rồi viên thường. */
+function vienDotPha(k: Kho, id: string, loai: PhamThat | 'dv'): { khoa: string | null; bac: number; co: number }[] {
+  const ra: { khoa: string | null; bac: number; co: number }[] = [];
+  for (const c of dsChuyen(k)) if (c.phuongId === id && c.loai === loai) ra.push({ khoa: c.khoa, bac: c.bac, co: c.co });
+  ra.sort((a, b) => b.bac - a.bac);
+  const thuong = loai === 'dv' ? (k.danVan[id] ?? 0) : (k.tuiDan[id]?.[loai] ?? 0);
+  if (thuong > 0) ra.push({ khoa: null, bac: 0, co: thuong });
+  return ra;
+}
+/** Chọn đúng `n` viên một phẩm: trả về tổng số chuyển cộng thêm (viên đã dưỡng được ưu tiên), hoặc null nếu không đủ. */
+function chonVien(k: Kho, id: string, loai: PhamThat | 'dv', n: number): { chuyen: number; lay: { khoa: string | null; so: number }[] } | null {
+  let con = n;
+  let chuyen = 0;
+  const lay: { khoa: string | null; so: number }[] = [];
+  for (const v of vienDotPha(k, id, loai)) {
+    if (con <= 0) break;
+    const so = Math.min(con, v.co);
+    lay.push({ khoa: v.khoa, so });
+    chuyen += so * v.bac;
+    con -= so;
+  }
+  return con > 0 ? null : { chuyen, lay };
+}
+/** Các lựa chọn phẩm cho bảng đột phá: phẩm nào đủ số viên, tỉ lệ thành bao nhiêu. */
+export function luaChonDotPha(k: Kho) {
+  const yc = yeuCauDotPha(k);
+  if (!yc.p) return [];
+  const ra: { loai: PhamThat | 'dv'; co: number; du: boolean; tiLe: number; chuyen: number }[] = [];
+  for (const loai of ['dv', 3, 2, 1, 0] as (PhamThat | 'dv')[]) {
+    if (loai !== 'dv' && loai < yc.phamToiThieu) continue;
+    const co = vienDotPha(k, yc.p.id, loai).reduce((s, v) => s + v.co, 0);
+    if (co < 1) continue;
+    const chon = chonVien(k, yc.p.id, loai, yc.soVien);
+    const chuyen = chon?.chuyen ?? 0;
+    ra.push({ loai, co, du: !!chon, chuyen, tiLe: tiLeDotPha(k, loai === 'dv' ? 3 : loai, loai === 'dv', chuyen * LUAT.daiDotPha.moiChuyen) });
+  }
+  return ra;
+}
+/** Thiếu gì để đột phá (ngoài đan): dẫn dược, linh thạch. Rỗng = đủ. */
+export function thieuDotPha(k: Kho): string[] {
+  const yc = yeuCauDotPha(k);
+  const ra: string[] = [];
+  for (const id of yc.danDuoc) if ((k.danDuoc[id] ?? 0) < 1) ra.push(timDanDuoc(id).ten);
+  if (k.linhThach < yc.phi) ra.push(`${yc.phi - k.linhThach} linh thạch`);
+  return ra;
+}
+/** Giá một phần dẫn dược (danh vọng của tông môn đó) theo cảnh giới đột phá kế tiếp. */
+export const giaDanDuoc = (k: Kho) => LUAT.daiDotPha.giaDanhVong * Math.max(LUAT.daiDotPha.tu, k.tuVi.canhGioi + 1);
+/** Đổi danh vọng lấy một phần dẫn dược ở Tàng Bảo Các. */
+export function doiDanDuoc(k: Kho, id: string): Kho {
+  const d = timDanDuoc(id);
+  const gia = giaDanDuoc(k);
+  if (d.id !== id || (k.danhVong[d.tongMon] ?? 0) < gia) return k;
+  return { ...k, danhVong: { ...k.danhVong, [d.tongMon]: k.danhVong[d.tongMon] - gia }, danDuoc: { ...k.danDuoc, [id]: (k.danDuoc[id] ?? 0) + 1 } };
 }
 
 /**
@@ -1168,23 +1274,68 @@ export function tiLeDotPha(k: Kho, pham: PhamThat, danVan: boolean): number {
  * Thành công: lên cảnh giới mới, tầng 1. Thất bại: mất viên đan, hao một phần tu vi của tầng hiện tại.
  * Không đủ điều kiện (chưa viên mãn, không có viên đó) thì trả về null.
  */
-export function dotPha(k: Kho, pham: PhamThat, danVan: boolean, r: number): { kho: Kho; thanh: boolean } | null {
-  const p = danDotPha(k);
+export function dotPha(k: Kho, pham: PhamThat, danVan: boolean, r: number, luc = Date.now()): { kho: Kho; thanh: boolean; giuLai: number; hoDao: boolean } | null {
+  const yc = yeuCauDotPha(k);
+  const p = yc.p;
   if (!p || !vienMan(k)) return null;
+  const loai: PhamThat | 'dv' = danVan ? 'dv' : pham;
+  if (loai !== 'dv' && loai < yc.phamToiThieu) return null;
+  if (thieuDotPha(k).length) return null;
+  const chon = chonVien(k, p.id, loai, yc.soVien);
+  if (!chon) return null;
+  // tiêu hao: đan (viên đã dưỡng trước), dẫn dược, phí lập trận
   const tui = [...k.tuiDan[p.id]] as [number, number, number, number];
   let dv = k.danVan[p.id] ?? 0;
-  if (danVan) {
-    if (dv < 1) return null;
-    dv -= 1;
-  } else {
-    if (tui[pham] < 1) return null;
-    tui[pham] -= 1;
+  const danChuyen = { ...k.danChuyen };
+  for (const l of chon.lay) {
+    if (l.khoa) {
+      danChuyen[l.khoa] = (danChuyen[l.khoa] ?? 0) - l.so;
+      if (danChuyen[l.khoa] <= 0) delete danChuyen[l.khoa];
+    } else if (loai === 'dv') dv -= l.so;
+    else tui[loai] -= l.so;
   }
-  const thanh = r < tiLeDotPha(k, pham, danVan);
-  const tuVi = thanh
-    ? { canhGioi: k.tuVi.canhGioi + 1, tang: 1, diem: 0 }
-    : { ...k.tuVi, diem: Math.floor(k.tuVi.diem * (1 - LUAT.dotPha.matTuVi)) };
-  return { thanh, kho: { ...k, tuVi, congDotPha: 0, tuiDan: { ...k.tuiDan, [p.id]: tui }, danVan: { ...k.danVan, [p.id]: dv } } };
+  const danDuoc = { ...k.danDuoc };
+  for (const id of yc.danDuoc) danDuoc[id] = (danDuoc[id] ?? 0) - 1;
+  const thanh = r < tiLeDotPha(k, loai === 'dv' ? 3 : loai, loai === 'dv', chon.chuyen * LUAT.daiDotPha.moiChuyen);
+  let tuVi = k.tuVi;
+  let giuLai = 0;
+  let tauHoa = k.tauHoa ?? 0;
+  let thongBao = k.thongBao;
+  if (thanh) tuVi = { canhGioi: k.tuVi.canhGioi + 1, tang: 1, diem: 0 };
+  else {
+    const c = LUAT.daiDotPha;
+    if (k.hoDao) {
+      // hộ đạo: trả lại một nửa số đan (viên thường cùng phẩm), không hao tu vi
+      giuLai = Math.ceil(yc.soVien / 2);
+      if (loai === 'dv') dv += giuLai;
+      else tui[loai] += giuLai;
+    } else {
+      const mat = yc.dai ? Math.min(c.matTuViToiDa, LUAT.dotPha.matTuVi + c.matTuViThem * (yc.dich - c.tu)) : LUAT.dotPha.matTuVi;
+      tuVi = { ...k.tuVi, diem: Math.floor(k.tuVi.diem * (1 - mat)) };
+    }
+    if (yc.dai) {
+      tauHoa = luc;
+      thongBao = { loai: 'tau-hoa', luc };
+    }
+  }
+  return {
+    thanh,
+    giuLai,
+    hoDao: !thanh && k.hoDao,
+    kho: {
+      ...k,
+      tuVi,
+      linhThach: k.linhThach - yc.phi,
+      congDotPha: 0,
+      hoDao: false,
+      tauHoa,
+      thongBao,
+      tuiDan: { ...k.tuiDan, [p.id]: tui },
+      danVan: { ...k.danVan, [p.id]: dv },
+      danChuyen,
+      danDuoc,
+    },
+  };
 }
 
 /** Số mẻ đan phương đứng trước (cùng bậc) phải luyện thành thì mới mở đan phương kế tiếp. */

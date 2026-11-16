@@ -6,6 +6,7 @@ import { lyDoKhongDi, vaoBanDo } from './game/kyNgo.ts';
 import { taiCot, taiNgam } from './taiTruoc.ts';
 import { dsChuyen, khoMoi, lamMoiDon, luuKho, napKho, soVienHopDon, tuLuyen, type Kho } from './game/kho.ts';
 import { BanDo } from './manHinh/BanDo.tsx';
+import { TheTrangThai } from './manHinh/TheTrangThai.tsx';
 import { KhoiDau } from './manHinh/KhoiDau.tsx';
 import { nhanQua, type LoaiQua } from './game/quaMoDau.ts';
 import { ChiTay } from './manHinh/ChiTay.tsx';
@@ -22,7 +23,7 @@ import { VuonDuoc } from './manHinh/VuonDuoc.tsx';
 
 /** Luồng màn hình: mở đầu -> (lần đầu) thiên mệnh -> động phủ tu tiên <-> đan phòng / vườn dược / bản đồ du ngoạn. */
 type Man = 'mo-dau' | 'khoi-dau' | 'thien-menh' | 'tu-tien' | 'lo-dan' | 'vuon' | 'ban-do';
-type Bang = null | 'tui' | 'don' | 'phuong-thi' | 'sao-luu' | 'duong' | 'dan-thu';
+type Bang = null | 'tui' | 'don' | 'phuong-thi' | 'sao-luu' | 'duong' | 'dan-thu' | 'tang-bao';
 
 export function UngDung() {
   const [kho, datKho] = useState<Kho>(napKho);
@@ -193,6 +194,8 @@ export function UngDung() {
     }
     if (noi === 'lo-dan' || noi === 'vuon') datMan(noi);
   };
+  // thẻ trạng thái (tẩu hỏa, trúng độc, mất hồn): phủ lên mọi màn chính, bấm "Đã hiểu" mới tắt
+  const theTrangThai = kho.thongBao && <TheTrangThai key={kho.thongBao.luc} thongBao={kho.thongBao} onXong={() => datKho((k) => ({ ...k, thongBao: null }))} />;
   // chỉ tay lần đầu: phủ lên mọi màn chính
   const chiTay = <ChiTay daXem={kho.daChiTay} bat={!!kho.nhanVat} onXem={(ids) => datKho((k) => ({ ...k, daChiTay: [...new Set([...k.daChiTay, ...ids])] }))} />;
 
@@ -206,6 +209,7 @@ export function UngDung() {
           donDu={donDu}
           onDanThu={() => datBang('dan-thu')}
           onDiToi={diToi}
+          onTangBao={() => datBang('tang-bao')}
           onLuyenDan={() => datMan('lo-dan')}
           onMonPhai={() => datBang('tui')}
           onCaiDat={() => datBang('sao-luu')}
@@ -216,6 +220,8 @@ export function UngDung() {
         />
         {thanhDay}
         {bang === 'tui' && <TuiDan kho={kho} doiKho={doiKho} onDong={() => datBang(null)} />}
+        {bang === 'tang-bao' && <TuiDan kho={kho} doiKho={doiKho} onDong={() => datBang(null)} trangDau="tang-bao" />}
+        {theTrangThai}
         {bang === 'sao-luu' && (
           <SaoLuu kho={kho} onNap={(k) => datKho(k)} onDong={() => datBang(null)} onXemLaiHuongDan={() => datKho((k) => ({ ...k, daChiTay: [] }))} />
         )}
@@ -233,6 +239,7 @@ export function UngDung() {
         {thanhDay}
         {phuongThi}
         {theBao}
+        {theTrangThai}
         {chiTay}
       </div>
     );
@@ -277,6 +284,7 @@ export function UngDung() {
       {danThu}
       {(bang === 'duong' || kho.duong) && <DuongDan kho={kho} doiKho={doiKho} onDong={() => datBang(null)} />}
       {theBao}
+      {theTrangThai}
       {chiTay}
     </div>
   );

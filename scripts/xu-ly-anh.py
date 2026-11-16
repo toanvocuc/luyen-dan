@@ -204,7 +204,12 @@ def main():
         for ten in sorted(os.listdir(vao)):
             if not ten.lower().endswith('.png') or ten in BO_QUA:
                 continue
-            im = thu_nho(cat_sat(tach_nen(Image.open(os.path.join(vao, ten)), tron)), canh)
+            goc_anh = Image.open(os.path.join(vao, ten))
+            if ten in TACH_THUONG:
+                # viên đan trắng đặt trên hình trắng: tách kiểu tròn giữ nhầm cả đĩa nền, nên tách thường rồi lấp lỗ kín bên trong
+                im = thu_nho(cat_sat(lap_lo(tach_nen(goc_anh, False), goc_anh)), canh)
+            else:
+                im = thu_nho(cat_sat(tach_nen(goc_anh, tron)), canh)
             im.save(os.path.join(RA, thu_muc, ten), optimize=True)
             print('ok', thu_muc + '/' + ten, im.size)
     # ghi danh sách đan đã có ảnh riêng, để game biết đan nào còn phải mượn ảnh
@@ -310,6 +315,7 @@ def main():
 
     xu_ly_ky_ngo()
     xu_ly_mo_dau()
+    xu_ly_trang_thai()
     sys.exit(1 if loi else 0)
 
 
@@ -369,6 +375,59 @@ def xu_ly_mo_dau():
             im = thu_nho(im.convert('RGB'), 1280)
             im.save(os.path.join(ra, goc_ten + '.jpg'), quality=88)
         print('ok mo-dau/' + ten, im.size)
+
+
+# ảnh trong THU_MUC phải tách kiểu thường + lấp lỗ (xem lap_lo)
+TACH_THUONG = {'ho-dao-dan.png'}
+
+
+def lap_lo(im: Image.Image, goc: Image.Image) -> Image.Image:
+    """Lấp mọi lỗ trong suốt nằm kín bên trong vật (không thông ra mép ảnh) bằng màu gốc, đặc hoàn toàn."""
+    a = np.asarray(im).copy()
+    dac = a[..., 3] > 40
+    h, w = dac.shape
+    ngoai = np.zeros_like(dac)
+    hang = deque()
+    for x in range(w):
+        for y in (0, h - 1):
+            if not dac[y, x] and not ngoai[y, x]:
+                ngoai[y, x] = True
+                hang.append((y, x))
+    for y in range(h):
+        for x in (0, w - 1):
+            if not dac[y, x] and not ngoai[y, x]:
+                ngoai[y, x] = True
+                hang.append((y, x))
+    while hang:
+        y, x = hang.popleft()
+        for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            ny, nx = y + dy, x + dx
+            if 0 <= ny < h and 0 <= nx < w and not dac[ny, nx] and not ngoai[ny, nx]:
+                ngoai[ny, nx] = True
+                hang.append((ny, nx))
+    lo = ~dac & ~ngoai
+    g = np.asarray(goc.convert('RGB'))
+    a[lo, :3] = g[lo]
+    a[lo, 3] = 255
+    return Image.fromarray(a, 'RGBA')
+
+
+def xu_ly_trang_thai():
+    """Thẻ trạng thái: Hinh_anh/trang-thai/*.png (tranh 1024×765 trên giấy) -> public/hinh/trang-thai/*.jpg, vá dấu ✦ góc dưới phải."""
+    vao = os.path.join(GOC, 'trang-thai')
+    if not os.path.isdir(vao):
+        return
+    ra = os.path.join(RA, 'trang-thai')
+    os.makedirs(ra, exist_ok=True)
+    for ten in sorted(os.listdir(vao)):
+        goc_ten, duoi = os.path.splitext(ten)
+        if duoi.lower() != '.png':
+            continue
+        im = Image.open(os.path.join(vao, ten))
+        w, h = im.size
+        im = thu_nho(va_dau_sao(im, (w - 95, h - 80), 18), 800)
+        im.save(os.path.join(ra, goc_ten + '.jpg'), quality=86)
+        print('ok trang-thai/' + ten, im.size)
 
 
 def xu_ly_ky_ngo():

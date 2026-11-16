@@ -65,7 +65,7 @@ export const LUOT_CHI_TAY: readonly LuotChiTay[] = [
     buoc: [
       {
         chon: '.nut-dot-pha',
-        chu: 'Tu vi đã viên mãn! Đột phá cần một viên đan đột phá. Phẩm càng cao càng dễ thành; thất bại thì mất viên đan và hao một phần tu vi.',
+        chu: 'Tu vi đã viên mãn! Bấm để xem điều kiện đột phá. Từ Kim Đan trở lên cần nhiều viên đan đột phá, dẫn dược tông môn (đổi bằng danh vọng) và phí lập trận; thất bại là mất hết.',
       },
     ],
   },

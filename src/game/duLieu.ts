@@ -102,7 +102,7 @@ export interface DanPhuong {
  * `doc` nhân vào lượng độc tố của viên đan (đan càng mạnh càng độc).
  */
 export interface TacDung {
-  loai: 'tang-toc' | 'tu-vi' | 'tu-chat' | 'dot-pha' | 'hoi-mau';
+  loai: 'tang-toc' | 'tu-vi' | 'tu-chat' | 'dot-pha' | 'hoi-mau' | 'ho-dao';
   giaTri: readonly [number, number, number, number, number];
   giay?: number;
   doc?: number;
@@ -222,6 +222,25 @@ const DAN_GOC: readonly DanPhuong[] = [
       { ten: 'Thu hỏa', tam: 56, giay: 5 },
     ],
     giaGoc: 380,
+  },
+  {
+    id: 'ho-dao-dan',
+    ten: 'Hộ Đạo Đan',
+    moTa: 'Uống trước khi đột phá: lỡ thất bại vẫn giữ được một nửa số đan và không hao tu vi.',
+    bac: 'Trúc Cơ',
+    uong: { loai: 'ho-dao', giaTri: [1, 1, 1, 1, 1], doc: 1.5 },
+    lieu: ['dia-tam-sam', 'tu-van-chi', 'han-bang-hoa'],
+    tuoiToiThieu: 1,
+    doKho: 1.15,
+    rongVung: 14,
+    xungDot: 4,
+    doan: [
+      { ten: 'Văn hỏa', tam: 40, giay: 6 },
+      { ten: 'Hàn hỏa', tam: 24, giay: 5 },
+      { ten: 'Vũ hỏa', tam: 70, giay: 5 },
+      { ten: 'Thu hỏa', tam: 48, giay: 5 },
+    ],
+    giaGoc: 420,
   },
 ];
 
@@ -432,6 +451,30 @@ export const LUAT = {
    * Mỗi điểm khí vận lệch khỏi 50 cộng/trừ khiVan. Thất bại mất viên đan và hao matTuVi phần tu vi của tầng hiện tại.
    */
   dotPha: { tiLe: [0.5, 0.7, 0.85, 0.95], khiVan: 0.002, matTuVi: 0.3, congToiDa: 0.3 },
+  /**
+   * Đột phá đại cảnh giới (lên cảnh giới `tu` = Kim Đan trở lên; Luyện Khí, Trúc Cơ vẫn theo luật cũ một viên):
+   * - soVien[i] / phamToiThieu[i]: số viên đan đột phá cùng một phẩm phải đặt vào, và phẩm thấp nhất (i = cảnh giới đích − tu, quá bảng lấy ô cuối);
+   * - dẫn dược của tông môn (DAN_DUOC, đổi bằng danh vọng ở Tàng Bảo Các): xem DAN_DUOC_DOT_PHA;
+   * - phí lập trận phiGoc × phiNhan^(đích − tu) linh thạch, mất dù thành hay bại;
+   * - tỉ lệ gốc theo phẩm trừ giamMoiCanhGioi × (đích − 2); mỗi chuyển của viên đã dưỡng cộng moiChuyen;
+   * - thất bại: mất hết đan, dẫn dược, phí; hao matTuVi + matTuViThem × (đích − tu) tu vi (tối đa matTuViToiDa); TẨU HỎA: tu luyện ×tauHoaHeSo trong tauHoaGiay giây.
+   *   Có Hộ Đạo Đan: giữ lại một nửa số đan (làm tròn lên) và không hao tu vi; dẫn dược, phí, tẩu hỏa vẫn mất như thường.
+   */
+  daiDotPha: {
+    tu: 3,
+    soVien: [1, 2, 2, 3, 3, 3],
+    phamToiThieu: [0, 1, 1, 1, 1, 2],
+    phiGoc: 3000,
+    phiNhan: 1.8,
+    giamMoiCanhGioi: 0.04,
+    moiChuyen: 0.01,
+    matTuViThem: 0.03,
+    matTuViToiDa: 0.5,
+    tauHoaGiay: 1800,
+    tauHoaHeSo: 0.5,
+    /** Giá một phần dẫn dược = giaDanhVong × cảnh giới đích danh vọng của tông môn đó. */
+    giaDanhVong: 15,
+  },
   /**
    * Đan độc: mỗi viên uống vào cộng moiVien[phẩm] điểm độc ([hạ, trung, thượng, cực, đan văn]) — phẩm càng cao càng ít độc
    * nhưng không bao giờ hết hẳn. Vượt `day` vẫn uống được nhưng TRÚNG ĐỘC: mỗi điểm quá ngưỡng làm mọi chỉ số giảm giamMoiDiem (không dưới heSoToiThieu), độc tan thì hồi.
@@ -662,3 +705,28 @@ export function heSoChuyen(bac: number): number {
 export function giaBan(phuong: DanPhuong, pham: PhamThat, danVan = false, heSo = 1): number {
   return Math.round(phuong.giaGoc * HE_SO_GIA[pham] * (danVan ? HE_SO_DAN_VAN : 1) * LUAT.heSoBan * heSo);
 }
+
+/** Dẫn dược của năm tông môn: đổi bằng danh vọng ở Tàng Bảo Các, dùng khi đột phá đại cảnh giới. Ảnh: public/hinh/nguyen-lieu/<id>.webp */
+export const DAN_DUOC = [
+  { id: 'van-lo', ten: 'Vân Lộ', tongMon: 'thanh-van', moTa: 'Sương mây ngưng tụ trên đỉnh Thanh Vân, giúp linh khí thông suốt khi phá quan.' },
+  { id: 'duong-dan-dich', ten: 'Dưỡng Đan Dịch', tongMon: 'duoc-vuong', moTa: 'Linh dịch Dược Vương Cốc, giữ đan lực không tán khi dồn vào kinh mạch.' },
+  { id: 'kiem-y-thach', ten: 'Kiếm Ý Thạch', tongMon: 'thien-kiem', moTa: 'Đá khắc kiếm ý của Thiên Kiếm Môn, chém tan tâm chướng.' },
+  { id: 'tu-bao-kim-sa', ten: 'Tử Bảo Kim Sa', tongMon: 'van-bao', moTa: 'Cát vàng trăm năm của Vạn Bảo Lâu, đắp nền cho đạo cơ.' },
+  { id: 'huyen-am-tuy', ten: 'Huyền Âm Tủy', tongMon: 'huyen-am', moTa: 'Tủy huyền âm ngàn năm, trấn hỏa khí khi linh lực sôi trào.' },
+] as const;
+export type DanDuocId = (typeof DAN_DUOC)[number]['id'];
+export const timDanDuoc = (id: string) => DAN_DUOC.find((d) => d.id === id) ?? DAN_DUOC[0];
+/** Cảnh giới đích -> các dẫn dược cần (mỗi loại một phần). Đại Thừa cần hai loại. */
+export const DAN_DUOC_DOT_PHA: Record<number, readonly DanDuocId[]> = {
+  3: ['van-lo'],
+  4: ['duong-dan-dich'],
+  5: ['kiem-y-thach'],
+  6: ['tu-bao-kim-sa'],
+  7: ['huyen-am-tuy'],
+  8: ['van-lo', 'huyen-am-tuy'],
+  9: ['van-lo'],
+  10: ['duong-dan-dich'],
+  11: ['kiem-y-thach'],
+  12: ['tu-bao-kim-sa'],
+  13: ['huyen-am-tuy'],
+};

@@ -4302,3 +4302,119 @@ button.bien-ten:active {
   40% { opacity: 1; }
   100% { opacity: 1; }
 }
+
+/* ================= đột phá đại cảnh giới ================= */
+.dieu-kien-dp {
+  margin: 6px 0 4px;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+.dieu-kien-dp li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 0;
+}
+.dieu-kien-dp li::before {
+  flex: 0 0 auto;
+  width: 18px;
+  text-align: center;
+  font-weight: 700;
+}
+.dieu-kien-dp li.du::before {
+  content: '✓';
+  color: #6cc596;
+}
+.dieu-kien-dp li.thieu::before {
+  content: '✗';
+  color: #ff7a5c;
+}
+.dieu-kien-dp li.tuy::before {
+  content: '○';
+  color: #a99d80;
+}
+.dieu-kien-dp img {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+}
+.canh-bao-dp {
+  color: #ffb39e;
+}
+.thieu-dp {
+  color: #ffb39e;
+}
+.dong-ban.can-dot-pha {
+  border-color: rgba(159, 212, 255, 0.5);
+}
+/* thẻ trạng thái */
+.lop-trang-thai {
+  z-index: 80;
+}
+.the-trang-thai {
+  width: min(94%, 440px);
+  padding: 16px 16px 14px;
+  border: 1px solid #8a7a5a;
+  border-radius: 6px;
+  background: #e9dfc8;
+  color: #2a2018;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+  text-align: center;
+  animation: loi-hien 0.5s ease-out;
+}
+.the-trang-thai h2 {
+  margin: 0 0 10px;
+  font-size: 20px;
+  letter-spacing: 0.06em;
+  color: #4a2a18;
+}
+.anh-trang-thai {
+  display: block;
+  width: 100%;
+  border: 1px solid rgba(60, 40, 20, 0.4);
+  border-radius: 2px;
+  filter: contrast(1.05);
+}
+.the-trang-thai p {
+  margin: 12px 0 14px;
+  font-size: 15px;
+  line-height: 1.6;
+  text-align: left;
+}
+.the-trang-thai .nut {
+  width: 100%;
+}
+
+/* đột phá đại cảnh giới: thiên kiếp giáng xuống */
+.canh-dot-pha.thien-kiep {
+  background: linear-gradient(rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0.55)), url('/hinh/nen/thien-kiep.webp') center / cover no-repeat;
+}
+.canh-dot-pha.thien-kiep.bai {
+  filter: saturate(0.6);
+}
+.canh-dot-pha.thien-kiep::after {
+  /* chớp sét */
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: #e8e0ff;
+  opacity: 0;
+  pointer-events: none;
+  animation: chop-set 2.4s ease-out;
+}
+@keyframes chop-set {
+  0%, 100% { opacity: 0; }
+  8% { opacity: 0.75; }
+  12% { opacity: 0.1; }
+  18% { opacity: 0.55; }
+  26% { opacity: 0; }
+}
+.canh-dot-pha.thien-kiep .dp-chu {
+  padding: 14px 18px;
+  border-radius: 10px;
+  background: rgba(6, 8, 14, 0.55);
+  text-shadow: 0 2px 8px #000, 0 0 2px #000;
+}

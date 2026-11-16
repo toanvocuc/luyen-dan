@@ -1139,7 +1139,7 @@ export function chonLuaChon(k: Kho, id: number, i: number, rng: () => number = M
   if (trongThuong) {
     // mất hồn: bị đưa về cổng vùng; máu tính lại theo máu tối đa đã bị giảm, để hồi đều từ 0
     const nhe = (kho.soLanMatHon ?? 0) === 0;
-    kho = { ...kho, matHon: luc, matHonNhe: nhe, soLanMatHon: (kho.soLanMatHon ?? 0) + 1, banDo: { ...kho.banDo, viTri: 0 } };
+    kho = { ...kho, matHon: luc, matHonNhe: nhe, soLanMatHon: (kho.soLanMatHon ?? 0) + 1, banDo: { ...kho.banDo, viTri: 0 }, thongBao: { loai: 'mat-hon', luc } };
     kho = { ...kho, mau: { thieu: mauToiDa(kho), luc } };
   }
   return { kho, kq: { thanh, coKiem: !!lc.kiem, ketCuc, nhan, mat, trongThuong, tiep, matHonNhe: trongThuong && kho.matHonNhe } };
