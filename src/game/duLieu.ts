@@ -460,6 +460,12 @@ export const LUAT = {
    * - thất bại: mất hết đan, dẫn dược, phí; hao matTuVi + matTuViThem × (đích − tu) tu vi (tối đa matTuViToiDa); TẨU HỎA: tu luyện ×tauHoaHeSo trong tauHoaGiay giây.
    *   Có Hộ Đạo Đan: giữ lại một nửa số đan (làm tròn lên) và không hao tu vi; dẫn dược, phí, tẩu hỏa vẫn mất như thường.
    */
+  /**
+   * Bình cảnh trung kỳ: từ cảnh giới tuCanhGioi (Kim Đan) trở lên — Luyện Khí, Trúc Cơ được miễn theo ý user — tu vi đầy tầng `tang` thì dừng; phải dùng một viên đan cùng bậc với cảnh giới đang tu
+   * (bất kỳ đan phương nào có bậc đó, kể cả đan đột phá của bậc) mới lên tầng kế. Tỉ lệ theo phẩm [hạ, trung, thượng, cực]
+   * trừ giamMoiCanhGioi × (cảnh giới − 1), không dưới toiThieu; đan văn chắc chắn thành. Thất bại: mất viên đan, hao matTuVi tu vi của tầng.
+   */
+  binhCanh: { tuCanhGioi: 3, tang: 5, tiLe: [0.6, 0.75, 0.88, 0.96], giamMoiCanhGioi: 0.03, toiThieu: 0.1, matTuVi: 0.2 },
   daiDotPha: {
     tu: 3,
     soVien: [1, 2, 2, 3, 3, 3],

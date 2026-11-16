@@ -885,11 +885,13 @@ export function tuLuyen(k: Kho, giay: number): Kho {
   // phần tăng tốc nhờ đan chỉ tính cho số giây còn hiệu lực
   const giayNhanh = Math.min(giay, k.tangToc.giay);
   diem += (giay + giayNhanh * k.tangToc.nhan) * tocDoGoc(k);
-  while (tang < soTang(cg) && diem >= tuViCan(tang, cg)) {
+  // bình cảnh trung kỳ: tới tầng LUAT.binhCanh.tang thì dừng, phải dùng đan cùng bậc mới qua (xem phaBinhCanh)
+  const chan = (t: number) => t >= soTang(cg) || (cg >= LUAT.binhCanh.tuCanhGioi && t === LUAT.binhCanh.tang);
+  while (!chan(tang) && diem >= tuViCan(tang, cg)) {
     diem -= tuViCan(tang, cg);
     tang += 1;
   }
-  if (tang >= soTang(cg)) diem = Math.min(diem, tuViCan(tang, cg));
+  if (chan(tang)) diem = Math.min(diem, tuViCan(tang, cg));
   const conGiay = k.tangToc.giay - giayNhanh;
   const tangToc = giayNhanh > 0 ? { nhan: conGiay > 0 ? k.tangToc.nhan : 0, giay: conGiay } : k.tangToc;
   return { ...k, tuVi: { ...k.tuVi, tang, diem }, tangToc };
@@ -1350,4 +1352,46 @@ export function lyDoKhoaPhuong(k: Kho, i: number): string | null {
   const truoc = DAN_PHUONG[i - 1];
   if (truoc && truoc.bac === p.bac && (k.thongThao[truoc.id] ?? 0) < ME_DE_MO_KHOA) return `Cần ${ME_DE_MO_KHOA} mẻ ${truoc.ten}`;
   return null;
+}
+
+// ---------- bình cảnh trung kỳ ----------
+
+/** Đang kẹt bình cảnh trung kỳ (tu vi đầy tầng LUAT.binhCanh.tang, chưa phá). */
+export const dangBinhCanh = (k: Kho) =>
+  k.tuVi.canhGioi >= LUAT.binhCanh.tuCanhGioi && k.tuVi.tang === LUAT.binhCanh.tang && k.tuVi.diem >= tuViCan(k.tuVi.tang, k.tuVi.canhGioi);
+/** Tỉ lệ phá bình cảnh bằng một viên phẩm `loai`. */
+export function tiLeBinhCanh(k: Kho, loai: PhamThat | 'dv'): number {
+  if (loai === 'dv') return 1;
+  const c = LUAT.binhCanh;
+  const kv = ((k.nhanVat?.khiVan ?? 50) - 50) * LUAT.dotPha.khiVan;
+  return Math.min(0.99, Math.max(c.toiThieu, c.tiLe[loai] - c.giamMoiCanhGioi * Math.max(0, k.tuVi.canhGioi - 1) + kv));
+}
+/** Các viên dùng được để phá bình cảnh: mọi đan phương cùng bậc với cảnh giới đang tu, theo phẩm (cao trước). */
+export function danBinhCanh(k: Kho): { id: string; loai: PhamThat | 'dv'; co: number }[] {
+  const ra: { id: string; loai: PhamThat | 'dv'; co: number }[] = [];
+  for (const p of DAN_PHUONG) {
+    if (bacSo(p) !== k.tuVi.canhGioi) continue;
+    if ((k.danVan[p.id] ?? 0) > 0) ra.push({ id: p.id, loai: 'dv', co: k.danVan[p.id] });
+    for (const ph of [3, 2, 1, 0] as PhamThat[]) if ((k.tuiDan[p.id]?.[ph] ?? 0) > 0) ra.push({ id: p.id, loai: ph, co: k.tuiDan[p.id][ph] });
+  }
+  return ra;
+}
+/** Dùng một viên để phá bình cảnh. Thành: lên tầng kế (tu vi về 0). Bại: mất viên đan, hao một phần tu vi của tầng. */
+export function phaBinhCanh(k: Kho, id: string, loai: PhamThat | 'dv', r: number): { kho: Kho; thanh: boolean } | null {
+  if (!dangBinhCanh(k)) return null;
+  const p = timDanPhuong(id);
+  if (bacSo(p) !== k.tuVi.canhGioi) return null;
+  let kho: Kho;
+  if (loai === 'dv') {
+    if ((k.danVan[id] ?? 0) < 1) return null;
+    kho = { ...k, danVan: { ...k.danVan, [id]: k.danVan[id] - 1 } };
+  } else {
+    if ((k.tuiDan[id]?.[loai] ?? 0) < 1) return null;
+    const t = [...k.tuiDan[id]] as [number, number, number, number];
+    t[loai] -= 1;
+    kho = { ...k, tuiDan: { ...k.tuiDan, [id]: t } };
+  }
+  const thanh = r < tiLeBinhCanh(k, loai);
+  const tuVi = thanh ? { ...k.tuVi, tang: k.tuVi.tang + 1, diem: 0 } : { ...k.tuVi, diem: Math.floor(k.tuVi.diem * (1 - LUAT.binhCanh.matTuVi)) };
+  return { kho: { ...kho, tuVi }, thanh };
 }

@@ -70,6 +70,17 @@ export const LUOT_CHI_TAY: readonly LuotChiTay[] = [
     ],
   },
   {
+    id: 'binh-canh',
+    cho: '.nut-binh-canh',
+    nen: true,
+    buoc: [
+      {
+        chon: '.nut-binh-canh',
+        chu: 'Tu vi đã chạm bình cảnh trung kỳ (tầng 5): phải dùng một viên đan cùng bậc với cảnh giới đang tu mới lên tầng 6. Phẩm càng cao càng dễ phá, cảnh giới càng cao càng khó.',
+      },
+    ],
+  },
+  {
     id: 'dong-phu',
     nen: true,
     cho: '.tu-tien .dau-tu-tien',
