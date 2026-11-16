@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { daHetLuotThu } from '../anhLoi.ts';
 import { DAN_DUOC, DAN_PHUONG, LUAT, TEN_MOC, TEN_PHAM, TONG_MON, anhDan, bacSo, giaBan, mocChuyen, timDanPhuong, timTongMon, type PhamThat } from '../game/duLieu.ts';
+import { ANH_TRUNG_CHUA_RO, LUAT_THU, giaTrung, muaTrung } from '../game/linhThu.ts';
 import { banChuyen, banDan, banLe, danDotPha, doiDanDuoc, dsChuyen, giaDanDuoc, yeuCauDotPha, giaChuyen, giaTriTui, giaoDon, loiTheKho, soVienHopDon, thuongDon, tuChoiDon, vienSeGiao, type Kho } from '../game/kho.ts';
 import { dongHo, useBayGio } from './PhuongThi.tsx';
 
@@ -158,6 +159,24 @@ export function TuiDan({ kho, doiKho, onDong, trangDau = 'don' }: { kho: Kho; do
             <p className="chu-nho">
               Tàng Bảo Các các tông môn: đổi danh vọng lấy dẫn dược, thứ bắt buộc khi đột phá từ Kim Đan trở lên. Muốn có danh vọng của tông môn nào thì giao đơn cho tông môn đó.
             </p>
+            <div className="dong-tui dong-ban dong-trung-thu">
+              <img src={ANH_TRUNG_CHUA_RO} alt="" />
+              <div className="than-dong">
+                <b>Trứng linh thú ×{kho.trungThu ?? 0}</b>
+                <div className="hang-pham">
+                  <span>
+                    {timTongMon('van-bao').ten} · {giaTrung(kho).toLocaleString('vi-VN')} linh thạch + {LUAT_THU.giaDanhVong} danh vọng (đang có {kho.danhVong['van-bao'] ?? 0})
+                  </span>
+                </div>
+              </div>
+              <button
+                className="nut-nho nut-ban"
+                disabled={kho.linhThach < giaTrung(kho) || (kho.danhVong['van-bao'] ?? 0) < LUAT_THU.giaDanhVong}
+                onClick={() => doiKho(muaTrung)}
+              >
+                Mua
+              </button>
+            </div>
             {DAN_DUOC.map((d) => {
               const gia = giaDanDuoc(kho);
               const co = kho.danhVong[d.tongMon] ?? 0;

@@ -3,6 +3,7 @@ import { CANH_GIOI, CHI_SO, DAN_DUOC_DOT_PHA, DAN_PHUONG, DUOC_LIEU, timDanDuoc,
 import type { KetQua } from './luyenDan.ts';
 import { loiThe, timXuatThan, type NhanVat } from './nhanVat.ts';
 import type { QuaMoDau } from './quaMoDau.ts';
+import { tacDungThu, type Thu } from './linhThu.ts';
 
 export interface Kho {
   phienBan: 3;
@@ -99,6 +100,12 @@ export interface Kho {
   tauHoa: number;
   /** Thẻ trạng thái đang chờ người chơi bấm "Đã hiểu" (tự gây ra: tẩu hỏa, trúng độc, mất hồn). */
   thongBao: { loai: 'tau-hoa' | 'trung-doc' | 'mat-hon'; luc: number } | null;
+  /** Linh thú đang nuôi (xem game/linhThu.ts), con đang xuất chiến, trứng chưa ấp, trứng đang ấp, thú vừa nở chờ nhận nuôi. */
+  linhThu: Thu[];
+  thuXuatChien: string | null;
+  trungThu: number;
+  apTrung: { cap: number; truot: number } | null;
+  thuMoiNo: Thu | null;
 }
 
 /** Loại viên đan dưỡng được: thượng phẩm, cực phẩm, hoặc đan văn. */
@@ -195,6 +202,11 @@ export function khoMoi(nv: NhanVat | null = null): Kho {
     hoDao: false,
     tauHoa: 0,
     thongBao: null,
+    linhThu: [],
+    thuXuatChien: null,
+    trungThu: 0,
+    apTrung: null,
+    thuMoiNo: null,
   };
 }
 
@@ -241,6 +253,11 @@ function buKho(k: Kho | null): Kho | null {
       hoDao: k.hoDao ?? false,
       tauHoa: k.tauHoa ?? 0,
       thongBao: k.thongBao ?? null,
+      linhThu: [...(k.linhThu ?? [])],
+      thuXuatChien: k.thuXuatChien ?? null,
+      trungThu: k.trungThu ?? 0,
+      apTrung: k.apTrung ?? null,
+      thuMoiNo: k.thuMoiNo ?? null,
   });
 }
 
@@ -870,7 +887,8 @@ export const vienMan = (k: Kho) => k.tuVi.tang >= soTang(k.tuVi.canhGioi) && k.t
 
 /** Tu vi mỗi giây khi không có đan trợ lực (linh căn quyết định). */
 export const tocDoGoc = (k: Kho, luc = Date.now()) =>
-  LUAT.tuViMoiGiay * loiThe(k.nhanVat).tocDoTuLuyen * (1 + (k.tocDoCong ?? 0)) * (k.trung ? 1 + LUAT.qua.trung.tocDo : 1) * (dangTauHoa(k, luc) ? LUAT.daiDotPha.tauHoaHeSo : 1);
+  LUAT.tuViMoiGiay * loiThe(k.nhanVat).tocDoTuLuyen * (1 + (k.tocDoCong ?? 0)) * (k.trung ? 1 + LUAT.qua.trung.tocDo : 1) * (dangTauHoa(k, luc) ? LUAT.daiDotPha.tauHoaHeSo : 1) *
+  (1 + (k.linhThu?.length ? tacDungThu(k, luc).tuLuyen : 0));
 /** Còn bao nhiêu giây tẩu hỏa (0 = không). */
 export const giayTauHoa = (k: Kho, luc = Date.now()) => Math.max(0, Math.ceil(((k.tauHoa ?? 0) + LUAT.daiDotPha.tauHoaGiay * 1000 - luc) / 1000));
 export const dangTauHoa = (k: Kho, luc = Date.now()) => (k.tauHoa ?? 0) > 0 && giayTauHoa(k, luc) > 0;
@@ -916,7 +934,8 @@ export function loiTheKho(k: Kho): LoiThe {
   const luyen = k.quaMoDau?.loai === 'luyen-than';
   return {
     ...goc,
-    phamCong: goc.phamCong + phamTheoCanhGioi(bac) + (lo.phamCong ?? 0) + (luyen ? (k.quaMoDau!.nhe ? LUAT.qua.luyenThan.phamNhe : LUAT.qua.luyenThan.pham) : 0),
+    phamCong:
+      goc.phamCong + phamTheoCanhGioi(bac) + (lo.phamCong ?? 0) + (luyen ? (k.quaMoDau!.nhe ? LUAT.qua.luyenThan.phamNhe : LUAT.qua.luyenThan.pham) : 0) + (k.linhThu?.length ? tacDungThu(k).pham : 0),
     rongVung: goc.rongVung + bac * LUAT.canhGioi.rongVung + (lo.rongVung ?? 0) + (luyen && !k.quaMoDau!.nhe ? LUAT.qua.luyenThan.rongVung : 0),
     heSoBan: heSoBanCho(k),
     heSoAp: goc.heSoAp * (lo.heSoAp ?? 1),
@@ -957,7 +976,13 @@ export const chiSoDan = (k: Kho, cs: ChiSo) => (k.chiSoCong[cs] ?? 0) * (cs === 
 export const dangMatHon = (k: Kho, luc = Date.now()) => (k.matHon ?? 0) > 0 && !k.matHonNhe && luc - k.matHon < LUAT.kyNgo.matHon.yeuGiay * 1000;
 /** Giá trị một chỉ số (làm tròn xuống). Đang mất hồn thì chỉ còn LUAT.kyNgo.matHon.heSo phần. */
 export const chiSo = (k: Kho, cs: ChiSo, luc = Date.now()) =>
-  Math.floor((chiSoGoc(k, cs) + chiSoDan(k, cs)) * (dangMatHon(k, luc) ? LUAT.kyNgo.matHon.heSo : 1) * heSoTrungDoc(docHienTai(k, luc)) * heSoChiSoQua(k));
+  Math.floor((chiSoGoc(k, cs) + chiSoDan(k, cs)) * (dangMatHon(k, luc) ? LUAT.kyNgo.matHon.heSo : 1) * heSoTrungDoc(docHienTai(k, luc)) * heSoChiSoQua(k) * heSoChiSoThu(k, cs, luc));
+/** Linh thú xuất chiến cộng chỉ số: Ngân Nguyệt Lang -> Lực, Thân pháp; Bích Thủy Huyền Quy -> Khí huyết, Phòng ngự. */
+function heSoChiSoThu(k: Kho, cs: ChiSo, luc: number): number {
+  if (!k.linhThu?.length) return 1;
+  const t = tacDungThu(k, luc);
+  return 1 + (cs === 'luc' || cs === 'thanPhap' ? t.lucThan : cs === 'khiHuyet' || cs === 'phongNgu' ? t.mauPhong : 0);
+}
 /** Lệ Thần Đan: mọi chỉ số nhân thêm. */
 export const heSoChiSoQua = (k: Kho) => (k.quaMoDau?.loai === 'le-than' ? (k.quaMoDau.nhe ? LUAT.qua.leThan.chiSoNhe : LUAT.qua.leThan.chiSo) : 1);
 /** Lệ Thần Đan bản đầy đủ: thân thể thần linh. */
@@ -1192,7 +1217,7 @@ export function tiLeDotPha(k: Kho, pham: PhamThat, danVan: boolean, congChuyen =
   const kv = ((k.nhanVat?.khiVan ?? 50) - 50) * LUAT.dotPha.khiVan;
   const dich = k.tuVi.canhGioi + 1;
   const giam = dich >= LUAT.daiDotPha.tu ? LUAT.daiDotPha.giamMoiCanhGioi * (dich - 2) : 0;
-  return Math.min(0.99, Math.max(0.05, LUAT.dotPha.tiLe[pham] + kv + k.congDotPha - giam + congChuyen));
+  return Math.min(0.99, Math.max(0.05, LUAT.dotPha.tiLe[pham] + kv + k.congDotPha - giam + congChuyen + (k.linhThu?.length ? tacDungThu(k).dotPha : 0)));
 }
 
 // ---------- đột phá đại cảnh giới ----------
@@ -1364,7 +1389,7 @@ export function tiLeBinhCanh(k: Kho, loai: PhamThat | 'dv'): number {
   if (loai === 'dv') return 1;
   const c = LUAT.binhCanh;
   const kv = ((k.nhanVat?.khiVan ?? 50) - 50) * LUAT.dotPha.khiVan;
-  return Math.min(0.99, Math.max(c.toiThieu, c.tiLe[loai] - c.giamMoiCanhGioi * Math.max(0, k.tuVi.canhGioi - 1) + kv));
+  return Math.min(0.99, Math.max(c.toiThieu, c.tiLe[loai] - c.giamMoiCanhGioi * Math.max(0, k.tuVi.canhGioi - 1) + kv + (k.linhThu?.length ? tacDungThu(k).dotPha : 0)));
 }
 /** Các viên dùng được để phá bình cảnh: mọi đan phương cùng bậc với cảnh giới đang tu, theo phẩm (cao trước). */
 export function danBinhCanh(k: Kho): { id: string; loai: PhamThat | 'dv'; co: number }[] {

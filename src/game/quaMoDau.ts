@@ -30,7 +30,7 @@ export function tacDungQua(loai: LoaiQua, nhe: boolean): string[] {
     return nhe
       ? [`Phẩm đan nhích lên một chút`, `Bán đan ở chợ +${pt(q.luyenThan.banNhe - 1)}`]
       : [`Phẩm đan cao hẳn, vùng hỏa hầu rộng hơn`, `Bán đan ở chợ +${pt(q.luyenThan.ban - 1)}`, `Thu nhập mỗi mẻ gần gấp rưỡi tới gấp đôi`];
-  return [`Nhận Trứng Dực Quang Thần Thú`, `Linh khí của trứng: tu luyện nhanh +${pt(q.trung.tocDo)}`, `Trứng nở khi thần thú giáng thế`];
+  return [`Nhận Trứng Dực Quang Thần Thú`, `Linh khí của trứng: tu luyện nhanh +${pt(q.trung.tocDo)}`, `Ấp nở ở Linh Thú Viên (nút Linh thú ở động phủ)`];
 }
 
 /** Ghi nhận quà vào kho (chỉ một lần). */

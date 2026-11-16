@@ -19,11 +19,12 @@ import { SaoLuu } from './manHinh/SaoLuu.tsx';
 import { ManMoDau, ManThienMenh } from './manHinh/ThienMenh.tsx';
 import { TuiDan } from './manHinh/TuiDan.tsx';
 import { TuTien } from './manHinh/TuTien.tsx';
+import { LinhThuVien } from './manHinh/LinhThuVien.tsx';
 import { VuonDuoc } from './manHinh/VuonDuoc.tsx';
 
 /** Luồng màn hình: mở đầu -> (lần đầu) thiên mệnh -> động phủ tu tiên <-> đan phòng / vườn dược / bản đồ du ngoạn. */
 type Man = 'mo-dau' | 'khoi-dau' | 'thien-menh' | 'tu-tien' | 'lo-dan' | 'vuon' | 'ban-do';
-type Bang = null | 'tui' | 'don' | 'phuong-thi' | 'sao-luu' | 'duong' | 'dan-thu' | 'tang-bao';
+type Bang = null | 'tui' | 'don' | 'phuong-thi' | 'sao-luu' | 'duong' | 'dan-thu' | 'tang-bao' | 'linh-thu';
 
 export function UngDung() {
   const [kho, datKho] = useState<Kho>(napKho);
@@ -210,6 +211,7 @@ export function UngDung() {
           onDanThu={() => datBang('dan-thu')}
           onDiToi={diToi}
           onTangBao={() => datBang('tang-bao')}
+          onLinhThu={() => datBang('linh-thu')}
           onLuyenDan={() => datMan('lo-dan')}
           onMonPhai={() => datBang('tui')}
           onCaiDat={() => datBang('sao-luu')}
@@ -221,6 +223,7 @@ export function UngDung() {
         {thanhDay}
         {bang === 'tui' && <TuiDan kho={kho} doiKho={doiKho} onDong={() => datBang(null)} />}
         {bang === 'tang-bao' && <TuiDan kho={kho} doiKho={doiKho} onDong={() => datBang(null)} trangDau="tang-bao" />}
+        {bang === 'linh-thu' && <LinhThuVien kho={kho} doiKho={doiKho} onDong={() => datBang(null)} />}
         {theTrangThai}
         {bang === 'sao-luu' && (
           <SaoLuu kho={kho} onNap={(k) => datKho(k)} onDong={() => datBang(null)} onXemLaiHuongDan={() => datKho((k) => ({ ...k, daChiTay: [] }))} />

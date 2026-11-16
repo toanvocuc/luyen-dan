@@ -4418,3 +4418,331 @@ button.bien-ten:active {
   background: rgba(6, 8, 14, 0.55);
   text-shadow: 0 2px 8px #000, 0 0 2px #000;
 }
+
+/* ---- Linh Thú Viên ---- */
+.man-linh-thu {
+  position: absolute;
+  inset: 0;
+  z-index: 19;
+  display: flex;
+  flex-direction: column;
+  background: #0c1a14 url('/hinh/nen/linh-thu-vien.webp') center / cover no-repeat;
+}
+.dau-linh-thu {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: max(10px, env(safe-area-inset-top)) 12px 6px;
+  background: linear-gradient(rgba(5, 12, 10, 0.85), rgba(5, 12, 10, 0));
+}
+.dau-linh-thu b {
+  font-size: 18px;
+  color: #f3e3b8;
+  text-shadow: 0 2px 6px #000;
+}
+.the-linh-thu {
+  flex: 0 0 auto;
+  padding: 0 12px;
+}
+.than-linh-thu {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 12px max(14px, env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+/* sân đứng: đáy con thú chạm ổ rơm giữa ảnh nền */
+.san-thu {
+  flex: 0 0 auto;
+  height: max(170px, calc(53dvh - 96px));
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  pointer-events: none;
+}
+.anh-thu-lon {
+  max-height: 78%;
+  max-width: 78%;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 10px rgba(0, 0, 0, 0.55));
+  animation: thu-tho 3.2s ease-in-out infinite;
+}
+@keyframes thu-tho {
+  50% { transform: translateY(-5px) scale(1.015); }
+}
+.anh-thu-tam {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  width: 100%;
+  max-width: 160px;
+  border-radius: 50%;
+  background: radial-gradient(#3a5a48, #14231c);
+  border: 1px solid var(--dong);
+  color: #f3e3b8;
+  font-size: 28px;
+}
+.hang-thu {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px 0 4px;
+}
+.o-thu {
+  position: relative;
+  flex: 0 0 auto;
+  width: 58px;
+  height: 58px;
+  padding: 4px;
+  border-radius: 12px;
+  border: 2px solid var(--dong-toi);
+  background: rgba(9, 17, 19, 0.82);
+  cursor: pointer;
+}
+.o-thu.chon {
+  box-shadow: 0 0 0 2px #f3e3b8, 0 0 12px rgba(255, 220, 140, 0.6);
+}
+.o-thu img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.o-thu .anh-thu-tam {
+  font-size: 18px;
+}
+.dau-xuat-chien {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  font-style: normal;
+  font-size: 14px;
+  color: #ffd66e;
+  text-shadow: 0 0 4px #000, 0 0 2px #000;
+}
+.the-thu {
+  background: rgba(9, 17, 19, 0.9);
+  border: 1px solid var(--dong-toi);
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px rgba(185, 147, 90, 0.25);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.dau-the-thu {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.5;
+}
+.dau-the-thu b {
+  font-size: 17px;
+}
+.dau-the-thu small {
+  color: var(--chu-mo);
+}
+.mo-ta-thu,
+.tac-dung-thu {
+  margin: 0;
+  font-size: 13px;
+  color: var(--chu-mo);
+}
+.tac-dung-thu {
+  color: #cfe8d6;
+}
+.luoi-chi-so-thu {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.luoi-chi-so-thu span {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 13px;
+}
+.luoi-chi-so-thu b {
+  color: #f3e3b8;
+}
+.thanh-thu {
+  position: relative;
+  display: block;
+  height: 20px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+.thanh-thu i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 10px;
+  transition: width 0.4s;
+}
+.thanh-thu em {
+  position: relative;
+  display: block;
+  font-style: normal;
+  font-size: 12px;
+  line-height: 20px;
+  text-align: center;
+  text-shadow: 0 1px 2px #000;
+}
+.hang-nut-thu {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+.hang-nut-thu .nut {
+  flex: 1 1 auto;
+}
+.trong-linh-thu {
+  margin-top: auto;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(9, 17, 19, 0.88);
+}
+.bao-thu {
+  color: #ffd66e;
+}
+.ds-trung {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 12px;
+  background: rgba(9, 17, 19, 0.9);
+}
+.ds-trung .dong-tui img,
+.ds-trung .dong-tui .anh-thu-tam {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  font-size: 18px;
+}
+.phan-bo-bac {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  font-size: 11px;
+  text-align: center;
+}
+.phan-bo-bac span {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 2px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+}
+.phan-bo-bac b {
+  font-size: 13px;
+}
+.trung-ap {
+  max-height: 62%;
+  max-width: 60%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 18px rgba(220, 230, 255, 0.45));
+  animation: thu-tho 2.6s ease-in-out infinite;
+}
+.trung-ap.nay {
+  animation: trung-nay 0.6s ease-out, thu-tho 2.6s 0.6s ease-in-out infinite;
+}
+.trung-ap.rung {
+  animation: trung-rung 0.45s linear;
+}
+@keyframes trung-nay {
+  40% { transform: scale(1.12); filter: drop-shadow(0 0 34px rgba(255, 236, 160, 0.95)) brightness(1.3); }
+}
+@keyframes trung-rung {
+  20% { transform: translateX(-6px) rotate(-4deg); }
+  40% { transform: translateX(6px) rotate(4deg); }
+  60% { transform: translateX(-4px) rotate(-2deg); }
+  80% { transform: translateX(3px); }
+}
+.lop-thu-moi {
+  z-index: 25;
+  background: rgba(0, 0, 0, 0.72);
+}
+.the-thu-moi {
+  width: min(340px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(9, 17, 19, 0.96);
+  border: 1px solid var(--dong);
+  animation: thu-hien 0.5s ease-out;
+}
+.the-thu-moi > b {
+  font-size: 20px;
+}
+.the-thu-moi p {
+  margin: 0;
+}
+.anh-thu-moi {
+  width: 190px;
+  height: 190px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 22px rgba(255, 230, 160, 0.5));
+}
+@keyframes thu-hien {
+  from { transform: scale(0.85); opacity: 0; }
+}
+/* thú xuất chiến ngồi cạnh chủ ở động phủ */
+.thu-dong-phu {
+  position: absolute;
+  right: 8%;
+  bottom: 4%;
+  width: min(30%, 130px);
+  aspect-ratio: 1;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  z-index: 2;
+}
+.thu-dong-phu.dang-0 {
+  width: min(22%, 96px);
+}
+.thu-dong-phu.dang-2 {
+  width: min(36%, 156px);
+}
+.thu-dong-phu img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: bottom;
+  filter: drop-shadow(0 8px 8px rgba(0, 0, 0, 0.6));
+  animation: thu-tho 3.4s ease-in-out infinite;
+}
+.dong-trung-thu {
+  border-color: rgba(211, 155, 255, 0.5);
+}
+.the-linh-thu .the {
+  background: rgba(9, 17, 19, 0.86);
+  color: var(--chu);
+  text-shadow: none;
+}
+.the-linh-thu .the.chon {
+  background: rgba(58, 42, 18, 0.94);
+  border-color: var(--dong);
+  color: #f3e3b8;
+}
+.the-thu-moi .hang-nut-thu {
+  width: 100%;
+  flex-wrap: nowrap;
+}
+.the-thu-moi .hang-nut-thu .nut {
+  flex: 1 1 0;
+  white-space: nowrap;
+  padding-left: 6px;
+  padding-right: 6px;
+}

@@ -2,6 +2,7 @@
 // Số cân bằng nằm ở LUAT.kyNgo (duLieu.ts); dữ liệu bản đồ, sự kiện và NPC nằm ngay trong file này.
 import { CHI_SO, DAN_PHUONG, DUOC_LIEU, LUAT, TEN_PHAM, bacSo, timDanPhuong, type ChiSo, type PhamThat, type Tuoi } from './duLieu.ts';
 import { chiSo, coLeThanDay, dangMatHon, kyCho, mauHienTai, mauToiDa, tuLuyen, tuViCan, type Kho } from './kho.ts';
+import { tacDungThu } from './linhThu.ts';
 
 // ---------- dữ liệu ----------
 
@@ -871,7 +872,8 @@ export const duocVao = (k: Kho) => k.tuVi.canhGioi >= BAN_DO.canhGioi;
 
 export function theLucHienTai(k: Kho, luc = Date.now()): number {
   const c = LUAT.kyNgo;
-  return Math.min(c.theLucToiDa, k.theLuc.diem + Math.max(0, luc - k.theLuc.luc) / 1000 / c.giayHoiTheLuc);
+  const nhanh = 1 + (k.linhThu?.length ? tacDungThu(k, luc).theLuc : 0);
+  return Math.min(c.theLucToiDa, k.theLuc.diem + (Math.max(0, luc - k.theLuc.luc) / 1000 / c.giayHoiTheLuc) * nhanh);
 }
 /** Còn bao nhiêu giây nữa thì đủ thể lực cho một bước. */
 export function giayDuBuoc(k: Kho, luc = Date.now()): number {

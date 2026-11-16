@@ -10,6 +10,8 @@ import { BupBe } from './BupBe.tsx';
 import { dongThienMenh } from './ThienMenh.tsx';
 import { giayKhoaMatHon, giayYeuMatHon } from '../game/kyNgo.ts';
 import { NutAnh } from './DieuHuong.tsx';
+import { AnhThu } from './LinhThuVien.tsx';
+import { anhThu, noHienTai, thuXuatChien, timLoaiThu } from '../game/linhThu.ts';
 import { NHIEM_VU, chuThuong, nhanThuongDan, nhiemVuNay, type NoiLam } from '../game/danDuong.ts';
 
 type Bang = null | 'hanh-trang' | 'thien-menh' | 'dot-pha' | 'chi-so' | 'binh-canh';
@@ -22,6 +24,7 @@ export function TuTien({
   onDiToi,
   onDanThu,
   onTangBao,
+  onLinhThu,
   onLuyenDan,
   onMonPhai,
   onCaiDat,
@@ -38,6 +41,8 @@ export function TuTien({
   onDiToi: (noi: NoiLam) => void;
   /** Mở Tàng Bảo Các (đổi danh vọng lấy dẫn dược). */
   onTangBao: () => void;
+  /** Mở Linh Thú Viên (nuôi thú, ấp trứng). */
+  onLinhThu: () => void;
   onLuyenDan: () => void;
   /** Mở bảng đơn hàng của các tông môn. */
   onMonPhai: () => void;
@@ -70,6 +75,9 @@ export function TuTien({
   const yeuMatHon = giayYeuMatHon(kho, luc);
   const nhiemVu = nhiemVuNay(kho);
   const binhCanh = dangBinhCanh(kho);
+  const thu = thuXuatChien(kho);
+  /** Chấm đỏ nút Linh thú: có thú vừa nở chờ nhận, hoặc thú xuất chiến đang đói. */
+  const chamThu = !!kho.thuMoiNo || (!!thu && noHienTai(thu, luc) < 25);
   /** Thẻ nhiệm vụ đang mở hay thu gọn thành cuộn thư (mặc định thu gọn để không che màn). */
   const [moNhiemVu, datMoNhiemVu] = useState(false);
   const diToi = (noi: NoiLam) => {
@@ -124,11 +132,10 @@ export function TuTien({
         <NutAnh anh="tang-bao-cac" ten="Tàng Bảo" chu="寶" onClick={onTangBao} />
       </div>
 
-      {nhiemVu && (
-        <div className="cot-nut trai nut-nhiem-vu">
-          <NutAnh anh="nhiem-vu" ten="Nhiệm vụ" chu="卷" dang={moNhiemVu} cham={kho.danDuong.xong} onClick={() => datMoNhiemVu((x) => !x)} />
-        </div>
-      )}
+      <div className="cot-nut trai nut-nhiem-vu">
+        {nhiemVu && <NutAnh anh="nhiem-vu" ten="Nhiệm vụ" chu="卷" dang={moNhiemVu} cham={kho.danDuong.xong} onClick={() => datMoNhiemVu((x) => !x)} />}
+        <NutAnh anh="linh-thu" ten="Linh thú" chu="獸" cham={chamThu} onClick={onLinhThu} />
+      </div>
       {nhiemVu && moNhiemVu && (
         <section className={`the-nhiem-vu ${kho.danDuong.xong ? 'xong' : ''}`}>
           <button className="dong-nhiem-vu" onClick={() => datMoNhiemVu(false)} aria-label="Thu gọn">
@@ -164,6 +171,11 @@ export function TuTien({
       <div className={`san-tu-luyen ${yeuMatHon > 0 ? 'mat-hon' : ''}`}>
         <div className={`hao-quang ${day ? 'day' : ''}`} />
         <BupBe dang={nhanVat.dang} gioiTinh={nhanVat.gioiTinh} />
+        {thu && (
+          <button className={`thu-dong-phu dang-${thu.dang}`} onClick={onLinhThu} aria-label={timLoaiThu(thu.loai).ten}>
+            <AnhThu src={anhThu(thu.loai, thu.dang)} ten={timLoaiThu(thu.loai).ten} />
+          </button>
+        )}
       </div>
 
       <section className="bang day tu-vi">
@@ -469,7 +481,7 @@ export function TuTien({
                     <div className="than-dong">
                       <b>Trứng Dực Quang Thần Thú</b>
                       <div className="hang-pham">
-                        <span>Linh khí của trứng: tu luyện nhanh +{Math.round(LUAT.qua.trung.tocDo * 100)}%. Trứng sẽ nở khi thần thú giáng thế.</span>
+                        <span>Linh khí của trứng: tu luyện nhanh +{Math.round(LUAT.qua.trung.tocDo * 100)}%. Mang tới Linh Thú Viên để ấp nở.</span>
                       </div>
                     </div>
                   </div>

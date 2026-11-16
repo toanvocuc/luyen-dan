@@ -316,6 +316,7 @@ def main():
     xu_ly_ky_ngo()
     xu_ly_mo_dau()
     xu_ly_trang_thai()
+    xu_ly_linh_thu()
     sys.exit(1 if loi else 0)
 
 
@@ -468,6 +469,92 @@ def xu_ly_ky_ngo():
                 im = thu_nho(im.convert('RGB'), 512 if goc_ten == 'giay' else 800)
                 im.save(os.path.join(RA, 'ky-ngo', goc_ten + '.jpg'), quality=84)
             print('ok ky-ngo/' + ten, im.size)
+
+
+
+def dac_bao_loi(im: Image.Image, goc: Image.Image, nguong: float = 0.55) -> Image.Image:
+    """Vật gần như trắng toàn thân (trứng ngọc trai): tách nền tưởng ruột là nền. Lấy các mảng nét đậm đủ lớn (viền vỏ),
+    dựng bao lồi của nó rồi tô đặc bên trong bằng màu gốc; phần khói ngoài bao lồi giữ nguyên như đã tách."""
+    a = np.asarray(goc.convert('RGB')).astype(np.float32) / 255.0
+    dam = (1.0 - a.min(axis=2)) > nguong
+    # tìm mảng liền lớn nhất trên ảnh thu nhỏ cho nhanh
+    k = 4
+    nho = dam[::k, ::k]
+    h, w = nho.shape
+    nhan = np.zeros((h, w), dtype=np.int32)
+    co = {}
+    so = 0
+    for y0, x0 in zip(*np.nonzero(nho)):
+        if nhan[y0, x0]:
+            continue
+        so += 1
+        nhan[y0, x0] = so
+        hang = deque([(y0, x0)])
+        dem = 0
+        while hang:
+            y, x = hang.popleft()
+            dem += 1
+            for dy in (-1, 0, 1):
+                for dx in (-1, 0, 1):
+                    ny, nx = y + dy, x + dx
+                    if 0 <= ny < h and 0 <= nx < w and nho[ny, nx] and not nhan[ny, nx]:
+                        nhan[ny, nx] = so
+                        hang.append((ny, nx))
+        co[so] = dem
+    # gộp mọi đoạn viền đủ lớn (viền bị khói cắt thành nhiều đoạn), bỏ chấm lấp lánh nhỏ
+    nguong_co = max(40, max(co.values()) * 0.05)
+    ys, xs = np.nonzero(np.isin(nhan, [n for n, d in co.items() if d >= nguong_co]))
+    diem = sorted(set(zip((xs * k).tolist(), (ys * k).tolist())))
+
+    def cheo(o, p1, p2):
+        return (p1[0] - o[0]) * (p2[1] - o[1]) - (p1[1] - o[1]) * (p2[0] - o[0])
+
+    duoi, tren = [], []
+    for q in diem:
+        while len(duoi) >= 2 and cheo(duoi[-2], duoi[-1], q) <= 0:
+            duoi.pop()
+        duoi.append(q)
+    for q in reversed(diem):
+        while len(tren) >= 2 and cheo(tren[-2], tren[-1], q) <= 0:
+            tren.pop()
+        tren.append(q)
+    bao = duoi[:-1] + tren[:-1]
+    mn = Image.new('L', im.size, 0)
+    ImageDraw.Draw(mn).polygon(bao, fill=255)
+    trong = np.asarray(mn) > 127
+    ra = np.asarray(im.convert('RGBA')).copy()
+    g = np.asarray(goc.convert('RGB'))
+    ra[trong, :3] = g[trong]
+    ra[trong, 3] = 255
+    return Image.fromarray(ra, 'RGBA')
+
+
+# ảnh thú trắng gần hết thân: tách xong phải tô đặc theo bao lồi của viền (xem dac_bao_loi)
+DAC_BAO_LOI = {'trung-chua-ro.png'}
+
+
+def xu_ly_linh_thu():
+    """Linh thú: Hinh_anh/linh-thu/<loài>-<trung|non|thanh|truong>.png và trung-chua-ro.png (vẽ trên nền trắng, có quầng sáng)
+    -> public/hinh/linh-thu/*.png (tách nền kiểu thường + lấp lỗ, 512). Chưa có icon ui/nut-linh-thu.png thì dùng tạm quả trứng chưa rõ."""
+    vao = os.path.join(GOC, 'linh-thu')
+    if not os.path.isdir(vao):
+        return
+    os.makedirs(os.path.join(RA, 'linh-thu'), exist_ok=True)
+    for ten in sorted(os.listdir(vao)):
+        goc_ten, duoi = os.path.splitext(ten)
+        if duoi.lower() != '.png':
+            continue
+        goc = Image.open(os.path.join(vao, ten))
+        im = lap_lo(tach_nen(goc), goc)
+        if ten in DAC_BAO_LOI:
+            im = dac_bao_loi(im, goc)
+        im = cat_sat(im)
+        thu_nho(im, 512).save(os.path.join(RA, 'linh-thu', ten), optimize=True)
+        print('ok linh-thu/' + ten, im.size)
+        if goc_ten == 'trung-chua-ro' and not os.path.exists(os.path.join(GOC, 'ui', 'nut-linh-thu.png')):
+            os.makedirs(os.path.join(RA, 'ui'), exist_ok=True)
+            thu_nho(im, 256).save(os.path.join(RA, 'ui', 'nut-linh-thu.png'), optimize=True)
+            print('ok ui/nut-linh-thu.png (tam dung qua trung)')
 
 
 if __name__ == '__main__':
