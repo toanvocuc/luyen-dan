@@ -26,7 +26,7 @@ export function ChonVung({ kho, onThanhVan, onVuc, onDong }: { kho: Kho; onThanh
                 ? `Không vào được: ${khongVuc}`
                 : kho.vuc.trong
                   ? `Ngươi vẫn còn ở tầng ${diemVuc(kho, kho.vuc.viTri).tang}. Chỉ ra được ở lối thoát: quay lại đúng chỗ cũ.`
-                  : `${LUAT_VUC.soTang} tầng không lối về. Quái mạnh, máu không tự hồi, chỉ ra được ở lối thoát. Sâu nhất đã tới: tầng ${kho.vuc.sauNhat}.`}
+                  : `${kho.tuVi.canhGioi < 3 ? 'Tu vi còn non: quái ở đây ngang tu sĩ Kim Đan, vào là cửu tử nhất sinh. ' : ''}${LUAT_VUC.soTang} tầng không lối về. Máu không tự hồi, chỉ ra được ở lối thoát. Sâu nhất đã tới: tầng ${kho.vuc.sauNhat}.`}
             </small>
           </span>
         </button>

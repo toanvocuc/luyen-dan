@@ -1,6 +1,6 @@
 // Vực Thẳm: mê cung 50 tầng đi XUỐNG, không reset. Quái chặn đường (đánh / bỏ chạy / từ bỏ), bốn trạng thái xấu,
 // chỗ nghỉ, lối thoát (cất đồ, ra khỏi vực), ba boss đánh theo lượt (linh thú xuất chiến cùng đánh và hộ thể).
-// Thuần tính toán, không dính giao diện. Mở khoá từ Kim Đan.
+// Thuần tính toán, không dính giao diện. Không khoá cảnh giới: quái tầng 1 đã ngang tu sĩ Kim Đan.
 import { CANH_GIOI, CHI_SO, DAN_PHUONG, LUAT, LO_DAN, anhDan, timDanPhuong, type ChiSo, type PhamThat } from './duLieu.ts';
 import { chiSo, mauHienTai, mauToiDa, type Kho } from './kho.ts';
 import { giayKhoaMatHon, theLucHienTai } from './kyNgo.ts';
@@ -9,8 +9,8 @@ import { chiSoThu, hieuLucThu, thuXuatChien, timLoaiThu } from './linhThu.ts';
 // ---------- luật ----------
 
 export const LUAT_VUC = {
-  /** Cảnh giới thấp nhất được vào (Kim Đan). */
-  canhGioi: 3,
+  /** Cảnh giới thấp nhất được vào: không khoá. Người yếu vào cũng được, nhưng sẽ chết — để họ thấy bức tường mà biết phải mạnh lên. */
+  canhGioi: 0,
   soTang: 50,
   /** Cảnh giới "chuẩn" của tầng 1 và tầng 50: quái ở giữa nội suy tuyến tính. */
   canhGioiDau: 3,

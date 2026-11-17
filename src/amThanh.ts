@@ -58,7 +58,8 @@ const NHAC = {
   'dan-phong': { file: 'nhac-dan-phong', dau: 0, cuoi: 28, am: 0.5 },
   'du-ngoan': { file: 'nhac-du-ngoan', dau: 0.5, cuoi: 99.5, am: 0.4 },
   'vuc-nong': { file: 'nhac-vuc-nong', dau: 0.9, cuoi: 27.7, am: 0.4 },
-  'vuc-sau': { file: 'nhac-vuc-sau', dau: 0.02, cuoi: 26.7, am: 0.22 },
+  // nhạc riêng của tầng Sâu nghe không hợp: dùng chung bản của tầng Nông
+  'vuc-sau': { file: 'nhac-vuc-nong', dau: 0.9, cuoi: 27.7, am: 0.4 },
   'vuc-tham': { file: 'nhac-vuc-tham', dau: 2.08, cuoi: 46.5, am: 0.22 },
   'cho-nghi': { file: 'nhac-cho-nghi', dau: 0.52, cuoi: 6.6, am: 0.7 },
   'boss-vuc': { file: 'nhac-boss-vuc', dau: 0.1, cuoi: 70.9, am: 0.27 },

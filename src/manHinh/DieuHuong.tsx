@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { giaiDoan, type Kho } from '../game/kho.ts';
 import { lyDoKhongDi } from '../game/kyNgo.ts';
+import { lyDoKhongVaoVuc } from '../game/vucTham.ts';
 import { daHetLuotThu } from '../anhLoi.ts';
 
 /** Màn chính đi được từ thanh đáy. */
@@ -62,7 +63,8 @@ export const coCayChin = (k: Kho, luc = Date.now()) => k.vuon.o.some((o) => o &&
 
 export function ThanhDieuHuong({ man, kho, onChon, onPhuongThi }: { man: ManChinh; kho: Kho; onChon: (m: ManChinh) => void; onPhuongThi: () => void }) {
   // đang ở dưới Vực Thẳm thì nút Du ngoạn luôn mở (quay lại vực)
-  const khongDi = kho.vuc?.trong ? null : lyDoKhongDi(kho);
+  // nút chỉ khoá khi cả Thanh Vân sơn lẫn Vực Thẳm đều không vào được
+  const khongDi = kho.vuc?.trong || !lyDoKhongVaoVuc(kho) ? null : lyDoKhongDi(kho);
   const nhanDi = khongDi === 'cần Luyện Khí' ? 'Luyện Khí' : khongDi === 'mất hồn' ? 'Mất hồn' : khongDi ? 'Dưỡng thương' : undefined;
   return (
     <nav className="thanh-dieu-huong">
