@@ -331,6 +331,13 @@ export interface TranBoss {
   /** Thụ Yêu còn bấy nhiêu lượt mới hồi máu lại được. */
   hoiCho: number;
   nhatKy: string[];
+  /** Người chơi đã ra đòn, đang đợi boss đánh trả (giao diện chờ một nhịp rồi gọi bossDanh). */
+  choBoss?: boolean;
+  /** Lượt này người chơi đang đỡ / linh thú sẽ đỡ thay. */
+  dangDo?: boolean;
+  thuDo?: boolean;
+  /** Các dòng tả nửa lượt của người chơi, chờ ghép với nửa lượt của boss. */
+  dongNguoi?: string[];
 }
 export interface VucTrangThai {
   /** Ngày (giờ Việt Nam) của mê cung hiện tại; qua ngày thì vực đổi hình (xem lamMoiVuc). */
@@ -774,7 +781,7 @@ export type HanhDong = { loai: 'luc' | 'thanThuc' | 'do' } | { loai: 'dan'; khoa
 export interface KetLuot {
   kho: Kho;
   ket: 'tiep' | 'thang' | 'chet';
-  /** Các dòng tả lượt này (đưa vào nhật ký trận). */
+  /** Các dòng tả nửa lượt này. */
   dong: string[];
   /** Chiêu boss vừa ra (để giao diện phát tiếng, đổi ảnh). */
   chieu: Chieu | null;
@@ -784,14 +791,17 @@ export interface KetLuot {
   thuDo: boolean;
   dinh: TrangThaiId[];
 }
-export function luotTran(k: Kho, hd: HanhDong, rng: () => number = Math.random, luc = Date.now()): KetLuot | null {
+/**
+ * Nửa lượt của người chơi: ra đòn (hoặc thủ, hoặc dùng đan), linh thú có thể đánh theo.
+ * Boss chưa đánh trả ngay: trận chuyển sang chờ boss (choBoss), giao diện đợi một nhịp rồi gọi bossDanh.
+ */
+export function nguoiDanh(k: Kho, hd: HanhDong, rng: () => number = Math.random, luc = Date.now()): KetLuot | null {
   const t0 = k.vuc.tran;
-  if (!t0) return null;
+  if (!t0 || t0.choBoss) return null;
   const b = BOSS[t0.boss];
   let kho = k;
   const t: TranBoss = { ...t0, luot: t0.luot + 1, nhatKy: [...t0.nhatKy] };
   const dong: string[] = [];
-  // 1. người chơi
   if (hd.loai === 'dan') {
     const r = dungDanVuc(kho, hd.khoa, luc);
     if (!r) return null;
@@ -802,7 +812,6 @@ export function luotTran(k: Kho, hd: HanhDong, rng: () => number = Math.random, 
     t.mau = Math.max(0, t.mau - dmg);
     dong.push(`Ngươi ${hd.loai === 'luc' ? 'vung kiếm chém' : 'xuất thần thức đánh'} trúng: −${dmg}.${t.giap > 0 ? ' (giáp dày, chỉ được nửa)' : ''}`);
   } else dong.push('Ngươi thủ thế, chờ đòn.');
-  // 2. linh thú
   const thu = thuRaTran(kho, luc);
   const thuDanh = !!thu && t.luot % LUAT_VUC.thuDanhMoi === 0 && t.mau > 0;
   const thuDo = !!thu && t.luot % LUAT_VUC.thuDoMoi === 0;
@@ -812,12 +821,27 @@ export function luotTran(k: Kho, hd: HanhDong, rng: () => number = Math.random, 
     t.mau = Math.max(0, t.mau - dmg);
     dong.push(`${l.ten} lao vào cắn xé: −${dmg}.`);
   }
-  const nhanThang = () => thangTran(kho, t, rng, luc);
   if (t.mau <= 0) {
-    const w = nhanThang();
-    return { kho: w.kho, ket: 'thang', dong: [...dong, `${b.ten} gục xuống.`], chieu: null, nhan: w.nhan, thuDanh, thuDo, dinh: [] };
+    const w = thangTran(kho, t, rng, luc);
+    return { kho: w.kho, ket: 'thang', dong: [...dong, `${b.ten} gục xuống.`], chieu: null, nhan: w.nhan, thuDanh, thuDo: false, dinh: [] };
   }
-  // 3. boss ra chiêu đã báo trước
+  t.choBoss = true;
+  t.dangDo = hd.loai === 'do';
+  t.thuDo = thuDo;
+  t.dongNguoi = dong;
+  return { kho: datVuc(kho, { tran: t }), ket: 'tiep', dong, chieu: null, nhan: [], thuDanh, thuDo: false, dinh: [] };
+}
+/** Nửa lượt của boss: ra chiêu đã báo trước, trạng thái rút máu, rồi báo trước chiêu kế tiếp. */
+export function bossDanh(k: Kho, rng: () => number = Math.random, luc = Date.now()): KetLuot | null {
+  const t0 = k.vuc.tran;
+  if (!t0 || !t0.choBoss) return null;
+  const b = BOSS[t0.boss];
+  let kho = k;
+  const t: TranBoss = { ...t0, choBoss: false, nhatKy: [...t0.nhatKy] };
+  const dong: string[] = [];
+  const thu = thuRaTran(kho, luc);
+  const thuDo = !!t.thuDo && !!thu;
+  const dangDo = !!t.dangDo;
   const chieu = timChieu(b, t.yDo);
   t.anh = chieu.anh;
   const dinh: TrangThaiId[] = [];
@@ -833,16 +857,14 @@ export function luotTran(k: Kho, hd: HanhDong, rng: () => number = Math.random, 
   } else if (thuDo && thu) {
     dong.push(`${timLoaiThu(thu.loai).ten} lao ra đỡ trọn ${chieu.ten}!`);
   } else {
-    const thu_ = hd.loai === 'do';
-    let dmg = satThuongBoss(kho, t, chieu, luc) * (0.9 + rng() * 0.2) * (thu_ ? LUAT_VUC.doDon : 1);
-    dmg = Math.round(dmg);
+    const dmg = Math.round(satThuongBoss(kho, t, chieu, luc) * (0.9 + rng() * 0.2) * (dangDo ? LUAT_VUC.doDon : 1));
     kho = truMau(kho, dmg, luc);
-    dong.push(`${b.ten} dùng ${chieu.ten}: ngươi mất ${dmg} máu.${thu_ ? ' (đã đỡ)' : ''}`);
+    dong.push(`${b.ten} dùng ${chieu.ten}: ngươi mất ${dmg} máu.${dangDo ? ' (đã đỡ)' : ''}`);
     if (chieu.tt) {
-      kho = datVuc(kho, { tt: themTrangThai(kho.vuc.tt, chieu.tt, thu_ ? 0.5 : 1) });
+      kho = datVuc(kho, { tt: themTrangThai(kho.vuc.tt, chieu.tt, dangDo ? 0.5 : 1) });
       for (const id of Object.keys(chieu.tt) as TrangThaiId[]) dinh.push(id);
     }
-    if (thu_ && chieu.loai === 'lon') {
+    if (dangDo && chieu.loai === 'lon') {
       const phan = Math.round(satThuong(kho, t, 'luc', luc) * 0.5);
       t.mau = Math.max(0, t.mau - phan);
       dong.push(`Đỡ trúng đòn lớn, ngươi phản lại: −${phan}.`);
@@ -850,19 +872,21 @@ export function luotTran(k: Kho, hd: HanhDong, rng: () => number = Math.random, 
   }
   if (t.giap > 0 && chieu.id !== 'giap-hoa') t.giap -= 1;
   if (t.hoiCho > 0 && chieu.id !== 'hap-huyet') t.hoiCho -= 1;
-  // 4. trạng thái rút máu mỗi lượt
   const tk = tick(kho, luc);
   kho = tk.kho;
   if (tk.mat > 0) dong.push(`Độc và vết thương rút thêm ${tk.mat} máu.`);
   if (t.mau <= 0) {
     const w = thangTran(kho, t, rng, luc);
-    return { kho: w.kho, ket: 'thang', dong: [...dong, `${b.ten} gục xuống.`], chieu, nhan: w.nhan, thuDanh, thuDo, dinh };
+    return { kho: w.kho, ket: 'thang', dong: [...dong, `${b.ten} gục xuống.`], chieu, nhan: w.nhan, thuDanh: false, thuDo, dinh };
   }
-  if (daChet(kho, luc)) return { kho: chet(kho, luc), ket: 'chet', dong, chieu, nhan: [], thuDanh, thuDo, dinh };
+  if (daChet(kho, luc)) return { kho: chet(kho, luc), ket: 'chet', dong, chieu, nhan: [], thuDanh: false, thuDo, dinh };
   t.yDo = chonYDo(t, t.luot + 1, rng);
-  // mỗi lượt một đoạn, lượt mới nhất đứng đầu
-  t.nhatKy = [dong.join(' '), ...t.nhatKy].slice(0, 4);
-  return { kho: datVuc(kho, { tran: t }), ket: 'tiep', dong, chieu, nhan: [], thuDanh, thuDo, dinh };
+  // nhật ký: mỗi lượt một mục (người chơi rồi boss), lượt mới nhất đứng đầu; giữ cả trận để kéo xem lại
+  t.nhatKy = [`Lượt ${t.luot}: ${[...(t.dongNguoi ?? []), ...dong].join(' ')}`, ...t.nhatKy].slice(0, 60);
+  t.dongNguoi = [];
+  t.dangDo = false;
+  t.thuDo = false;
+  return { kho: datVuc(kho, { tran: t }), ket: 'tiep', dong, chieu, nhan: [], thuDanh: false, thuDo, dinh };
 }
 /** Hạ boss: đồ rơi vào túi (Ma Long thì cất luôn, vì đáy vực cũng là lối thoát). */
 function thangTran(k: Kho, t: TranBoss, rng: () => number, luc: number): { kho: Kho; nhan: string[] } {

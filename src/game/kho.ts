@@ -991,6 +991,63 @@ function heSoChiSoThu(k: Kho, cs: ChiSo, luc: number): number {
   const t = tacDungThu(k, luc);
   return 1 + (cs === 'luc' || cs === 'thanPhap' ? t.lucThan : cs === 'khiHuyet' || cs === 'phongNgu' ? t.mauPhong : 0);
 }
+/** Một thứ đang làm tăng / giảm chỉ số, để bảng thông tin nhân vật kể ra. */
+export interface AnhHuong {
+  ten: string;
+  /** Vì sao (câu ngắn). */
+  lyDo: string;
+  /** Hệ số nhân vào từng chỉ số (không có = không ảnh hưởng chỉ số đó). */
+  heSo: Partial<Record<ChiSo, number>>;
+  giam: boolean;
+  /** Còn bấy nhiêu giây thì hết (null = không tự hết, hoặc hết theo cách khác). */
+  giay: number | null;
+  /** Chỉ có tác dụng khi ở trong Vực Thẳm. */
+  chiTrongVuc?: boolean;
+}
+const TAT_CA = (h: number): Partial<Record<ChiSo, number>> => ({ khiHuyet: h, luc: h, phongNgu: h, thanPhap: h, thanThuc: h });
+/** Mọi thứ đang làm tăng / giảm chỉ số lúc này (cùng các hệ số mà chiSo() dùng). */
+export function anhHuongChiSo(k: Kho, luc = Date.now()): AnhHuong[] {
+  const ra: AnhHuong[] = [];
+  if (dangMatHon(k, luc)) {
+    const h = LUAT.kyNgo.matHon.heSo;
+    ra.push({
+      ten: 'Mất hồn',
+      lyDo: 'Gục ngã khi du ngoạn, hồn phách chưa về nhập xác.',
+      heSo: TAT_CA(h),
+      giam: true,
+      giay: Math.max(0, Math.ceil((k.matHon + LUAT.kyNgo.matHon.yeuGiay * 1000 - luc) / 1000)),
+    });
+  }
+  const doc = docHienTai(k, luc);
+  const hd = heSoTrungDoc(doc);
+  if (hd < 1) {
+    // độc tan dần: còn bao lâu thì xuống dưới ngưỡng
+    const giay = Math.ceil((doc - LUAT.doc.day) * LUAT.doc.giayMoiDiem);
+    ra.push({ ten: 'Trúng độc', lyDo: `Đan độc ${Math.round(doc)}/${LUAT.doc.day}: uống đan quá nhiều. Độc tự tan dần.`, heSo: TAT_CA(hd), giam: true, giay });
+  }
+  if ((k.vuc?.tt.yeu ?? 0) > 0) {
+    ra.push({
+      ten: 'Yếu đuối',
+      lyDo: `Bị quái Vực Thẳm đánh trúng. Còn ${k.vuc.tt.yeu} bước.`,
+      heSo: { luc: 0.7, thanThuc: 0.7 },
+      giam: true,
+      giay: null,
+      chiTrongVuc: true,
+    });
+  }
+  const qua = heSoChiSoQua(k);
+  if (qua > 1) ra.push({ ten: 'Lệ Thần Đan', lyDo: 'Quà của Đan Lão đã dung hợp vào thân.', heSo: TAT_CA(qua), giam: false, giay: null });
+  if (k.linhThu?.length) {
+    const t = tacDungThu(k, luc);
+    const heSo: Partial<Record<ChiSo, number>> = {};
+    if (t.lucThan > 0) heSo.luc = heSo.thanPhap = 1 + t.lucThan;
+    if (t.mauPhong > 0) heSo.khiHuyet = heSo.phongNgu = 1 + t.mauPhong;
+    if (Object.keys(heSo).length) ra.push({ ten: 'Linh thú xuất chiến', lyDo: 'Linh thú đi theo trợ lực.', heSo, giam: false, giay: null });
+  }
+  return ra;
+}
+/** Chỉ số khi chưa bị điều gì làm giảm (để bảng thông tin tính phần bị trừ). */
+export const chiSoChuaGiam = (k: Kho, cs: ChiSo, luc = Date.now()) => Math.floor((chiSoGoc(k, cs) + chiSoDan(k, cs)) * heSoChiSoQua(k) * heSoChiSoThu(k, cs, luc));
 /** Lệ Thần Đan: mọi chỉ số nhân thêm. */
 export const heSoChiSoQua = (k: Kho) => (k.quaMoDau?.loai === 'le-than' ? (k.quaMoDau.nhe ? LUAT.qua.leThan.chiSoNhe : LUAT.qua.leThan.chiSo) : 1);
 /** Lệ Thần Đan bản đầy đủ: thân thể thần linh. */

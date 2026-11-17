@@ -34,7 +34,8 @@ import {
   laThoat,
   lopTang,
   luiTran,
-  luotTran,
+  bossDanh,
+  nguoiDanh,
   nghiNgoi,
   roiVuc,
   satThuong,
@@ -136,6 +137,8 @@ export function VucTham({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho
   const [moDan, datMoDan] = useState(false);
   const [boQuaCong, datBoQuaCong] = useState<number | null>(null);
   const [rung, datRung] = useState(0);
+  /** Người chơi trúng đòn: rung màn trận. */
+  const [rungNguoi, datRungNguoi] = useState(0);
   const cuonRef = useRef<HTMLDivElement>(null);
   const tl = theLucHienTai(kho, luc);
   const mau = mauHienTai(kho, luc);
@@ -218,24 +221,49 @@ export function VucTham({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho
   // ---- boss ----
   const coCong = d.loai === 'boss' && !tran && bossConSong(kho, d.id, luc) && boQuaCong !== d.id && !gap && !bao;
   const daPhaCong = !!v.bossDiet[d.id];
-  const hanhDong = (hd: HanhDong) => {
-    const r = luotTran(kho, hd);
-    if (!r) return;
-    doiKho(() => r.kho);
-    if (hd.loai === 'luc' || hd.loai === 'thanThuc') phat('danh-trung-vuc');
-    else if (hd.loai === 'do') phat('do-don');
-    datRung((x) => x + 1);
-    if (r.chieu && r.chieu.loai !== 'thuong') setTimeout(() => phat('gam-boss'), 380);
-    else if (r.chieu?.dmg) setTimeout(() => phat('bi-danh'), 420);
-    if (r.dinh[0]) setTimeout(() => phat(TIENG_TT[r.dinh[0]]), 900);
-    if (r.ket === 'thang' && tran) {
+  /** Kết thúc trận (thắng / gục) sau nửa lượt nào cũng xử như nhau. */
+  const ketTran = (r: NonNullable<ReturnType<typeof nguoiDanh>>, bossId: keyof typeof BOSS, tuiTruoc: Record<string, number>) => {
+    if (r.ket === 'thang') {
       setTimeout(() => phat('thang-vuc'), 500);
-      datBao({ loai: 'thang-boss', ten: BOSS[tran.boss].ten, anh: anhBoss(tran.boss, 'dung'), lop: lopTang(BOSS[tran.boss].tang), nhan: r.nhan });
+      datBao({ loai: 'thang-boss', ten: BOSS[bossId].ten, anh: anhBoss(bossId, 'dung'), lop: lopTang(BOSS[bossId].tang), nhan: r.nhan });
     } else if (r.ket === 'chet') {
       phat('chet-vuc');
-      datBao({ loai: 'chet', mat: chuTui(kho.vuc.tui) });
+      datBao({ loai: 'chet', mat: chuTui(tuiTruoc) });
     }
   };
+  /** Nửa lượt của người chơi; boss đánh trả sau một nhịp (xem hiệu ứng choBoss bên dưới). */
+  const hanhDong = (hd: HanhDong) => {
+    if (!tran) return;
+    const r = nguoiDanh(kho, hd);
+    if (!r) return;
+    doiKho(() => r.kho);
+    if (hd.loai === 'luc' || hd.loai === 'thanThuc') {
+      phat('danh-trung-vuc');
+      datRung((x) => x + 1);
+    } else if (hd.loai === 'do') phat('do-don');
+    else phat('hao-cam');
+    ketTran(r, tran.boss, kho.vuc.tui);
+  };
+  // boss đánh trả chậm một giây sau đòn của người chơi (cả khi tải lại trang giữa chừng)
+  const khoRef = useRef(kho);
+  khoRef.current = kho;
+  useEffect(() => {
+    if (!tran?.choBoss) return;
+    const id = setTimeout(() => {
+      const k0 = khoRef.current;
+      const t0 = k0.vuc.tran;
+      if (!t0?.choBoss) return;
+      const r = bossDanh(k0);
+      if (!r) return;
+      doiKho(() => r.kho);
+      if (r.chieu && r.chieu.loai !== 'thuong') phat('gam-boss');
+      else if (r.chieu?.dmg && !r.thuDo) phat('bi-danh');
+      if (r.chieu?.dmg && !r.thuDo) datRungNguoi((x) => x + 1);
+      if (r.dinh[0]) setTimeout(() => phat(TIENG_TT[r.dinh[0]]), 600);
+      ketTran(r, t0.boss, k0.vuc.tui);
+    }, 1000);
+    return () => clearTimeout(id);
+  }, [tran?.choBoss, tran?.luot]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ---- bản đồ ----
   const H = DINH * 2 + LUAT_VUC.soTang * KC;
@@ -409,21 +437,24 @@ export function VucTham({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho
 
       {/* ---- trận boss ---- */}
       {tran && !bao && (
-        <div className="tran-vuc">
+        <div className={`tran-vuc ${rungNguoi % 2 ? 'trung-a' : rungNguoi ? 'trung-b' : ''}`}>
           <div className="dau-tran">
             <b>{BOSS[tran.boss].ten}</b>
             <ThanhMau loai="mau-boss" nay={tran.mau} max={tran.mauMax} chu={`${tran.mau}/${tran.mauMax}${tran.giap > 0 ? ' · giáp hoá' : ''}${tran.cuong ? ' · hoá ma' : ''}`} />
           </div>
           <SanDau lop={lopTang(BOSS[tran.boss].tang)} anh={anhBoss(tran.boss, tran.anh)} rung={rung} lon />
-          <p className={`y-do ${chieuBoss(tran, tran.yDo).loai === 'lon' ? 'nguy' : ''}`}>
-            Lượt {tran.luot + 1}: {chieuBoss(tran, tran.yDo).bao}
+          <p className={`y-do ${!tran.choBoss && chieuBoss(tran, tran.yDo).loai === 'lon' ? 'nguy' : ''} ${tran.choBoss ? 'cho' : ''}`}>
+            {tran.choBoss ? `${BOSS[tran.boss].ten} đang ra đòn…` : `Lượt ${tran.luot + 1}: ${chieuBoss(tran, tran.yDo).bao}`}
           </p>
+          {/* nhật ký cả trận: lượt mới nhất ở trên, kéo xuống để xem lại */}
           <div className="nhat-ky">
-            {tran.nhatKy.slice(0, 3).map((x, i) => (
-              <p key={i} style={{ opacity: 1 - i * 0.3 }}>
+            {tran.choBoss && !!tran.dongNguoi?.length && <p className="moi">Lượt {tran.luot}: {tran.dongNguoi.join(' ')}</p>}
+            {tran.nhatKy.map((x, i) => (
+              <p key={tran.nhatKy.length - i} className={i === 0 && !tran.choBoss ? 'moi' : ''}>
                 {x}
               </p>
             ))}
+            {!tran.nhatKy.length && !tran.choBoss && <p className="trong">Chưa ra đòn nào. Đọc ý đồ của nó ở trên rồi chọn.</p>}
           </div>
           <div className="nguoi-tran">
             <ThanhMau loai="mau" nay={mau} max={mauMax} chu={`Máu ${mau}/${mauMax}`} />
@@ -438,25 +469,26 @@ export function VucTham({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho
             )}
           </div>
           <div className="nut-tran">
-            <button data-im className="nut" onClick={() => hanhDong({ loai: 'luc' })}>
+            <button data-im className="nut" disabled={!!tran.choBoss} onClick={() => hanhDong({ loai: 'luc' })}>
               Đánh bằng sức mạnh
               <small>~{Math.round(satThuong(kho, tran, 'luc', luc))}</small>
             </button>
-            <button data-im className="nut" onClick={() => hanhDong({ loai: 'thanThuc' })}>
+            <button data-im className="nut" disabled={!!tran.choBoss} onClick={() => hanhDong({ loai: 'thanThuc' })}>
               Đánh bằng thần thức
               <small>~{Math.round(satThuong(kho, tran, 'thanThuc', luc))}</small>
             </button>
-            <button data-im className="nut" onClick={() => hanhDong({ loai: 'do' })}>
+            <button data-im className="nut" disabled={!!tran.choBoss} onClick={() => hanhDong({ loai: 'do' })}>
               Đỡ đòn
               <small>chỉ nhận {phanTram(LUAT_VUC.doDon)}</small>
             </button>
-            <button className="nut" onClick={() => datMoDan(true)}>
+            <button className="nut" disabled={!!tran.choBoss} onClick={() => datMoDan(true)}>
               Dùng đan
               <small>mất lượt</small>
             </button>
           </div>
           <button
             className="nut-nho lui-tran"
+            disabled={!!tran.choBoss}
             onClick={() => {
               if (confirm('Rút lui? Boss sẽ hồi đầy máu.')) doiKho((k) => luiTran(k));
             }}

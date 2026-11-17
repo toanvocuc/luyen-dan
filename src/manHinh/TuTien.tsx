@@ -2,8 +2,8 @@
 import { useState } from 'react';
 import { QUA, tacDungQua } from '../game/quaMoDau.ts';
 import { phat } from '../amThanh.ts';
-import { CANH_GIOI, CHI_SO, DAN_DUOC, timDanDuoc, timTongMon, DAN_PHUONG, DUOC_LIEU, LUAT, PHU_LIEU, TEN_MOC, TEN_PHAM, TEN_TUOI_NGAN, anhDan, anhDuocLieu, mocChuyen, timDanPhuong, type PhamThat } from '../game/duLieu.ts';
-import { chiSo, chiSoDan, danBinhCanh, dangBinhCanh, giayTauHoa, phaBinhCanh, tiLeBinhCanh, heSoTrungDoc, luaChonDotPha, thieuDotPha, yeuCauDotPha, danDotPha, docHienTai, dotPha, dsChuyen, duocLucChuyen, mauHienTai, mauToiDa, soTang, tocDoTuVi, tuViCan, uongChuyen, uongDan, vienMan, xemUong, xemUongChuyen, type Kho } from '../game/kho.ts';
+import { type ChiSo as ChiSoId, CANH_GIOI, CHI_SO, DAN_DUOC, timDanDuoc, timTongMon, DAN_PHUONG, DUOC_LIEU, LUAT, PHU_LIEU, TEN_MOC, TEN_PHAM, TEN_TUOI_NGAN, anhDan, anhDuocLieu, mocChuyen, timDanPhuong, type PhamThat } from '../game/duLieu.ts';
+import { anhHuongChiSo, chiSoChuaGiam, chiSo, chiSoDan, danBinhCanh, dangBinhCanh, giayTauHoa, phaBinhCanh, tiLeBinhCanh, heSoTrungDoc, luaChonDotPha, thieuDotPha, yeuCauDotPha, danDotPha, docHienTai, dotPha, dsChuyen, duocLucChuyen, mauHienTai, mauToiDa, soTang, tocDoTuVi, tuViCan, uongChuyen, uongDan, vienMan, xemUong, xemUongChuyen, type Kho } from '../game/kho.ts';
 import type { NhanVat } from '../game/nhanVat.ts';
 import { dongHo, useBayGio } from './PhuongThi.tsx';
 import { BupBe } from './BupBe.tsx';
@@ -75,6 +75,8 @@ export function TuTien({
   const docNay = docHienTai(kho, luc);
   const yeuMatHon = giayYeuMatHon(kho, luc);
   const nhiemVu = nhiemVuNay(kho);
+  /** Những thứ đang làm tăng / giảm chỉ số (hiện ở bảng thông tin nhân vật). */
+  const anhHuong = anhHuongChiSo(kho, luc);
   const binhCanh = dangBinhCanh(kho);
   const thu = thuXuatChien(kho);
   /** Chấm đỏ nút Linh thú: có thú vừa nở chờ nhận, hoặc thú xuất chiến đang đói. */
@@ -412,19 +414,53 @@ export function TuTien({
             </div>
             {CHI_SO.map((cs) => {
               const tuDan = chiSoDan(kho, cs.id);
+              const nay = chiSo(kho, cs.id);
+              const goc = chiSoChuaGiam(kho, cs.id);
+              const yeu = anhHuong.find((a) => a.chiTrongVuc && a.heSo[cs.id]);
               return (
                 <div key={cs.id} className="dong-chi-so">
                   <div className="than-dong">
                     <b>{cs.ten}</b>
                     <small>{cs.moTa}</small>
                   </div>
-                  <span className="so-chi-so">
-                    <b>{chiSo(kho, cs.id)}</b>
+                  <span className={`so-chi-so ${nay < goc ? 'bi-giam' : ''}`}>
+                    <b>{nay}</b>
+                    {nay < goc && (
+                      <em className="tru">
+                        −{goc - nay} (gốc {goc})
+                      </em>
+                    )}
+                    {yeu && <em className="tru">trong vực −{Math.round((1 - yeu.heSo[cs.id]!) * 100)}%</em>}
                     {tuDan >= 0.05 && <em>+{tuDan.toFixed(1)} nhờ đan</em>}
                   </span>
                 </div>
               );
             })}
+            {anhHuong.length > 0 && (
+              <div className="anh-huong">
+                <h3>Đang chịu ảnh hưởng</h3>
+                {anhHuong.map((a) => {
+                  const cac = Object.entries(a.heSo) as [ChiSoId, number][];
+                  const deu = cac.length === 5 && cac.every(([, h]) => h === cac[0][1]);
+                  const chuHeSo = deu
+                    ? `Mọi chỉ số ${a.giam ? '−' : '+'}${Math.round(Math.abs(1 - cac[0][1]) * 100)}%`
+                    : cac.map(([id, h]) => `${CHI_SO.find((c) => c.id === id)!.ten} ${a.giam ? '−' : '+'}${Math.round(Math.abs(1 - h) * 100)}%`).join(', ');
+                  return (
+                    <div key={a.ten} className={`dong-anh-huong ${a.giam ? 'giam' : 'tang'}`}>
+                      <b>{a.ten}</b>
+                      <span>
+                        {chuHeSo}
+                        {a.chiTrongVuc ? ' (chỉ khi ở trong Vực Thẳm)' : ''}
+                      </span>
+                      <small>
+                        {a.lyDo}
+                        {a.giay !== null && a.giay > 0 ? ` Hết sau ${dongHo(a.giay)}.` : ''}
+                      </small>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
             <p className="chu-nho">Chỉ số lớn dần theo cảnh giới. Uống đan cộng thêm một ít, nhưng càng uống nhiều một loại càng nhờn thuốc.</p>
             <div className="hang-nut">
               <button className="nut-nho" onClick={() => datBang('thien-menh')}>
