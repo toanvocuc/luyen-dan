@@ -242,6 +242,59 @@ const DAN_GOC: readonly DanPhuong[] = [
     ],
     giaGoc: 420,
   },
+  // ba đan giải trạng thái của Vực Thẳm: chỉ dùng được trong vực (nút Dùng đan), không uống ở ngoài
+  {
+    id: 'giai-doc-dan',
+    ten: 'Giải Độc Đan',
+    anh: 'tay-tuy-dan',
+    moTa: 'Dùng trong Vực Thẳm: giải nhiễm độc và hồi chút máu. Phẩm càng cao hồi càng nhiều.',
+    bac: 'Trúc Cơ',
+    lieu: ['linh-thao', 'han-bang-hoa', 'chu-qua'],
+    doKho: 0.6,
+    rongVung: 17,
+    xungDot: 3,
+    doan: [
+      { ten: 'Văn hỏa', tam: 36, giay: 6 },
+      { ten: 'Hàn hỏa', tam: 22, giay: 5 },
+      { ten: 'Thu hỏa', tam: 50, giay: 5 },
+    ],
+    giaGoc: 160,
+  },
+  {
+    id: 'chi-huyet-dan',
+    ten: 'Chỉ Huyết Đan',
+    anh: 'pha-chuong-dan',
+    moTa: 'Dùng trong Vực Thẳm: cầm chảy máu và hồi máu. Phẩm càng cao hồi càng nhiều.',
+    bac: 'Trúc Cơ',
+    lieu: ['huyet-lien', 'chu-qua', 'dia-tam-sam'],
+    doKho: 0.75,
+    rongVung: 16,
+    xungDot: 3,
+    doan: [
+      { ten: 'Vũ hỏa', tam: 74, giay: 5 },
+      { ten: 'Văn hỏa', tam: 40, giay: 6 },
+      { ten: 'Thu hỏa', tam: 56, giay: 5 },
+    ],
+    giaGoc: 180,
+  },
+  {
+    id: 'thanh-tam-dan',
+    ten: 'Thanh Tâm Đan',
+    anh: 'bang-tam-dan',
+    moTa: 'Dùng trong Vực Thẳm: trấn ma khí, giảm hắc hoá. Phẩm càng cao giảm càng nhiều.',
+    bac: 'Trúc Cơ',
+    lieu: ['han-bang-hoa', 'long-tu-thao', 'linh-thao'],
+    doKho: 0.85,
+    rongVung: 15,
+    xungDot: 4,
+    doan: [
+      { ten: 'Hàn hỏa', tam: 20, giay: 6 },
+      { ten: 'Văn hỏa', tam: 42, giay: 5 },
+      { ten: 'Hàn hỏa', tam: 16, giay: 5 },
+      { ten: 'Thu hỏa', tam: 46, giay: 5 },
+    ],
+    giaGoc: 200,
+  },
 ];
 
 /**
@@ -666,6 +719,8 @@ export interface LoDan {
   ten: string;
   moTa: string;
   gia: number;
+  /** Không bán, chỉ rơi từ boss (Vực Thẳm). */
+  chiRoi?: boolean;
   /** Cộng vào tâm phẩm cấp. */
   phamCong?: number;
   /** Nhân vào lượng áp lò tăng lên (lớn hơn 1 = lò dễ nổ hơn). */
@@ -688,6 +743,8 @@ export const LO_DAN: readonly LoDan[] = [
   { id: 'hoa-long-lo', ten: 'Hỏa Long Lô', moTa: 'Long hỏa mãnh liệt: phẩm đan cao hơn hẳn, nhưng áp lò dâng nhanh gấp rưỡi và vùng hỏa hầu hẹp lại.', gia: 4000, phamCong: 0.35, heSoAp: 1.5, rongVung: -3 },
   { id: 'bat-quai-lo', ten: 'Bát Quái Lô', moTa: 'Trận văn ổn định: vùng hỏa hầu và khoảng xanh đều rộng ra, nhưng phẩm đan kém đi một chút.', gia: 5000, rongVung: 4, xanh: 0.03, phamCong: -0.15 },
   { id: 'tu-kim-lo', ten: 'Tử Kim Lô', moTa: 'Lò lớn bằng tử kim: mỗi mẻ thêm hai viên, nhưng con lắc tôi đan chạy nhanh hơn.', gia: 8000, soVien: 2, heSoQuet: 0.85 },
+  // chỉ rơi từ boss Vực Thẳm, không bán ở phường thị
+  { id: 'lo-vuc-tham', ten: 'Lò Đan Vực Thẳm', moTa: 'Lò xương sắt nhặt từ đáy vực, lửa tím không bao giờ tắt: phẩm đan cao nhất, dễ vượt đan kiếp, thêm hai viên mỗi mẻ; áp lò dâng nhanh hơn một phần mười.', gia: 0, chiRoi: true, phamCong: 0.7, vuotKiep: 0.3, soVien: 2, heSoAp: 1.1, rongVung: 2 },
   { id: 'cuu-long-than-lo', ten: 'Cửu Long Thần Lô', moTa: 'Thần lô thượng cổ: phẩm đan cao, dễ vượt đan kiếp, thêm một viên mỗi mẻ; áp lò dâng nhanh hơn hai phần mười.', gia: 30000, phamCong: 0.5, vuotKiep: 0.2, soVien: 1, heSoAp: 1.2 },
 ];
 export const timLoDan = (id: string) => LO_DAN.find((l) => l.id === id) ?? LO_DAN[0];

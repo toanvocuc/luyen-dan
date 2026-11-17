@@ -4,6 +4,7 @@ import type { KetQua } from './luyenDan.ts';
 import { loiThe, timXuatThan, type NhanVat } from './nhanVat.ts';
 import type { QuaMoDau } from './quaMoDau.ts';
 import { tacDungThu, type Thu } from './linhThu.ts';
+import { buVuc, vatCanDotPha, timVatVuc, vucMoi, type VucTrangThai } from './vucTham.ts';
 
 export interface Kho {
   phienBan: 3;
@@ -106,6 +107,9 @@ export interface Kho {
   trungThu: number;
   apTrung: { cap: number; truot: number } | null;
   thuMoiNo: Thu | null;
+  /** Vực Thẳm (xem game/vucTham.ts) và vật phẩm Vực Thẳm đã mang ra ngoài. */
+  vuc: VucTrangThai;
+  vatVuc: Record<string, number>;
 }
 
 /** Loại viên đan dưỡng được: thượng phẩm, cực phẩm, hoặc đan văn. */
@@ -207,6 +211,8 @@ export function khoMoi(nv: NhanVat | null = null): Kho {
     trungThu: 0,
     apTrung: null,
     thuMoiNo: null,
+    vuc: vucMoi(),
+    vatVuc: {},
   };
 }
 
@@ -258,6 +264,8 @@ function buKho(k: Kho | null): Kho | null {
       trungThu: k.trungThu ?? 0,
       apTrung: k.apTrung ?? null,
       thuMoiNo: k.thuMoiNo ?? null,
+      vuc: buVuc(k.vuc),
+      vatVuc: { ...k.vatVuc },
   });
 }
 
@@ -1010,7 +1018,8 @@ export const mauToiDa = (k: Kho) => chiSo(k, 'khiHuyet');
 /** Máu lúc này (đã cộng phần tự hồi theo thời gian). */
 export function mauHienTai(k: Kho, luc = Date.now()): number {
   const toiDa = mauToiDa(k);
-  const hoi = LUAT.chiSo.hoiMau * (coLeThanDay(k) ? LUAT.qua.leThan.hoiMau : 1);
+  // trong Vực Thẳm máu không tự hồi (phải dùng đan hoặc tìm chỗ nghỉ)
+  const hoi = k.vuc?.trong ? 0 : LUAT.chiSo.hoiMau * (coLeThanDay(k) ? LUAT.qua.leThan.hoiMau : 1);
   const thieu = Math.max(0, k.mau.thieu - (Math.max(0, luc - k.mau.luc) / 1000) * hoi * toiDa);
   return Math.max(0, Math.round(toiDa - thieu));
 }
@@ -1237,6 +1246,8 @@ export function yeuCauDotPha(k: Kho) {
     soVien: dai ? oBang(c.soVien, i) : 1,
     phamToiThieu: (dai ? oBang(c.phamToiThieu, i) : 0) as PhamThat,
     danDuoc: dai ? [...(DAN_DUOC_DOT_PHA[dich] ?? [])] : [],
+    /** Vật phẩm Vực Thẳm phải nộp (từ Hóa Thần trở lên). */
+    vatVuc: vatCanDotPha(dich),
     phi: dai ? Math.round(c.phiGoc * c.phiNhan ** i) : 0,
   };
 }
@@ -1283,6 +1294,7 @@ export function thieuDotPha(k: Kho): string[] {
   const yc = yeuCauDotPha(k);
   const ra: string[] = [];
   for (const id of yc.danDuoc) if ((k.danDuoc[id] ?? 0) < 1) ra.push(timDanDuoc(id).ten);
+  for (const [id, n] of yc.vatVuc) if ((k.vatVuc?.[id] ?? 0) < n) ra.push(`${n - (k.vatVuc?.[id] ?? 0)} ${timVatVuc(id).ten}`);
   if (k.linhThach < yc.phi) ra.push(`${yc.phi - k.linhThach} linh thạch`);
   return ra;
 }
@@ -1323,6 +1335,8 @@ export function dotPha(k: Kho, pham: PhamThat, danVan: boolean, r: number, luc =
   }
   const danDuoc = { ...k.danDuoc };
   for (const id of yc.danDuoc) danDuoc[id] = (danDuoc[id] ?? 0) - 1;
+  const vatVuc = { ...k.vatVuc };
+  for (const [id, n] of yc.vatVuc) vatVuc[id] = (vatVuc[id] ?? 0) - n;
   const thanh = r < tiLeDotPha(k, loai === 'dv' ? 3 : loai, loai === 'dv', chon.chuyen * LUAT.daiDotPha.moiChuyen);
   let tuVi = k.tuVi;
   let giuLai = 0;
@@ -1361,6 +1375,7 @@ export function dotPha(k: Kho, pham: PhamThat, danVan: boolean, r: number, luc =
       danVan: { ...k.danVan, [p.id]: dv },
       danChuyen,
       danDuoc,
+      vatVuc,
     },
   };
 }

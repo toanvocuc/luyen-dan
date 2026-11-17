@@ -11,6 +11,7 @@ import { dongThienMenh } from './ThienMenh.tsx';
 import { giayKhoaMatHon, giayYeuMatHon } from '../game/kyNgo.ts';
 import { NutAnh } from './DieuHuong.tsx';
 import { AnhThu } from './LinhThuVien.tsx';
+import { VAT_VUC, anhVatVuc, dotBua, timVatVuc } from '../game/vucTham.ts';
 import { anhThu, noHienTai, thuXuatChien, timLoaiThu } from '../game/linhThu.ts';
 import { NHIEM_VU, chuThuong, nhanThuongDan, nhiemVuNay, type NoiLam } from '../game/danDuong.ts';
 
@@ -80,6 +81,8 @@ export function TuTien({
   const chamThu = !!kho.thuMoiNo || (!!thu && noHienTai(thu, luc) < 25);
   /** Thẻ nhiệm vụ đang mở hay thu gọn thành cuộn thư (mặc định thu gọn để không che màn). */
   const [moNhiemVu, datMoNhiemVu] = useState(false);
+  /** Câu tả lần đốt Bùa Vực Thẳm vừa rồi. */
+  const [baoBua, datBaoBua] = useState('');
   const diToi = (noi: NoiLam) => {
     datMoNhiemVu(false);
     if (noi === 'tui-do') datBang('hanh-trang');
@@ -255,6 +258,12 @@ export function TuTien({
                   {yc.danDuoc.map((id) => (
                     <li key={id} className={(kho.danDuoc[id] ?? 0) >= 1 ? 'du' : 'thieu'}>
                       <img src={`./hinh/nguyen-lieu/${id}.webp`} alt="" />1 {timDanDuoc(id).ten} ({timTongMon(timDanDuoc(id).tongMon).ten}) · có {kho.danDuoc[id] ?? 0}
+                    </li>
+                  ))}
+                  {yc.vatVuc.map(([id, n]) => (
+                    <li key={id} className={(kho.vatVuc[id] ?? 0) >= n ? 'du' : 'thieu'}>
+                      <img src={anhVatVuc(id)} alt="" />
+                      {n} {timVatVuc(id).ten} (Vực Thẳm) · có {kho.vatVuc[id] ?? 0}
                     </li>
                   ))}
                   <li className={kho.linhThach >= yc.phi ? 'du' : 'thieu'}>Phí lập trận hộ pháp: {yc.phi} linh thạch</li>
@@ -486,6 +495,40 @@ export function TuTien({
                     </div>
                   </div>
                 )}
+              </>
+            )}
+
+            {VAT_VUC.some((d) => (kho.vatVuc[d.id] ?? 0) > 0) && (
+              <>
+                <h3>Vực Thẳm</h3>
+                {baoBua && <p className="chu-nho bao-thu">{baoBua}</p>}
+                {VAT_VUC.filter((d) => (kho.vatVuc[d.id] ?? 0) > 0).map((d) => (
+                  <div key={d.id} className="dong-tui">
+                    <img src={anhVatVuc(d.id)} alt="" />
+                    <div className="than-dong">
+                      <b>
+                        {d.ten} ×{kho.vatVuc[d.id]}
+                      </b>
+                      <div className="hang-pham">
+                        <span>{d.moTa}</span>
+                      </div>
+                    </div>
+                    {d.id === 'bua-vuc-tham' && (
+                      <button
+                        className="nut-nho"
+                        onClick={() => {
+                          const r = dotBua(kho);
+                          if (!r) return;
+                          doiKho(() => r.kho);
+                          phat('dot-pha');
+                          datBaoBua(r.chu);
+                        }}
+                      >
+                        Đốt bùa
+                      </button>
+                    )}
+                  </div>
+                ))}
               </>
             )}
 

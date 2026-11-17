@@ -182,6 +182,7 @@ export function PhuongThi({ kho, doiKho, onDong }: { kho: Kho; doiKho: (ham: (k:
           LO_DAN.map((lo) => {
             const daCo = kho.loDan.co.includes(lo.id);
             const dangDung = kho.loDan.dung === lo.id;
+            if (lo.chiRoi && !daCo) return null;
             return (
               <div key={lo.id} className={`dong-tui dong-lo ${dangDung ? 'dang-dung' : ''}`}>
                 <img

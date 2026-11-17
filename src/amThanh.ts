@@ -32,6 +32,22 @@ const TIENG = {
   'ket-dep': { dau: 0.19, dai: 3.5, am: 0.4 },
   'tu-tran': { dau: 0.03, dai: 3.7, am: 0.55 },
   'hao-cam': { dau: 0.02, dai: 1.1, am: 0.4 },
+  // Vực Thẳm (đo 2026-11-17, cùng cách đo): thì thầm cố ý nhỏ hơn để lẩn vào nền
+  'gap-quai-vuc': { dau: 0.14, dai: 3.6, am: 0.4 },
+  'danh-trung-vuc': { dau: 0.08, dai: 0.5, am: 0.75 },
+  'do-don': { dau: 0.06, dai: 0.6, am: 0.8 },
+  'bi-danh': { dau: 0.02, dai: 1.5, am: 0.16 },
+  'gam-boss': { dau: 0.02, dai: 2.4, am: 0.22 },
+  'trung-doc': { dau: 0.1, dai: 0.6, am: 1 },
+  'chay-mau': { dau: 0.08, dai: 0.4, am: 3 },
+  'hac-hoa': { dau: 0.12, dai: 3.2, am: 0.5 },
+  'tim-dap': { dau: 0.05, dai: 0.75, am: 0.25 },
+  'thang-vuc': { dau: 0.17, dai: 2.5, am: 2.6 },
+  'loi-thoat': { dau: 0.34, dai: 4, am: 0.8 },
+  'chet-vuc': { dau: 0.03, dai: 6, am: 0.24 },
+  'thi-tham-1': { dau: 0.88, dai: 3, am: 0.28 },
+  'thi-tham-2': { dau: 0.11, dai: 3, am: 2.5 },
+  'thi-tham-3': { dau: 0.66, dai: 2.9, am: 0.9 },
 } as const;
 export type Tieng = keyof typeof TIENG;
 
@@ -41,6 +57,12 @@ const NHAC = {
   vuon: { file: 'nhac-dong-phu2', dau: 0.5, cuoi: 99.5, am: 0.4 },
   'dan-phong': { file: 'nhac-dan-phong', dau: 0, cuoi: 28, am: 0.5 },
   'du-ngoan': { file: 'nhac-du-ngoan', dau: 0.5, cuoi: 99.5, am: 0.4 },
+  'vuc-nong': { file: 'nhac-vuc-nong', dau: 0.9, cuoi: 27.7, am: 0.4 },
+  'vuc-sau': { file: 'nhac-vuc-sau', dau: 0.02, cuoi: 26.7, am: 0.22 },
+  'vuc-tham': { file: 'nhac-vuc-tham', dau: 2.08, cuoi: 46.5, am: 0.22 },
+  'cho-nghi': { file: 'nhac-cho-nghi', dau: 0.52, cuoi: 6.6, am: 0.7 },
+  'boss-vuc': { file: 'nhac-boss-vuc', dau: 0.1, cuoi: 70.9, am: 0.27 },
+  'boss-cuoi': { file: 'nhac-boss-cuoi', dau: 0.09, cuoi: 31.8, am: 0.2 },
 } as const;
 export type Nhac = keyof typeof NHAC;
 

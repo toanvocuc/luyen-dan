@@ -6,6 +6,9 @@ import { lyDoKhongDi, vaoBanDo } from './game/kyNgo.ts';
 import { taiCot, taiNgam } from './taiTruoc.ts';
 import { dsChuyen, khoMoi, lamMoiDon, luuKho, napKho, soVienHopDon, tuLuyen, type Kho } from './game/kho.ts';
 import { BanDo } from './manHinh/BanDo.tsx';
+import { VucTham } from './manHinh/VucTham.tsx';
+import { ChonVung } from './manHinh/ChonVung.tsx';
+import { vaoVuc } from './game/vucTham.ts';
 import { TheTrangThai } from './manHinh/TheTrangThai.tsx';
 import { KhoiDau } from './manHinh/KhoiDau.tsx';
 import { nhanQua, type LoaiQua } from './game/quaMoDau.ts';
@@ -23,8 +26,8 @@ import { LinhThuVien } from './manHinh/LinhThuVien.tsx';
 import { VuonDuoc } from './manHinh/VuonDuoc.tsx';
 
 /** Luồng màn hình: mở đầu -> (lần đầu) thiên mệnh -> động phủ tu tiên <-> đan phòng / vườn dược / bản đồ du ngoạn. */
-type Man = 'mo-dau' | 'khoi-dau' | 'thien-menh' | 'tu-tien' | 'lo-dan' | 'vuon' | 'ban-do';
-type Bang = null | 'tui' | 'don' | 'phuong-thi' | 'sao-luu' | 'duong' | 'dan-thu' | 'tang-bao' | 'linh-thu';
+type Man = 'mo-dau' | 'khoi-dau' | 'thien-menh' | 'tu-tien' | 'lo-dan' | 'vuon' | 'ban-do' | 'vuc-tham';
+type Bang = null | 'tui' | 'don' | 'phuong-thi' | 'sao-luu' | 'duong' | 'dan-thu' | 'tang-bao' | 'linh-thu' | 'chon-vung';
 
 export function UngDung() {
   const [kho, datKho] = useState<Kho>(napKho);
@@ -55,6 +58,8 @@ export function UngDung() {
 
   // nhạc nền theo màn: đan phòng và vườn dược có bản riêng, còn lại dùng bản của động phủ
   useEffect(() => {
+    // Vực Thẳm tự chọn nhạc theo chỗ đứng (tầng, chỗ nghỉ, boss)
+    if (man === 'vuc-tham') return;
     datNhac(man === 'lo-dan' ? 'dan-phong' : man === 'vuon' ? 'vuon' : man === 'ban-do' ? 'du-ngoan' : 'dong-phu');
   }, [man]);
 
@@ -156,18 +161,41 @@ export function UngDung() {
   const coDay = !dangLuyen;
   const thanhDay = coDay && (
     <ThanhDieuHuong
-      man={man as ManChinh}
+      man={(man === 'vuc-tham' ? 'ban-do' : man) as ManChinh}
       kho={kho}
       onChon={(m) => {
         datBang(null);
-        if (m === man) return;
-        if (m === 'ban-do') datKho((k) => vaoBanDo(k));
+        if (m === man || (m === 'ban-do' && man === 'vuc-tham')) return;
+        // Du ngoạn: đang kẹt dưới vực thì về thẳng chỗ cũ; không thì chọn vùng
+        if (m === 'ban-do') {
+          if (kho.vuc.trong) {
+            datKho((k) => vaoVuc(k));
+            return datMan('vuc-tham');
+          }
+          return datBang('chon-vung');
+        }
         datMan(m);
       }}
       onPhuongThi={() => datBang('phuong-thi')}
     />
   );
   const phuongThi = bang === 'phuong-thi' && <PhuongThi kho={kho} doiKho={doiKho} onDong={() => datBang(null)} />;
+  const chonVung = bang === 'chon-vung' && (
+    <ChonVung
+      kho={kho}
+      onDong={() => datBang(null)}
+      onThanhVan={() => {
+        datBang(null);
+        datKho((k) => vaoBanDo(k));
+        datMan('ban-do');
+      }}
+      onVuc={() => {
+        datBang(null);
+        datKho((k) => vaoVuc(k));
+        datMan('vuc-tham');
+      }}
+    />
+  );
   // Đan thư: "Luyện đan này" -> sang đan phòng với đúng đan phương đó
   const danThu = bang === 'dan-thu' && (
     <DanThu
@@ -229,7 +257,21 @@ export function UngDung() {
           <SaoLuu kho={kho} onNap={(k) => datKho(k)} onDong={() => datBang(null)} onXemLaiHuongDan={() => datKho((k) => ({ ...k, daChiTay: [] }))} />
         )}
         {phuongThi}
+        {chonVung}
         {danThu}
+        {chiTay}
+      </div>
+    );
+  }
+
+  if (man === 'vuc-tham') {
+    return (
+      <div className="ung-dung nen-vuc co-day">
+        <VucTham kho={kho} doiKho={doiKho} onVe={() => datMan('tu-tien')} />
+        {thanhDay}
+        {phuongThi}
+        {theBao}
+        {theTrangThai}
         {chiTay}
       </div>
     );
@@ -241,6 +283,7 @@ export function UngDung() {
         <BanDo kho={kho} doiKho={doiKho} onVe={() => datMan('tu-tien')} />
         {thanhDay}
         {phuongThi}
+        {chonVung}
         {theBao}
         {theTrangThai}
         {chiTay}
@@ -284,6 +327,7 @@ export function UngDung() {
       {bang === 'tui' && <TuiDan kho={kho} doiKho={doiKho} onDong={() => datBang(null)} trangDau="ban-le" />}
       {bang === 'don' && <TuiDan kho={kho} doiKho={doiKho} onDong={() => datBang(null)} />}
       {phuongThi}
+        {chonVung}
       {danThu}
       {(bang === 'duong' || kho.duong) && <DuongDan kho={kho} doiKho={doiKho} onDong={() => datBang(null)} />}
       {theBao}

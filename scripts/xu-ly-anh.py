@@ -110,7 +110,8 @@ def anh_nen_giay(im: Image.Image) -> np.ndarray:
     return np.asarray(nho.resize((w, h), Image.BILINEAR)).astype(np.float32) / 255.0
 
 
-def tach_nen(im: Image.Image, tron: bool = False, giay: bool = False) -> Image.Image:
+def tach_nen(im: Image.Image, tron: bool = False, giay: bool = False, lo: int = 400) -> Image.Image:
+    # lo: mảng gần trắng kín bên trong vật lớn hơn bấy nhiêu điểm ảnh thì coi là nền (vật tối màu thì để nhỏ)
     a = np.asarray(im.convert('RGB')).astype(np.float32) / 255.0
     goc = a
     if giay:
@@ -147,7 +148,7 @@ def tach_nen(im: Image.Image, tron: bool = False, giay: bool = False) -> Image.I
                         da_xet[ny, nx] = True
                         mang.append((ny, nx))
                         hang.append((ny, nx))
-            if len(mang) > 400:
+            if len(mang) > lo:
                 for y, x in mang:
                     ngoai[y, x] = True
 
@@ -317,6 +318,7 @@ def main():
     xu_ly_mo_dau()
     xu_ly_trang_thai()
     xu_ly_linh_thu()
+    xu_ly_vuc_tham()
     sys.exit(1 if loi else 0)
 
 
@@ -555,6 +557,79 @@ def xu_ly_linh_thu():
             os.makedirs(os.path.join(RA, 'ui'), exist_ok=True)
             thu_nho(im, 256).save(os.path.join(RA, 'ui', 'nut-linh-thu.png'), optimize=True)
             print('ok ui/nut-linh-thu.png (tam dung qua trung)')
+
+
+
+def xu_ly_vuc_tham():
+    """Vực Thẳm: Hinh_anh/vuc-tham/ -> public/hinh/vuc-tham/.
+    - quai-*, boss-* (vẽ khắc mực trên nền trắng): tách nền + lấp lỗ, 640;
+    - dau/* (dấu bản đồ) 160, trang-thai-* 128, do/* (vật phẩm) 256: tách nền;
+    - khung-vuc: tách nền như khung kỳ ngộ (768); giay-vuc: jpg 512; nen/*: jpg 1280, giữ nguyên.
+    Lò Đan Vực Thẳm nằm ở Hinh_anh/lo/lo-vuc-tham.png (tách nền, 700)."""
+    vao = os.path.join(GOC, 'vuc-tham')
+    if not os.path.isdir(vao):
+        return
+    ra = os.path.join(RA, 'vuc-tham')
+
+    def tach(duong, canh, ten_ra, toi=False):
+        # quái/boss thân tối: mọi chỗ trắng bị thân bao kín (giữa vòng cuộn, kẽ cành) đều là nền -> không lấp lỗ, xoá cả mảng nhỏ
+        goc = Image.open(duong)
+        im = tach_nen(goc, lo=30) if toi else lap_lo(tach_nen(goc), goc)
+        im = thu_nho(cat_sat(im), canh)
+        os.makedirs(os.path.dirname(ten_ra), exist_ok=True)
+        im.save(ten_ra, optimize=True)
+        print('ok', os.path.relpath(ten_ra, RA), im.size)
+
+    for ten in sorted(os.listdir(vao)):
+        goc_ten, duoi = os.path.splitext(ten)
+        if duoi.lower() != '.png':
+            continue
+        d = os.path.join(vao, ten)
+        if goc_ten == 'giay-vuc':
+            os.makedirs(ra, exist_ok=True)
+            thu_nho(Image.open(d).convert('RGB'), 512).save(os.path.join(ra, goc_ten + '.jpg'), quality=84)
+            print('ok vuc-tham/giay-vuc.jpg')
+        elif goc_ten == 'khung-vuc':
+            im = thu_nho(cat_sat(tach_nen(Image.open(d))), 768)
+            os.makedirs(ra, exist_ok=True)
+            im = im.resize((568, 768), Image.LANCZOS)
+            # mặt quỷ giữa cạnh trên tách thành ảnh riêng (khung-vuc-mat) để CSS đặt đè lên, kẻo khung cắt chín ô kéo méo nó;
+            # chỗ trống trên khung vá bằng đoạn thanh xương và lòng khung ngay bên trái (toạ độ theo ảnh 568×768)
+            mat = im.crop((232, 14, 336, 152))
+            m = np.asarray(mat).copy()
+            trang = (m[..., :3].min(axis=2) > 200) & (m[..., 3] > 0)
+            m[trang, 3] = 0
+            Image.fromarray(m, 'RGBA').save(os.path.join(ra, 'khung-vuc-mat.png'), optimize=True)
+            a_ = np.asarray(im).copy()
+            mau_thanh = a_[60:112, 180:232]
+            mau_long = a_[112:152, 180:232]
+            for x in range(232, 336, 52):
+                w_ = min(52, 336 - x)
+                a_[60:112, x:x + w_] = mau_thanh[:, :w_]
+                a_[112:152, x:x + w_] = mau_long[:, :w_]
+            a_[0:60, 232:336] = 0
+            im = Image.fromarray(a_, 'RGBA')
+            im.save(os.path.join(ra, ten), optimize=True)
+            print('ok vuc-tham/khung-vuc.png + khung-vuc-mat.png', im.size)
+        else:
+            tach(d, 128 if goc_ten.startswith('trang-thai') else 640, os.path.join(ra, ten), toi=goc_ten.startswith(('quai-', 'boss-')))
+    for thu_muc, canh in (('dau', 160), ('do', 256)):
+        v = os.path.join(vao, thu_muc)
+        if os.path.isdir(v):
+            for ten in sorted(os.listdir(v)):
+                if ten.lower().endswith('.png'):
+                    tach(os.path.join(v, ten), canh, os.path.join(ra, thu_muc, ten))
+    v = os.path.join(vao, 'nen')
+    if os.path.isdir(v):
+        os.makedirs(os.path.join(ra, 'nen'), exist_ok=True)
+        for ten in sorted(os.listdir(v)):
+            goc_ten, duoi = os.path.splitext(ten)
+            if duoi.lower() == '.png':
+                thu_nho(Image.open(os.path.join(v, ten)).convert('RGB'), 1280).save(os.path.join(ra, 'nen', goc_ten + '.jpg'), quality=84)
+                print('ok vuc-tham/nen/' + goc_ten + '.jpg')
+    lo = os.path.join(GOC, 'lo', 'lo-vuc-tham.png')
+    if os.path.exists(lo):
+        tach(lo, 700, os.path.join(RA, 'lo', 'lo-vuc-tham.png'))
 
 
 if __name__ == '__main__':

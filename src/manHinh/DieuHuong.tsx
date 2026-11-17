@@ -61,7 +61,8 @@ export function NutAnh({
 export const coCayChin = (k: Kho, luc = Date.now()) => k.vuon.o.some((o) => o && giaiDoan(o, luc) >= 3);
 
 export function ThanhDieuHuong({ man, kho, onChon, onPhuongThi }: { man: ManChinh; kho: Kho; onChon: (m: ManChinh) => void; onPhuongThi: () => void }) {
-  const khongDi = lyDoKhongDi(kho);
+  // đang ở dưới Vực Thẳm thì nút Du ngoạn luôn mở (quay lại vực)
+  const khongDi = kho.vuc?.trong ? null : lyDoKhongDi(kho);
   const nhanDi = khongDi === 'cần Luyện Khí' ? 'Luyện Khí' : khongDi === 'mất hồn' ? 'Mất hồn' : khongDi ? 'Dưỡng thương' : undefined;
   return (
     <nav className="thanh-dieu-huong">

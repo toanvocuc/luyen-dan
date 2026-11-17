@@ -897,6 +897,7 @@ export function giayYeuMatHon(k: Kho, luc = Date.now()): number {
 /** Du ngoạn được không, và nếu không thì vì sao (chữ ngắn để ghi lên nút). */
 export function lyDoKhongDi(k: Kho, luc = Date.now()): string | null {
   if (!duocVao(k)) return 'cần Luyện Khí';
+  if (k.vuc?.trong) return 'đang ở Vực Thẳm';
   if (giayKhoaMatHon(k, luc) > 0) return 'mất hồn';
   if (!duMau(k, luc)) return 'đang dưỡng thương';
   return null;
