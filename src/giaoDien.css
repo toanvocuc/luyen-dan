@@ -4753,6 +4753,9 @@ button.bien-ten:active {
   background: #07060a;
 }
 .man-vuc {
+  /* thanh cuộn tối trên PC */
+  color-scheme: dark;
+  scrollbar-color: #4a3a36 #0d0b10;
   position: absolute;
   inset: 0;
   display: flex;
@@ -5132,6 +5135,11 @@ p.nhan-mat.vuc {
 }
 
 /* trận boss: phủ cả màn */
+.tran-vuc,
+.lop-vuc {
+  color-scheme: dark;
+  scrollbar-color: #4a3a36 #0d0b10;
+}
 .tran-vuc {
   position: absolute;
   inset: 0;

@@ -171,7 +171,8 @@ export function TuTien({
         </section>
       )}
 
-      <div className={`san-tu-luyen ${yeuMatHon > 0 ? 'mat-hon' : ''}`}>
+      {/* mất hồn (kể cả lần đầu, lần nhẹ chỉ khoá du ngoạn): nhân vật mờ đi */}
+      <div className={`san-tu-luyen ${yeuMatHon > 0 || giayKhoaMatHon(kho, luc) > 0 ? 'mat-hon' : ''}`}>
         <div className={`hao-quang ${day ? 'day' : ''}`} />
         <BupBe dang={nhanVat.dang} gioiTinh={nhanVat.gioiTinh} />
         {thu && (
@@ -207,6 +208,9 @@ export function TuTien({
           <p className="chu-nho bao-mat-hon">
             Trúng độc: mọi chỉ số chỉ còn {Math.round(heSoTrungDoc(docNay) * 100)}%. Độc tự tan {Math.round(3600 / LUAT.doc.giayMoiDiem)} điểm mỗi giờ.
           </p>
+        )}
+        {yeuMatHon <= 0 && giayKhoaMatHon(kho, luc) > 0 && (
+          <p className="chu-nho bao-mat-hon">Hồn phách chưa về hẳn: du ngoạn lại được sau {dongHo(giayKhoaMatHon(kho, luc))}.</p>
         )}
         {yeuMatHon > 0 && (
           <p className="chu-nho bao-mat-hon">

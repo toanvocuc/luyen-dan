@@ -1,4 +1,4 @@
-// Vực Thẳm: mê cung 50 tầng đi XUỐNG, không reset. Quái chặn đường (đánh / bỏ chạy / từ bỏ), bốn trạng thái xấu,
+// Vực Thẳm: mê cung 50 tầng đi XUỐNG. Mỗi ngày (giờ Việt Nam) vực đổi hình một lần: mê cung mới, quái và boss sống lại, về miệng vực. Quái chặn đường (đánh / bỏ chạy / từ bỏ), bốn trạng thái xấu,
 // chỗ nghỉ, lối thoát (cất đồ, ra khỏi vực), ba boss đánh theo lượt (linh thú xuất chiến cùng đánh và hộ thể).
 // Thuần tính toán, không dính giao diện. Không khoá cảnh giới: quái tầng 1 đã ngang tu sĩ Kim Đan.
 import { CANH_GIOI, CHI_SO, DAN_PHUONG, LUAT, LO_DAN, anhDan, timDanPhuong, type ChiSo, type PhamThat } from './duLieu.ts';
@@ -294,7 +294,8 @@ export function taoBanDoVuc(hat: string): BanDoVuc {
 }
 const boNho = new Map<string, BanDoVuc>();
 export function banDoVuc(k: Kho): BanDoVuc {
-  const hat = k.nhanVat?.ten ?? '';
+  // mỗi nhân vật mỗi ngày một mê cung
+  const hat = `${k.nhanVat?.ten ?? ''}|${k.vuc.ngay}`;
   let bd = boNho.get(hat);
   if (!bd) {
     bd = taoBanDoVuc(hat);
@@ -332,6 +333,10 @@ export interface TranBoss {
   nhatKy: string[];
 }
 export interface VucTrangThai {
+  /** Ngày (giờ Việt Nam) của mê cung hiện tại; qua ngày thì vực đổi hình (xem lamMoiVuc). */
+  ngay: number;
+  /** Vực vừa đổi hình mà người chơi chưa đọc bảng báo. */
+  doiHinh?: boolean;
   /** Đang ở trong vực (chỉ ra được ở lối thoát). Trong vực máu KHÔNG tự hồi. */
   trong: boolean;
   viTri: number;
@@ -354,7 +359,12 @@ export interface VucTrangThai {
   gap: { diem: number; quai: string; langThang: boolean } | null;
   tran: TranBoss | null;
 }
-export const vucMoi = (): VucTrangThai => ({
+/** Số thứ tự ngày theo giờ Việt Nam (UTC+7). */
+export const ngayVuc = (luc = Date.now()) => Math.floor((luc + 7 * 3600 * 1000) / 86400000);
+/** Còn bao nhiêu giây nữa thì vực đổi hình. */
+export const giayDoiVuc = (luc = Date.now()) => Math.ceil(((ngayVuc(luc) + 1) * 86400000 - 7 * 3600 * 1000 - luc) / 1000);
+export const vucMoi = (luc = Date.now()): VucTrangThai => ({
+  ngay: ngayVuc(luc),
   trong: false,
   viTri: 0,
   truoc: 0,
@@ -371,7 +381,7 @@ export const vucMoi = (): VucTrangThai => ({
 });
 export const buVuc = (v: Partial<VucTrangThai> | undefined): VucTrangThai => {
   const m = vucMoi();
-  return { ...m, ...v, tt: { ...m.tt, ...v?.tt }, tui: { ...v?.tui }, nghi: { ...v?.nghi }, bossDiet: { ...v?.bossDiet }, daDen: [...(v?.daDen ?? m.daDen)], diet: [...(v?.diet ?? [])] };
+  return { ...m, ...v, ngay: v?.ngay ?? m.ngay, tt: { ...m.tt, ...v?.tt }, tui: { ...v?.tui }, nghi: { ...v?.nghi }, bossDiet: { ...v?.bossDiet }, daDen: [...(v?.daDen ?? m.daDen)], diet: [...(v?.diet ?? [])] };
 };
 
 // ---------- tiện ích ----------
@@ -463,8 +473,20 @@ export function lyDoKhongVaoVuc(k: Kho, luc = Date.now()): string | null {
   if (!k.vuc.trong && mauHienTai(k, luc) < mauToiDa(k) * LUAT.kyNgo.mauVao) return 'đang dưỡng thương';
   return null;
 }
+/**
+ * Qua ngày mới: vực đổi hình. Mê cung mới, quái và boss sống lại, chỗ nghỉ nhóm lại, mốc về miệng vực.
+ * Đang ở dưới thì bị đẩy về miệng vực (cũng là lối thoát), đồ đang mang và trạng thái vẫn giữ. Kỷ lục "sâu nhất" giữ nguyên.
+ */
+export function lamMoiVuc(k: Kho, luc = Date.now()): Kho {
+  const hom = ngayVuc(luc);
+  if (k.vuc.ngay === hom) return k;
+  // bản lưu chưa từng vào vực thì không cần báo
+  const daVao = k.vuc.daDen.length > 1 || k.vuc.trong;
+  return { ...k, vuc: { ...vucMoi(luc), sauNhat: k.vuc.sauNhat, trong: k.vuc.trong, tui: k.vuc.tui, tt: k.vuc.tt, doiHinh: daVao } };
+}
 /** Vào vực: ở trong rồi thì đứng nguyên chỗ cũ; mới vào thì bắt đầu ở lối thoát gần nhất. Máu ngừng tự hồi từ lúc này. */
-export function vaoVuc(k: Kho, luc = Date.now()): Kho {
+export function vaoVuc(k0: Kho, luc = Date.now()): Kho {
+  const k = lamMoiVuc(k0, luc);
   if (k.vuc.trong) return k;
   const toiDa = mauToiDa(k);
   const nay = mauHienTai(k, luc);
@@ -521,7 +543,7 @@ function tick(k: Kho, luc: number): { kho: Kho; mat: number } {
 export function diVuc(k: Kho, id: number, rng: () => number = Math.random, luc = Date.now()): KetBuoc | null {
   const v = k.vuc;
   const c = LUAT.kyNgo;
-  if (!v.trong || v.gap || v.tran || !keVuc(k, v.viTri, id) || !coMau(k, luc)) return null;
+  if (!v.trong || v.gap || v.tran || v.ngay !== ngayVuc(luc) || !keVuc(k, v.viTri, id) || !coMau(k, luc)) return null;
   const tl = theLucHienTai(k, luc);
   if (tl < c.theLucMoiBuoc) return null;
   const tu = diemVuc(k, v.viTri);

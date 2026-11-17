@@ -26,8 +26,11 @@ import {
   dsDanVuc,
   dungDanVuc,
   giayChoNghi,
+  giayDoiVuc,
   keVuc,
   kiemChet,
+  lamMoiVuc,
+  ngayVuc,
   laThoat,
   lopTang,
   luiTran,
@@ -120,6 +123,7 @@ type Bao =
   | { loai: 'ket-gap'; tieuDe: string; anh: string; lop: number; chu: string; nhan: string[]; mat: string[] }
   | { loai: 'chet'; mat: string[] }
   | { loai: 'nghi' }
+  | { loai: 'doi-hinh' }
   | { loai: 'thoat'; cat: string[] }
   | { loai: 'thang-boss'; ten: string; anh: string; lop: number; nhan: string[] };
 
@@ -161,6 +165,14 @@ export function VucTham({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho
     phat('chet-vuc');
     datBao({ loai: 'chet', mat: chuTui(kho.vuc.tui) });
   }, [mau <= 0, v.tt.hac >= LUAT_VUC.hacToiDa]); // eslint-disable-line react-hooks/exhaustive-deps
+  // qua ngày mới: vực đổi hình
+  const homNay = ngayVuc(luc);
+  useEffect(() => {
+    if (v.ngay !== homNay) doiKho((k) => lamMoiVuc(k));
+  }, [homNay]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (v.doiHinh && !bao) datBao({ loai: 'doi-hinh' });
+  }, [v.doiHinh]); // eslint-disable-line react-hooks/exhaustive-deps
   // cuộn bản đồ theo người chơi
   useEffect(() => {
     const c = cuonRef.current;
@@ -251,6 +263,7 @@ export function VucTham({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho
             <small>
               {TEN_LOP[lopTang(Math.max(1, d.tang))]} · sâu nhất {v.sauNhat}/{LUAT_VUC.soTang}
             </small>
+            <small>Vực đổi hình sau {dongHo(giayDoiVuc(luc))}</small>
           </b>
           <button className="nut-nho nut-vuc" onClick={() => datMoDan(true)}>
             Dùng đan
@@ -524,6 +537,24 @@ export function VucTham({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho
           <div className="hang-nut">
             <button className="nut chinh" onClick={() => datBao(null)}>
               Đi tiếp
+            </button>
+          </div>
+        </KhungVuc>
+      )}
+      {bao?.loai === 'doi-hinh' && (
+        <KhungVuc tieuDe="Vực thẳm đổi hình">
+          <p className="loi-ke">
+            Mặt đất rung chuyển, vách đá sụp đổ rồi mọc lại thành những lối đi khác hẳn. Những thứ đã bị hạ lại bò ra từ bóng tối. Ngươi bị đẩy ngược về miệng vực.
+          </p>
+          <div className="hang-nut">
+            <button
+              className="nut chinh"
+              onClick={() => {
+                datBao(null);
+                doiKho((k) => ({ ...k, vuc: { ...k.vuc, doiHinh: false } }));
+              }}
+            >
+              Đứng dậy
             </button>
           </div>
         </KhungVuc>
