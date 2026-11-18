@@ -114,7 +114,7 @@ function BangChoAn({ kho, t, doiKho, onDong }: { kho: Kho; t: Thu; doiKho: (h: (
     <div className="lop-phu" onClick={onDong}>
       <div className="bang tam" onClick={(e) => e.stopPropagation()}>
         <h2>Cho {timLoaiThu(t.loai).ten} ăn</h2>
-        <p className="chu-nho">Độ no {Math.round(noHienTai(t, luc))}/100. Đan bậc càng cao, phẩm càng cao thì càng mau lớn. Lớn rồi thì kén ăn hơn.</p>
+        <p className="chu-nho">Độ no {Math.round(noHienTai(t, luc))}/100. Đan càng tốt càng mau lớn; lớn rồi thì kén ăn.</p>
         {bao && <p className="chu-nho bao-thu">{bao}</p>}
         {ds.length === 0 && <p className="chu-nho">Trong túi chưa có viên đan nào.</p>}
         {ds.map((m) => {
@@ -202,7 +202,7 @@ export function LinhThuVien({ kho, doiKho, onDong }: { kho: Kho; doiKho: (h: (k:
               <TheThongTin kho={kho} t={t} doiKho={doiKho} onChoAn={() => datChoAnUid(t.uid)} />
             </>
           ) : (
-            <p className="chu-nho trong-linh-thu">Chưa nuôi linh thú nào. Sang thẻ Ấp trứng để ấp một quả; trứng mua ở Tàng Bảo Các (Vạn Bảo Lâu).</p>
+            <p className="chu-nho trong-linh-thu">Chưa có linh thú. Sang thẻ Ấp trứng; trứng mua ở Tàng Bảo Các.</p>
           )}
         </div>
       )}
@@ -285,14 +285,14 @@ export function LinhThuVien({ kho, doiKho, onDong }: { kho: Kho; doiKho: (h: (k:
                 <div className="than-dong">
                   <b>Trứng linh thú ×{kho.trungThu ?? 0}</b>
                   <div className="hang-pham">
-                    <span>Truyền linh khí càng nhiều cấp, càng dễ nở ra thú bậc cao. Tư chất và khí vận càng cao, truyền càng dễ trúng.</span>
+                    <span>Truyền càng nhiều cấp, càng dễ nở thú bậc cao.</span>
                   </div>
                 </div>
                 <button className="nut-nho" disabled={(kho.trungThu ?? 0) < 1} onClick={() => doiKho(batDauAp)}>
                   Bắt đầu ấp
                 </button>
               </div>
-              {(kho.trungThu ?? 0) < 1 && !kho.trung && <p className="chu-nho">Hết trứng. Trứng bán ở Tàng Bảo Các (Vạn Bảo Lâu), giá rất cao.</p>}
+              {(kho.trungThu ?? 0) < 1 && !kho.trung && <p className="chu-nho">Hết trứng. Trứng bán ở Tàng Bảo Các.</p>}
             </div>
           )}
         </div>
@@ -309,7 +309,7 @@ export function LinhThuVien({ kho, doiKho, onDong }: { kho: Kho; doiKho: (h: (k:
               <b>{kho.thuMoiNo.tiemNang}</b>/100
             </p>
             <p className="chu-nho">{timLoaiThu(kho.thuMoiNo.loai).moTa}</p>
-            {day && <p className="chu-nho bao-thu">Chuồng đã đủ {LUAT_THU.soToiDa} con: phải bỏ rơi bớt một con mới nhận nuôi được.</p>}
+            {day && <p className="chu-nho bao-thu">Đã đủ {LUAT_THU.soToiDa} con: bỏ rơi bớt một con mới nhận được.</p>}
             <div className="hang-nut-thu">
               <button
                 className="nut chinh"

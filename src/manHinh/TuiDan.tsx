@@ -93,7 +93,7 @@ export function TuiDan({ kho, doiKho, onDong, trangDau = 'don' }: { kho: Kho; do
         {trang === 'don' && (
           <>
             <p className="chu-nho">
-              Tông môn trả đủ giá, gấp đôi bán lẻ. Viên phẩm cao hơn yêu cầu vẫn giao được và được trả theo đúng phẩm của nó. Danh vọng đã tích: {tongDanhVong}.
+              Tông môn trả gấp đôi bán lẻ. Danh vọng: {tongDanhVong}.
             </p>
             {Array.from({ length: LUAT.don.soDon }, (_, i) => {
               const d = kho.donHang.ds[i] ?? null;
@@ -157,7 +157,7 @@ export function TuiDan({ kho, doiKho, onDong, trangDau = 'don' }: { kho: Kho; do
         {trang === 'tang-bao' && (
           <>
             <p className="chu-nho">
-              Tàng Bảo Các các tông môn: đổi danh vọng lấy dẫn dược, thứ bắt buộc khi đột phá từ Kim Đan trở lên. Muốn có danh vọng của tông môn nào thì giao đơn cho tông môn đó.
+              Đổi danh vọng lấy dẫn dược (cần khi đột phá từ Kim Đan). Giao đơn cho tông môn nào thì có danh vọng tông môn đó.
             </p>
             <div className="dong-tui dong-ban dong-trung-thu">
               <img src={ANH_TRUNG_CHUA_RO} alt="" />
@@ -207,7 +207,7 @@ export function TuiDan({ kho, doiKho, onDong, trangDau = 'don' }: { kho: Kho; do
         {trang === 'ban-le' && (
           <>
             <p className="chu-nho">
-              Bán lẻ ở phường thị chỉ được {Math.round(LUAT.heSoBan * 100)}% giá trị. Đã luyện {kho.thongKe.soMe} mẻ, nổ lò {kho.thongKe.noLo} lần.
+              Bán lẻ chỉ được {Math.round(LUAT.heSoBan * 100)}% giá trị.
             </p>
             <div className="hang-chon loc-tui">
               {(
@@ -296,7 +296,7 @@ export function TuiDan({ kho, doiKho, onDong, trangDau = 'don' }: { kho: Kho; do
             <button
               className="nut-nho"
               onClick={() => {
-                if (confirm(`Bán ${haThua.reduce((s, d) => s + d.co, 0)} viên hạ phẩm thừa lấy ${giaHaThua} linh thạch? (Giữ lại viên cần cho đơn và đan đột phá kế tiếp.)`))
+                if (confirm(`Bán ${haThua.reduce((s, d) => s + d.co, 0)} viên hạ phẩm thừa lấy ${giaHaThua} linh thạch? (Giữ lại viên cần cho đơn và đột phá.)`))
                   doiKho((k) => haThua.reduce((kk, d) => banLe(kk, d.id, d.loai, d.co), k));
               }}
             >

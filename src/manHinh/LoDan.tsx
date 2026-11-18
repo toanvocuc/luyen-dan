@@ -738,7 +738,7 @@ export function LoDan({
             <div className="tien-do">
               <div ref={tienDoRef} />
             </div>
-            <p className="chu-nho">Nhấn giữ màn hình để tăng lửa, thả tay để hạ lửa. Lửa có đà — hãy đón trước vùng sáng. Quá nóng mà còn giữ tay thì áp lò dâng rất nhanh; thả tay ra là áp chỉ dâng nhẹ.</p>
+            <p className="chu-nho">Nhấn giữ để tăng lửa, thả tay để hạ. Lửa có đà, hãy đón trước vùng sáng. Quá nóng thì áp lò dâng nhanh.</p>
           </>
         )}
 
@@ -775,7 +775,7 @@ export function LoDan({
               <b>{Math.round(phanAp * 100)}%</b>
             </div>
 
-            <p className="chu-nho an-khi-thap">Bấm Tôi đan (hoặc chạm vào lò) đúng lúc con lắc trắng nằm trong khoảng xanh. Mỗi cấp con lắc chạy nhanh hơn và khoảng xanh hẹp lại.</p>
+            <p className="chu-nho an-khi-thap">Bấm Tôi đan (hoặc chạm lò) khi con lắc nằm trong khoảng xanh.</p>
             <div className="neu-thu">
               <span>Nếu thu bây giờ:</span>
               <ThanhTiLe doan={doanPham(tiLeVien(phuong, me, nangCap))} gon />

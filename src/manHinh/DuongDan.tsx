@@ -30,7 +30,7 @@ function ChonVien({ kho, doiKho, onDong }: { kho: Kho; doiKho: (ham: (k: Kho) =>
     <div className="man-duong">
       <h2>Dưỡng đan</h2>
       <p className="chu-nho">
-        Chọn đan từ thượng phẩm trở lên trong túi để dưỡng, mỗi lượt tối đa {toiDa} viên. Mỗi viên chỉ dưỡng được một lượt: thu về rồi là không dưỡng lại được nữa.
+        Chọn tối đa {toiDa} viên từ thượng phẩm trở lên. Mỗi viên chỉ dưỡng được một lượt.
       </p>
       <div className="chon-duong">
         {ds.length === 0 && <p className="chu-nho">Trong túi chưa có viên nào từ thượng phẩm trở lên.</p>}
@@ -114,8 +114,8 @@ function DangDuong({ kho, doiKho }: { kho: Kho; doiKho: (ham: (k: Kho) => Kho) =
     <div className="man-duong">
       <h2>Dưỡng đan</h2>
       <p className="chu-nho">
-        Chạm vào viên đan để dưỡng. Trúng thì lên 1 chuyển, trượt thì tụt {LUAT.duong.tut} chuyển; trượt quá {toiDa} lần thì đan vỡ.
-        {d.vien.length > 1 ? ' Mỗi lần chạm, mọi viên cùng quay; viên nào muốn giữ thì bấm Giữ lại.' : ''}
+        Chạm để dưỡng: trúng lên 1 chuyển, trượt tụt {LUAT.duong.tut}, trượt quá {toiDa} lần thì vỡ.
+        {d.vien.length > 1 ? ' Mọi viên cùng quay; muốn dừng viên nào thì bấm Giữ lại.' : ''}
       </p>
 
       <div className="than-duong">

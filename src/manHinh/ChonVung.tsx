@@ -14,7 +14,7 @@ export function ChonVung({ kho, onThanhVan, onVuc, onDong }: { kho: Kho; onThanh
           <img src="./hinh/ky-ngo/huou-1.webp" alt="" draggable={false} />
           <span>
             <b>{BAN_DO.ten}</b>
-            <small>{khongTv ? `Không đi được: ${khongTv}` : 'Kỳ ngộ, linh địa, cố nhân. Mỗi canh giờ một lượt.'}</small>
+            <small>{khongTv ? `Không đi được: ${khongTv}` : 'Kỳ ngộ, linh địa, cố nhân.'}</small>
           </span>
         </button>
         <button className="the-vung vuc" disabled={!!khongVuc} onClick={onVuc}>
@@ -25,8 +25,8 @@ export function ChonVung({ kho, onThanhVan, onVuc, onDong }: { kho: Kho; onThanh
               {khongVuc
                 ? `Không vào được: ${khongVuc}`
                 : kho.vuc.trong
-                  ? `Ngươi vẫn còn ở tầng ${diemVuc(kho, kho.vuc.viTri).tang}. Chỉ ra được ở lối thoát: quay lại đúng chỗ cũ.`
-                  : `${kho.tuVi.canhGioi < 3 ? 'Tu vi còn non: quái ở đây ngang tu sĩ Kim Đan, vào là cửu tử nhất sinh. ' : ''}${LUAT_VUC.soTang} tầng, mỗi ngày đổi hình một lần. Máu không tự hồi, chỉ ra được ở lối thoát. Sâu nhất đã tới: tầng ${kho.vuc.sauNhat}.`}
+                  ? `Đang ở tầng ${diemVuc(kho, kho.vuc.viTri).tang}: quay lại chỗ cũ.`
+                  : `${kho.tuVi.canhGioi < 3 ? 'Tu vi còn non: vào là cửu tử nhất sinh. ' : ''}${LUAT_VUC.soTang} tầng, đổi hình mỗi ngày. Máu không tự hồi. Sâu nhất: tầng ${kho.vuc.sauNhat}.`}
             </small>
           </span>
         </button>

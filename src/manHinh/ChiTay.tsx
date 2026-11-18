@@ -25,7 +25,7 @@ export const LUOT_CHI_TAY: readonly LuotChiTay[] = [
     buoc: [
       {
         chon: '.khung-ky-ngo .day-lua-chon',
-        chu: 'Mỗi lựa chọn ghi chỉ số được thử và tỉ lệ thành theo sức của ngươi. “Chắc chắn” là không rủi ro. Thua thì mất máu; máu về 0 là mất hồn.',
+        chu: 'Mỗi lựa chọn ghi tỉ lệ thành. Thua thì mất máu, hết máu là mất hồn.',
       },
     ],
   },
@@ -36,7 +36,7 @@ export const LUOT_CHI_TAY: readonly LuotChiTay[] = [
       { chon: '.man-duong .chon-duong', chu: 'Chọn tối đa 6 viên thượng phẩm, cực phẩm hoặc đan văn để dưỡng.' },
       {
         chon: '.man-duong .hang-nut',
-        chu: 'Vào dưỡng rồi chạm từng viên: trúng thì lên 1 chuyển, trượt thì tụt 3 chuyển, trượt quá 3 lần thì vỡ. Đan càng nhiều chuyển, uống vào càng mạnh.',
+        chu: 'Chạm từng viên: trúng lên 1 chuyển, trượt tụt 3, trượt quá 3 lần thì vỡ. Càng nhiều chuyển uống càng mạnh.',
       },
     ],
   },
@@ -46,7 +46,7 @@ export const LUOT_CHI_TAY: readonly LuotChiTay[] = [
     buoc: [
       {
         chon: '.lop-phu .dong-uong',
-        chu: 'Uống đan để tu luyện nhanh hơn hoặc tăng chỉ số. Mỗi viên thêm chút đan độc; độc vượt 100 thì trúng độc, mọi chỉ số giảm cho tới khi độc tan. Đan phẩm cao ít độc hơn.',
+        chu: 'Uống đan để tu nhanh hơn hoặc tăng chỉ số. Đan độc vượt 100 thì trúng độc, chỉ số giảm tới khi độc tan.',
       },
     ],
   },
@@ -54,7 +54,7 @@ export const LUOT_CHI_TAY: readonly LuotChiTay[] = [
     id: 'phuong-thi',
     cho: '.lop-phu .hang-doi-hang',
     buoc: [
-      { chon: '.lop-phu .hang-doi-hang', chu: 'Hàng ở phường thị tự đổi mỗi 3 giờ. Muốn đổi ngay thì trả linh thạch, mỗi ngày được 5 lượt.' },
+      { chon: '.lop-phu .hang-doi-hang', chu: 'Hàng đổi mỗi 3 giờ. Trả linh thạch để đổi ngay, 5 lượt mỗi ngày.' },
       { chon: '.lop-phu .o-mua.giong', chu: 'Ô viền xanh là hạt giống: mua về gieo ở vườn dược, lâu dài rẻ hơn mua thuốc.' },
     ],
   },
@@ -65,7 +65,7 @@ export const LUOT_CHI_TAY: readonly LuotChiTay[] = [
     buoc: [
       {
         chon: '.nut-dot-pha',
-        chu: 'Tu vi đã viên mãn! Bấm để xem điều kiện đột phá. Từ Kim Đan trở lên cần nhiều viên đan đột phá, dẫn dược tông môn (đổi bằng danh vọng) và phí lập trận; thất bại là mất hết.',
+        chu: 'Tu vi đã viên mãn! Bấm để xem cần gì để đột phá.',
       },
     ],
   },
@@ -76,7 +76,7 @@ export const LUOT_CHI_TAY: readonly LuotChiTay[] = [
     buoc: [
       {
         chon: '.nut-binh-canh',
-        chu: 'Tu vi đã chạm bình cảnh trung kỳ (tầng 5): phải dùng một viên đan cùng bậc với cảnh giới đang tu mới lên tầng 6. Phẩm càng cao càng dễ phá, cảnh giới càng cao càng khó.',
+        chu: 'Chạm bình cảnh ở tầng 5: dùng một viên đan cùng bậc để lên tầng 6.',
       },
     ],
   },
@@ -85,13 +85,13 @@ export const LUOT_CHI_TAY: readonly LuotChiTay[] = [
     nen: true,
     cho: '.tu-tien .dau-tu-tien',
     buoc: [
-      { chon: '.tu-tien .nut-nhiem-vu', chu: 'Cuộn thư nhiệm vụ dẫn đường. Chạm để xem việc cần làm; chạm vào nhiệm vụ là đi thẳng tới chỗ làm. Chấm đỏ là đã xong, về đây nhận thưởng.' },
+      { chon: '.tu-tien .nut-nhiem-vu', chu: 'Nhiệm vụ dẫn đường. Chạm nhiệm vụ để đi thẳng tới chỗ làm. Chấm đỏ: về nhận thưởng.' },
       {
         chon: '.bang.day.tu-vi',
-        chu: 'Tu vi tự tăng mỗi giây, kể cả khi tắt game. Đầy thanh thì lên tầng; tới tầng cuối thì cần đan đột phá để bước lên cảnh giới mới.',
+        chu: 'Tu vi tự tăng, kể cả khi tắt game. Tới tầng cuối thì cần đan đột phá.',
       },
-      { chon: '.tu-tien .cot-nut', chu: 'Túi đồ để uống đan và xem dược liệu. Đơn hàng là nơi tông môn đặt mua đan; số đỏ là đơn đã đủ đan để giao.' },
-      { chon: '.thanh-dieu-huong', chu: 'Thanh này đưa ngươi đi khắp nơi: luyện đan, trồng thuốc, mua bán và du ngoạn. Chấm đỏ là có việc đang chờ.' },
+      { chon: '.tu-tien .cot-nut', chu: 'Túi đồ: uống đan, xem dược liệu. Đơn hàng: giao đan cho tông môn.' },
+      { chon: '.thanh-dieu-huong', chu: 'Luyện đan, trồng thuốc, mua bán, du ngoạn. Chấm đỏ là có việc chờ.' },
       { chon: '.bien-ten', chu: 'Chạm vào tên để xem chỉ số và thiên mệnh của nhân vật.' },
     ],
   },
@@ -100,14 +100,14 @@ export const LUOT_CHI_TAY: readonly LuotChiTay[] = [
     nen: true,
     cho: '.lo-dan .phuong-dang-chon',
     buoc: [
-      { chon: '.lo-dan .ti-le', chu: 'Tỉ lệ ra từng phẩm của mẻ đan này. Phẩm càng cao bán càng đắt, uống càng mạnh; phế đan là mất trắng.' },
+      { chon: '.lo-dan .ti-le', chu: 'Tỉ lệ ra từng phẩm của mẻ này.' },
       { chon: '.lo-dan .phuong-dang-chon', chu: 'Đan phương đang luyện. Chạm để đổi; luyện thành đủ mẻ thì mở đan phương kế tiếp.' },
       { chon: '.lo-dan .hang-lieu', chu: 'Chọn tuổi thuốc cho từng vị. Thuốc 100 năm, 1000 năm đẩy phẩm đan lên cao hẳn.' },
       {
         chon: '.lo-dan .bang.day .nut.chinh',
-        chu: 'Khai lò xong thì NHẤN GIỮ màn hình để thêm lửa, thả tay cho lửa hạ, giữ kim nằm trong vùng sáng. Lửa có đà, phải đón trước. Sau đó bấm Tôi đan đúng lúc con lắc nằm trong khoảng xanh.',
+        chu: 'NHẤN GIỮ màn hình để thêm lửa, thả ra cho lửa hạ, giữ kim trong vùng sáng. Rồi bấm Tôi đan khi con lắc ở khoảng xanh.',
       },
-      { chon: '.ung-dung > .cot-nut:not(.trai)', chu: 'Túi đan để bán đan, Đơn hàng để giao đan cho tông môn. Nút Dưỡng đan bên trái dùng để nâng viên thượng phẩm lên nhiều chuyển.' },
+      { chon: '.ung-dung > .cot-nut:not(.trai)', chu: 'Túi đan: bán đan. Đơn hàng: giao đan. Dưỡng đan (bên trái): nâng chuyển cho đan thượng phẩm.' },
     ],
   },
   {
@@ -115,7 +115,7 @@ export const LUOT_CHI_TAY: readonly LuotChiTay[] = [
     nen: true,
     cho: '.vuon .o-vuon',
     buoc: [
-      { chon: '.vuon .luoi-vuon', chu: 'Chạm một ô trống để gieo hạt. Cây lớn theo giờ thật, kể cả khi tắt game; để càng lâu thuốc càng nhiều năm tuổi, nhưng hái muộn thì ô bị chiếm lâu.' },
+      { chon: '.vuon .luoi-vuon', chu: 'Chạm ô trống để gieo hạt. Cây lớn theo giờ thật; để càng lâu thuốc càng nhiều năm tuổi.' },
       { chon: '.vuon .o-vuon.khoa', chu: 'Có thêm linh thạch thì mở thêm ô để trồng được nhiều hơn.' },
     ],
   },
@@ -124,8 +124,8 @@ export const LUOT_CHI_TAY: readonly LuotChiTay[] = [
     nen: true,
     cho: '.man-ban-do .dau-nguoi',
     buoc: [
-      { chon: '.man-ban-do .chi-so-ban-do', chu: 'Mỗi bước đi tốn 5 thể lực, thể lực tự hồi theo thời gian. Mỗi lượt du ngoạn kéo dài 1 giờ: thoát ra vào lại vẫn đứng chỗ cũ, hết giờ thì về làng. Máu dưới 30% thì phải về dưỡng thương.' },
-      { chon: '.man-ban-do .diem-ban-do.ke', chu: 'Chạm điểm có đường nối đỏ để đi tới. Ba con đường tách riêng, chỉ gặp nhau ở làng: muốn sang đường khác phải vòng về. Vùng còn phủ sương sẽ hiện ra khi ngươi đến gần.' },
+      { chon: '.man-ban-do .chi-so-ban-do', chu: 'Mỗi bước tốn 5 thể lực, tự hồi dần. Một lượt du ngoạn kéo dài 1 giờ. Máu dưới 30% thì phải về dưỡng thương.' },
+      { chon: '.man-ban-do .diem-ban-do.ke', chu: 'Chạm điểm có đường đỏ để đi. Sương tan khi ngươi tới gần.' },
       { chon: '.man-ban-do .dau-su-kien', chu: 'Dấu ? là kỳ ngộ đang chờ. Kỳ ngộ đổi mới mỗi 3 giờ.' },
     ],
   },

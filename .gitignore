@@ -3,3 +3,8 @@ dist/
 *.log
 .DS_Store
 Thumbs.db
+
+# khoá bí mật: không bao giờ đưa lên GitHub
+.env
+.env.*
+tsconfig.tsbuildinfo

@@ -374,7 +374,7 @@ export function VucTham({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho
             Khiêu chiến lại {BOSS[d.boss!].ten}
           </button>
         )}
-        {!laThoat(kho, d.id) && d.loai !== 'nghi' && <p className="goi-y-vuc">Chạm điểm sáng kề bên để đi. Chỉ ra được khỏi vực ở lối thoát.</p>}
+        {!laThoat(kho, d.id) && d.loai !== 'nghi' && <p className="goi-y-vuc">Chạm điểm sáng kề bên để đi.</p>}
       </footer>
 
       {/* ---- quái chặn đường ---- */}
@@ -415,7 +415,7 @@ export function VucTham({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho
         <KhungVuc tieuDe={BOSS[d.boss].ten}>
           <SanDau lop={lopTang(d.tang)} anh={anhBoss(d.boss, 'dung')} />
           <p className="loi-ke">{BOSS[d.boss].mo}</p>
-          {thu && <p className="loi-ke thu-theo">{timLoaiThu(thu.loai).ten} gầm gừ bên cạnh ngươi: cứ {LUAT_VUC.thuDanhMoi} lượt nó đánh một đòn, {LUAT_VUC.thuDoMoi} lượt đỡ thay ngươi một đòn.</p>}
+          {thu && <p className="loi-ke thu-theo">{timLoaiThu(thu.loai).ten} theo ngươi vào trận: {LUAT_VUC.thuDanhMoi} lượt đánh một đòn, {LUAT_VUC.thuDoMoi} lượt đỡ thay một đòn.</p>}
           <div className="day-lua-chon">
             <button data-im className="lua-chon" onClick={() => { doiKho((k) => batDauTran(k)); phat('gam-boss'); }}>
               <b>{daPhaCong ? 'Khiêu chiến lại' : 'Khiêu chiến'}</b>
@@ -503,7 +503,7 @@ export function VucTham({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho
         <div className="lop-phu lop-vuc" onClick={() => datMoDan(false)}>
           <div className="bang tam bang-vuc" onClick={(e) => e.stopPropagation()}>
             <h2>Dùng đan</h2>
-            <p className="chu-nho">{tran ? 'Trong trận, dùng đan mất một lượt.' : 'Trong vực máu không tự hồi. Giải Độc, Chỉ Huyết, Thanh Tâm Đan luyện ở đan phòng (bậc Trúc Cơ).'}</p>
+            <p className="chu-nho">{tran ? 'Trong trận, dùng đan mất một lượt.' : 'Trong vực máu không tự hồi.'}</p>
             {dsDanVuc(kho).length === 0 && <p className="chu-nho">Không mang viên nào dùng được.</p>}
             {dsDanVuc(kho).map((m) => (
               <div key={m.khoa} className="dong-tui">
@@ -562,9 +562,9 @@ export function VucTham({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho
           <p className="loi-ke">Thân xác khổng lồ đổ sập, bóng tối quanh đây như nhạt đi một chút.</p>
           <NhanMat nhan={bao.nhan} mat={[]} />
           {laThoat(kho, kho.vuc.viTri) ? (
-            <p className="loi-ke thu-theo">Đáy vực có trận truyền tống cổ: đồ đã được cất an toàn, ngươi có thể rời vực ngay tại đây.</p>
+            <p className="loi-ke thu-theo">Đồ đã cất an toàn. Có thể rời vực ngay tại đây.</p>
           ) : (
-            <p className="loi-ke thu-theo">Đồ còn nằm trong túi mang theo: phải tới lối thoát mới cất được. Lối thoát kế tiếp ở ngay tầng dưới.</p>
+            <p className="loi-ke thu-theo">Đồ chưa cất: tới lối thoát ở tầng dưới để cất.</p>
           )}
           <div className="hang-nut">
             <button className="nut chinh" onClick={() => datBao(null)}>
@@ -576,7 +576,7 @@ export function VucTham({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho
       {bao?.loai === 'doi-hinh' && (
         <KhungVuc tieuDe="Vực thẳm đổi hình">
           <p className="loi-ke">
-            Mặt đất rung chuyển, vách đá sụp đổ rồi mọc lại thành những lối đi khác hẳn. Những thứ đã bị hạ lại bò ra từ bóng tối. Ngươi bị đẩy ngược về miệng vực.
+            Vách đá sụp rồi mọc lại thành lối khác. Quái đã hạ lại bò ra. Ngươi bị đẩy về miệng vực.
           </p>
           <div className="hang-nut">
             <button
@@ -594,7 +594,7 @@ export function VucTham({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho
       {bao?.loai === 'nghi' && (
         <KhungVuc tieuDe="Lửa trại">
           <img className="tranh-ke vuc" src={anhNen('cho-nghi')} alt="" draggable={false} />
-          <p className="loi-ke">Ngọn lửa nhỏ nổ lách tách, hơi ấm hiếm hoi giữa vực thẳm. Vết thương khép lại, độc tan, đầu óc tỉnh táo hơn.</p>
+          <p className="loi-ke">Hơi ấm hiếm hoi giữa vực thẳm. Vết thương khép lại, độc tan, đầu óc tỉnh lại.</p>
           <div className="hang-nut">
             <button className="nut chinh" onClick={() => datBao(null)}>
               Đứng dậy
@@ -605,7 +605,7 @@ export function VucTham({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho
       {bao?.loai === 'thoat' && (
         <KhungVuc tieuDe="Lối thoát">
           <img className="tranh-ke vuc" src={anhNen('loi-thoat')} alt="" draggable={false} />
-          <p className="loi-ke">Một khe đá với những bậc thang thô ráp dẫn lên, xa tít trên kia le lói chút ánh ngày. Từ đây có thể rời vực; lần sau quay lại cũng sẽ bắt đầu ở đây.</p>
+          <p className="loi-ke">Bậc đá dẫn lên ánh ngày. Có thể rời vực ở đây; lần sau vào lại sẽ bắt đầu từ đây.</p>
           {bao.cat.length > 0 && <p className="nhan-mat vuc nhan">Đã cất an toàn: {bao.cat.join(', ')}</p>}
           <div className="hang-nut">
             <button className="nut-nho" onClick={() => datBao(null)}>
@@ -626,7 +626,7 @@ export function VucTham({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho
       {bao?.loai === 'chet' && (
         <KhungVuc tieuDe="Gục ngã">
           <img className="tranh-ke vuc" src={anhNen('vuc-chet')} alt="" draggable={false} onError={(e) => (e.currentTarget.style.display = 'none')} />
-          <p className="loi-ke nguy">Bóng tối khép lại. Khi tỉnh dậy, ngươi đã bị ném lên miệng vực, hồn phách rời rạc, mọi thứ mang theo đều bị vực thẳm nuốt mất.</p>
+          <p className="loi-ke nguy">Bóng tối khép lại. Ngươi bị ném lên miệng vực, hồn lìa khỏi xác, đồ mang theo mất sạch.</p>
           <NhanMat nhan={[]} mat={bao.mat} />
           <div className="hang-nut">
             <button className="nut chinh" onClick={onVe}>

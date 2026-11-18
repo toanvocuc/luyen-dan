@@ -130,7 +130,7 @@ export function PhuongThi({ kho, doiKho, onDong }: { kho: Kho; doiKho: (ham: (k:
           <>
             <p className="chu-nho">
               {danCho.length
-                ? `Đan bậc ${CANH_GIOI[bacDanCho(kho)]}, cao nhất tới thượng phẩm, đắt hơn giá gốc 50–60%. Đan đột phá không bán, phải tự luyện.`
+                ? `Đan bậc ${CANH_GIOI[bacDanCho(kho)]}, tới thượng phẩm, đắt hơn giá gốc 50–60%. Đan đột phá phải tự luyện.`
                 : 'Cảnh giới này chưa có loại đan nào được bày bán.'}
             </p>
             {danCho.map((p) => (

@@ -61,7 +61,7 @@ export function SaoLuu({ kho, onNap, onDong, onXemLaiHuongDan }: { kho: Kho; onN
         )}
 
         <h3>Sao lưu</h3>
-        <p className="chu-nho trai">Bản lưu nằm trong trình duyệt này. Muốn chơi tiếp trên máy khác hoặc địa chỉ web khác thì chép mã ở đây rồi dán vào bên đó.</p>
+        <p className="chu-nho trai">Bản lưu nằm trong trình duyệt này. Sang máy khác thì chép mã ở đây rồi dán vào bên đó.</p>
 
         <h3>Mã của nhân vật đang chơi</h3>
         {kho.nhanVat ? (

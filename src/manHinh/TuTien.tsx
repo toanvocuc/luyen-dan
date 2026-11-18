@@ -208,7 +208,7 @@ export function TuTien({
         {giayTauHoa(kho, luc) > 0 && <p className="chu-nho bao-mat-hon">Tẩu hỏa: tu luyện chỉ còn một nửa, còn {dongHo(giayTauHoa(kho, luc))}.</p>}
         {heSoTrungDoc(docNay) < 1 && (
           <p className="chu-nho bao-mat-hon">
-            Trúng độc: mọi chỉ số chỉ còn {Math.round(heSoTrungDoc(docNay) * 100)}%. Độc tự tan {Math.round(3600 / LUAT.doc.giayMoiDiem)} điểm mỗi giờ.
+            Trúng độc: chỉ số còn {Math.round(heSoTrungDoc(docNay) * 100)}%.
           </p>
         )}
         {yeuMatHon <= 0 && giayKhoaMatHon(kho, luc) > 0 && (
@@ -222,16 +222,16 @@ export function TuTien({
         )}
         <p className="chu-nho">
           {binhCanh
-            ? `Chạm bình cảnh trung kỳ: tu vi tạm dừng ở tầng ${LUAT.binhCanh.tang}. Dùng một viên đan bậc ${CANH_GIOI[kho.tuVi.canhGioi]} để phá.`
+            ? `Chạm bình cảnh tầng ${LUAT.binhCanh.tang}: dùng một viên đan bậc ${CANH_GIOI[kho.tuVi.canhGioi]} để phá.`
             : day
             ? danCan
-              ? `${CANH_GIOI[kho.tuVi.canhGioi]} đã viên mãn. Dùng ${danCan.ten} để đột phá lên ${CANH_GIOI[kho.tuVi.canhGioi + 1]}.`
+              ? `Viên mãn. Dùng ${danCan.ten} để lên ${CANH_GIOI[kho.tuVi.canhGioi + 1]}.`
               : 'Đã đứng trên đỉnh tiên lộ.'
             : phamNhan
-              ? `Đang rèn thân dưỡng khí: +${tocDo.toFixed(1)} tu vi mỗi giây.`
+              ? `Rèn thân dưỡng khí: +${tocDo.toFixed(1)} tu vi/giây.`
               : kho.tangToc.giay > 0
-                ? `Đan lực đang vận hành: +${tocDo.toFixed(1)} tu vi mỗi giây, còn ${dongHo(Math.ceil(kho.tangToc.giay))}.`
-                : `Đang thổ nạp linh khí: +${tocDo.toFixed(1)} tu vi mỗi giây.`}
+                ? `Đan lực: +${tocDo.toFixed(1)} tu vi/giây, còn ${dongHo(Math.ceil(kho.tangToc.giay))}.`
+                : `Thổ nạp linh khí: +${tocDo.toFixed(1)} tu vi/giây.`}
         </p>
         {binhCanh && (
           <button className="nut chinh nut-binh-canh" onClick={() => datBang('binh-canh')}>
@@ -280,10 +280,10 @@ export function TuTien({
               )}
               <p className="chu-nho canh-bao-dp">
                 {yc.dai
-                  ? `Thất bại: mất hết đan, dẫn dược và phí; hao ${Math.round(matTuVi * 100)}% tu vi${kho.hoDao ? ' (Hộ Đạo Đan: giữ nửa số đan, không hao tu vi)' : ''}; tẩu hỏa ${Math.round(c.tauHoaGiay / 60)} phút.`
-                  : `Thất bại thì mất viên đan và hao ${Math.round(LUAT.dotPha.matTuVi * 100)}% tu vi của tầng này.`}
+                  ? `Thất bại: mất hết đan, dẫn dược, phí; hao ${Math.round(matTuVi * 100)}% tu vi${kho.hoDao ? ' (Hộ Đạo: giữ nửa số đan, không hao tu vi)' : ''}; tẩu hỏa ${Math.round(c.tauHoaGiay / 60)} phút.`
+                  : `Thất bại: mất viên đan, hao ${Math.round(LUAT.dotPha.matTuVi * 100)}% tu vi.`}
               </p>
-              {ds.length === 0 && <p className="chu-nho trai">Chưa có viên {danCan.ten} nào đủ phẩm. Hãy sang đan phòng luyện thêm.</p>}
+              {ds.length === 0 && <p className="chu-nho trai">Chưa có viên {danCan.ten} đủ phẩm.</p>}
               {ds.map((o) => (
                 <div key={String(o.loai)} className="dong-tui">
                   <img src={anhDan(danCan.id)} alt="" />
@@ -302,7 +302,7 @@ export function TuTien({
                   </button>
                 </div>
               ))}
-              {thieu.length > 0 && <p className="chu-nho trai thieu-dp">Còn thiếu: {thieu.join(', ')}. Dẫn dược đổi bằng danh vọng ở Tàng Bảo Các.</p>}
+              {thieu.length > 0 && <p className="chu-nho trai thieu-dp">Còn thiếu: {thieu.join(', ')}.</p>}
               <div className="hang-nut">
                 <button className="nut-nho" onClick={onLuyenDan}>
                   Đan phòng
@@ -326,10 +326,9 @@ export function TuTien({
           <div className="bang tam" onClick={(e) => e.stopPropagation()}>
             <h2>Bình cảnh trung kỳ</h2>
             <p className="chu-nho">
-              Tu vi đã chạm bình cảnh ở tầng {LUAT.binhCanh.tang}. Dùng một viên đan bậc {CANH_GIOI[kho.tuVi.canhGioi]} để phá: phẩm càng cao càng dễ, cảnh giới càng cao càng
-              khó. Thất bại thì mất viên đan và hao {Math.round(LUAT.binhCanh.matTuVi * 100)}% tu vi của tầng này.
+              Dùng một viên đan bậc {CANH_GIOI[kho.tuVi.canhGioi]} để phá. Thất bại: mất viên đan, hao {Math.round(LUAT.binhCanh.matTuVi * 100)}% tu vi.
             </p>
-            {danBinhCanh(kho).length === 0 && <p className="chu-nho trai">Chưa có viên đan bậc {CANH_GIOI[kho.tuVi.canhGioi]} nào. Hãy sang đan phòng luyện một mẻ.</p>}
+            {danBinhCanh(kho).length === 0 && <p className="chu-nho trai">Chưa có viên đan bậc {CANH_GIOI[kho.tuVi.canhGioi]} nào.</p>}
             {danBinhCanh(kho).map((d) => (
               <div key={`${d.id}|${d.loai}`} className="dong-tui">
                 <img src={anhDan(d.id)} alt="" />
@@ -388,7 +387,7 @@ export function TuTien({
                   ? `Viên đan đã tan, tu vi hao ${Math.round(LUAT.binhCanh.matTuVi * 100)}%. Chạm để tiếp tục.`
                   : ketQuaDotPha.dai
                   ? ketQuaDotPha.hoDao
-                    ? `Dẫn dược đã tan, nhưng Hộ Đạo Đan giữ lại ${ketQuaDotPha.giuLai} viên đan và tu vi vẹn nguyên. Chạm để tiếp tục.`
+                    ? `Hộ Đạo Đan giữ lại ${ketQuaDotPha.giuLai} viên đan, tu vi vẹn nguyên. Chạm để tiếp tục.`
                     : 'Đan dược và dẫn dược đều đã tan, tu vi hao tổn. Chạm để tiếp tục.'
                   : `Viên đan đã tan, tu vi hao ${Math.round(LUAT.dotPha.matTuVi * 100)}%. Chạm để tiếp tục.`}
             </span>
@@ -461,7 +460,7 @@ export function TuTien({
                 })}
               </div>
             )}
-            <p className="chu-nho">Chỉ số lớn dần theo cảnh giới. Uống đan cộng thêm một ít, nhưng càng uống nhiều một loại càng nhờn thuốc.</p>
+            <p className="chu-nho">Chỉ số lớn theo cảnh giới. Uống nhiều một loại đan thì nhờn thuốc.</p>
             <div className="hang-nut">
               <button className="nut-nho" onClick={() => datBang('thien-menh')}>
                 Thiên mệnh
@@ -530,7 +529,7 @@ export function TuTien({
                     <div className="than-dong">
                       <b>Trứng Dực Quang Thần Thú</b>
                       <div className="hang-pham">
-                        <span>Linh khí của trứng: tu luyện nhanh +{Math.round(LUAT.qua.trung.tocDo * 100)}%. Mang tới Linh Thú Viên để ấp nở.</span>
+                        <span>Tu luyện +{Math.round(LUAT.qua.trung.tocDo * 100)}%. Ấp nở ở Linh Thú Viên.</span>
                       </div>
                     </div>
                   </div>
@@ -593,7 +592,7 @@ export function TuTien({
 
             <h3>Đan dược</h3>
             <p className="chu-nho trai">
-              Đan độc {Math.round(docNay)}/{LUAT.doc.day} — tự tan {Math.round(3600 / LUAT.doc.giayMoiDiem)} điểm mỗi giờ. Đan phẩm càng cao càng ít độc. Vượt {LUAT.doc.day} vẫn uống được nhưng sẽ trúng độc, mọi chỉ số giảm cho tới khi độc tan.
+              Đan độc {Math.round(docNay)}/{LUAT.doc.day}, tự tan dần. Vượt {LUAT.doc.day} thì trúng độc, chỉ số giảm.
             </p>
             {dongDan.length === 0 && danDaDuong.length === 0 && <p className="chu-nho trai">Chưa có viên đan nào.</p>}
             {danDaDuong.map((c) => {

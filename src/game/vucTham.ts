@@ -101,18 +101,18 @@ export interface Quai {
   mo: string;
 }
 export const QUAI: readonly Quai[] = [
-  { id: 'ngo-cong', ten: 'Thạch Ngô Công', lop: 0, kiem: 'luc', tt: 'doc', mo: 'Vách đá trước mặt bỗng nứt toác. Một con rết đá dài như cây cầu bò ra, hàng trăm chân đá gõ lách cách, nọc đen nhỏ giọt từ đôi hàm.' },
-  { id: 'thi-khoi', ten: 'Cổ Khôi Lỗi', lop: 0, kiem: 'luc', tt: 'yeu', mo: 'Một con rối gỗ mục cao gấp đôi người lê bước lại gần. Đinh sắt cắm khắp thân, dây treo đứt lủng lẳng, cái đầu bao bố nghiêng nghiêng như đang nhìn ngươi.' },
-  { id: 'hon-dang', ten: 'U Hồn Đăng', lop: 0, kiem: 'thanThuc', tt: 'hac', mo: 'Ánh đèn lồng chập chờn trong bóng tối. Kẻ cầm đèn gầy như bộ xương, trong mỗi chiếc lồng giấy là một làn khói hình người đang gào không thành tiếng.' },
-  { id: 'bien-buc', ten: 'Huyết Âm Biên Bức', lop: 0, kiem: 'thanThuc', tt: 'mau', mo: 'Tiếng rít xé tai dội khắp vách đá. Một con dơi quỷ xương xẩu sà xuống, tiếng kêu của nó như lưỡi dao cứa thẳng vào thần thức.' },
-  { id: 'ma-tri', ten: 'Diện Ma Tri', lop: 1, kiem: 'luc', tt: 'doc', mo: 'Trên trần hang, một chiếc mặt nạ sứ trắng mỉm cười nhìn xuống. Rồi tám cái chân dài như lưỡi liềm từ từ duỗi ra quanh nó.' },
-  { id: 'kinh-dien', ten: 'Kính Diện Yêu', lop: 1, kiem: 'thanThuc', tt: 'yeu', mo: 'Một bóng người cao lêu khêu đứng im giữa lối đi. Gương mặt nó là một tấm gương đồng nứt, trong gương không phản chiếu gì ngoài bóng tối.' },
-  { id: 'huyet-dang', ten: 'Huyết Đằng Yêu', lop: 1, kiem: 'luc', tt: 'mau', mo: 'Dây leo đỏ sẫm phủ kín lối đi, giữa đám dây là sọ thú trắng hếu. Nụ hoa khổng lồ ở giữa chầm chậm hé ra, bên trong toàn gai nhọn.' },
-  { id: 'mong-diep', ten: 'Mộng Yểm Điệp', lop: 1, kiem: 'thanThuc', tt: 'hac', mo: 'Bụi xám rơi như tro. Một con bướm đêm khổng lồ đậu trên vách, trên cánh nó là hàng chục con mắt, và tất cả đều đang mở.' },
-  { id: 'cot-long', ten: 'Cốt Long Hài', lop: 2, kiem: 'luc', tt: 'mau', mo: 'Bộ xương rồng cổ đại nằm vắt ngang vực. Ngọn lửa tím trong hốc mắt nó vụt bùng lên, và cái sọ khổng lồ quay về phía ngươi.' },
-  { id: 'vo-dien-tang', ten: 'Vô Diện Tăng', lop: 2, kiem: 'thanThuc', tt: 'hac', mo: 'Một nhà sư áo đen lơ lửng giữa không trung, tràng hạt bằng sọ nhỏ khẽ lách cách. Dưới mũ trùm không có mặt, chỉ có một khoảng trơn nhẵn.' },
-  { id: 'thach-ma', ten: 'Uyên Thạch Cự Ma', lop: 2, kiem: 'luc', tt: 'yeu', mo: 'Mặt đất rung lên từng nhịp. Gã khổng lồ đá đeo xiềng sắt đứng dậy từ đáy vực, ánh đỏ âm ỉ trong lồng ngực nứt toác.' },
-  { id: 'thuy-mau', ten: 'U Uyên Thực Hồn Mẫu', lop: 2, kiem: 'thanThuc', tt: 'doc', mo: 'Một vòm sứa nhợt nhạt trôi lững lờ trong bóng tối, bên trong lờ mờ hình chiếc sọ. Những xúc tu móc câu thả dài xuống, dò dẫm về phía ngươi.' },
+  { id: 'ngo-cong', ten: 'Thạch Ngô Công', lop: 0, kiem: 'luc', tt: 'doc', mo: 'Vách đá nứt toác. Một con rết đá dài như cây cầu bò ra, nọc đen nhỏ giọt.' },
+  { id: 'thi-khoi', ten: 'Cổ Khôi Lỗi', lop: 0, kiem: 'luc', tt: 'yeu', mo: 'Một con rối gỗ mục cao gấp đôi người lê lại gần, đinh sắt cắm khắp thân.' },
+  { id: 'hon-dang', ten: 'U Hồn Đăng', lop: 0, kiem: 'thanThuc', tt: 'hac', mo: 'Kẻ cầm đèn gầy như bộ xương. Trong mỗi lồng đèn là một hồn người đang gào.' },
+  { id: 'bien-buc', ten: 'Huyết Âm Biên Bức', lop: 0, kiem: 'thanThuc', tt: 'mau', mo: 'Tiếng rít xé tai. Một con dơi quỷ sà xuống, tiếng kêu cứa thẳng vào thần thức.' },
+  { id: 'ma-tri', ten: 'Diện Ma Tri', lop: 1, kiem: 'luc', tt: 'doc', mo: 'Trên trần hang, một mặt nạ sứ trắng mỉm cười. Rồi tám cái chân dài duỗi ra.' },
+  { id: 'kinh-dien', ten: 'Kính Diện Yêu', lop: 1, kiem: 'thanThuc', tt: 'yeu', mo: 'Một bóng người cao lêu khêu đứng im. Mặt nó là tấm gương nứt, chỉ phản chiếu bóng tối.' },
+  { id: 'huyet-dang', ten: 'Huyết Đằng Yêu', lop: 1, kiem: 'luc', tt: 'mau', mo: 'Dây leo đỏ sẫm phủ kín lối đi. Nụ hoa khổng lồ hé ra, bên trong toàn gai.' },
+  { id: 'mong-diep', ten: 'Mộng Yểm Điệp', lop: 1, kiem: 'thanThuc', tt: 'hac', mo: 'Bụi xám rơi như tro. Trên cánh con bướm khổng lồ, hàng chục con mắt đều đang mở.' },
+  { id: 'cot-long', ten: 'Cốt Long Hài', lop: 2, kiem: 'luc', tt: 'mau', mo: 'Bộ xương rồng cổ nằm vắt ngang vực. Lửa tím trong hốc mắt vụt bùng lên.' },
+  { id: 'vo-dien-tang', ten: 'Vô Diện Tăng', lop: 2, kiem: 'thanThuc', tt: 'hac', mo: 'Nhà sư áo đen lơ lửng, tràng hạt sọ lách cách. Dưới mũ trùm không có mặt.' },
+  { id: 'thach-ma', ten: 'Uyên Thạch Cự Ma', lop: 2, kiem: 'luc', tt: 'yeu', mo: 'Mặt đất rung từng nhịp. Gã khổng lồ đá đeo xiềng đứng dậy từ đáy vực.' },
+  { id: 'thuy-mau', ten: 'U Uyên Thực Hồn Mẫu', lop: 2, kiem: 'thanThuc', tt: 'doc', mo: 'Vòm sứa nhợt nhạt trôi trong bóng tối, xúc tu móc câu dò dẫm về phía ngươi.' },
 ];
 export const timQuai = (id: string) => QUAI.find((q) => q.id === id) ?? QUAI[0];
 export const anhQuai = (id: string) => `./hinh/vuc-tham/quai-${id}.webp`;
@@ -149,7 +149,7 @@ export const BOSS: Record<BossId, Boss> = {
     tang: 16,
     soDon: 11,
     khang: { luc: 0.7, thanThuc: 1.2 },
-    mo: 'Cánh cổng đá vỡ vụn. Trong hang tối, một chiếc mặt nạ xương có sừng chậm rãi ngẩng lên, chiếc đuôi khổng lồ cong vút trên đầu nó. Giáp đen quá dày, đao kiếm khó lòng xuyên thủng: thần thức sẽ hữu hiệu hơn.',
+    mo: 'Cổng đá vỡ vụn. Mặt nạ xương có sừng ngẩng lên, đuôi độc cong vút. Giáp quá dày: thần thức sẽ hiệu quả hơn.',
     chieu: [
       { id: 'thuong', ten: 'Kìm thép', loai: 'thuong', anh: 'dung', dmg: 0.1, bao: 'Nó giương đôi kìm, chuẩn bị kẹp tới.' },
       { id: 'doc-cham', ten: 'Độc Châm', loai: 'lon', anh: 'doc-cham', dmg: 0.26, tt: { doc: 4 }, bao: 'Chiếc đuôi cong hết cỡ, ngòi độc rỉ nọc đen. Đòn lớn sắp tới!' },
@@ -163,7 +163,7 @@ export const BOSS: Record<BossId, Boss> = {
     tang: 33,
     soDon: 13,
     khang: { luc: 1.2, thanThuc: 0.75 },
-    mo: 'Giữa hang là một thân cây chết đen như than, xiềng lồng sắt treo lủng lẳng. Chín con mắt lần lượt mở ra trên vỏ cây. Thần thức của nó vững như bàn thạch, nhưng thân gỗ thì chém được.',
+    mo: 'Thân cây chết đen như than, chín con mắt lần lượt mở. Thần thức vô dụng với nó, nhưng thân gỗ thì chém được.',
     chieu: [
       { id: 'thuong', ten: 'Roi gai', loai: 'thuong', anh: 'dung', dmg: 0.11, bao: 'Những sợi dây gai quằn quại, sẵn sàng quất tới.' },
       { id: 'troi', ten: 'Huyết Đằng Trói', loai: 'lon', anh: 'troi', dmg: 0.24, tt: { mau: 4 }, bao: 'Hàng chục dây gai rút về, căng như dây cung. Đòn lớn sắp tới!' },
@@ -177,7 +177,7 @@ export const BOSS: Record<BossId, Boss> = {
     tang: 50,
     soDon: 14,
     khang: { luc: 1, thanThuc: 1 },
-    mo: 'Đáy vực. Không còn đường xuống nữa. Trong bóng tối mênh mông, những vòng thân đen như núi chậm rãi chuyển động, xiềng xích cổ xưa kêu loảng xoảng. Chúa vực đã thức giấc.',
+    mo: 'Đáy vực. Những vòng thân đen như núi chuyển động, xiềng xích loảng xoảng. Chúa vực đã thức giấc.',
     chieu: [
       { id: 'thuong', ten: 'Long trảo', loai: 'thuong', anh: 'dung', dmg: 0.13, bao: 'Móng vuốt khổng lồ cào xuống mặt đá.' },
       { id: 'hoa-tuc', ten: 'Hắc Diễm Long Tức', loai: 'lon', anh: 'hoa-tuc', dmg: 0.3, bao: 'Lửa đen dồn lên cổ họng nó, cả hang nóng rực. Đòn lớn sắp tới!' },
@@ -848,7 +848,7 @@ export function bossDanh(k: Kho, rng: () => number = Math.random, luc = Date.now
   if (chieu.loai === 'buff') {
     if (chieu.id === 'giap-hoa') t.giap = 2;
     if (chieu.id === 'nghich-lan') t.cuong = true;
-    dong.push(`${b.ten} dùng ${chieu.ten}!${chieu.id === 'giap-hoa' ? ' Hai lượt tới đòn đánh chỉ còn nửa.' : ' Từ giờ nó đánh mạnh hơn hẳn.'}`);
+    dong.push(`${b.ten} dùng ${chieu.ten}!${chieu.id === 'giap-hoa' ? ' Hai lượt tới chỉ nhận nửa sát thương.' : ' Nó đánh mạnh hơn hẳn.'}`);
   } else if (chieu.loai === 'hoi') {
     const hoi = Math.round(t.mauMax * 0.15);
     t.mau = Math.min(t.mauMax, t.mau + hoi);
@@ -930,7 +930,7 @@ export function dotBua(k: Kho, rng: () => number = Math.random): { kho: Kho; chu
   const tho = +(0.15 * c.goc * c.moiCanhGioi ** k.tuVi.canhGioi * (0.8 + rng() * 0.4)).toFixed(1);
   return {
     kho: { ...k, vatVuc: { ...k.vatVuc, 'bua-vuc-tham': k.vatVuc['bua-vuc-tham'] - 1 }, chiSoCong: { ...k.chiSoCong, [cs.id]: (k.chiSoCong[cs.id] ?? 0) + tho } },
-    chu: `Bùa cháy thành tro, ma khí thấm vào kinh mạch: ${cs.ten} +${(tho * (cs.id === 'khiHuyet' ? c.heSoMau : 1)).toFixed(1)} vĩnh viễn.`,
+    chu: `Bùa cháy thành tro: ${cs.ten} +${(tho * (cs.id === 'khiHuyet' ? c.heSoMau : 1)).toFixed(1)} vĩnh viễn.`,
   };
 }
 /** Vật phẩm Vực Thẳm cần cho lần đột phá lên cảnh giới `dich`. */

@@ -53,7 +53,7 @@ export function VuonDuoc({ kho, doiKho }: { kho: Kho; doiKho: (ham: (k: Kho) => 
         {chon !== null && !cayChon && (
           <>
             <div className="ten-doan">Ô {chon + 1}: chọn hạt giống để gieo</div>
-            {hatDangCo.length === 0 && <p className="chu-nho">Chưa có hạt giống nào. Hạt giống bán ở phường thị, mỗi kỳ một ít.</p>}
+            {hatDangCo.length === 0 && <p className="chu-nho">Chưa có hạt giống. Mua ở phường thị.</p>}
             <div className="hang-hat">
               {hatDangCo.map((d) => (
                 <button key={d.id} className="the-phuong" onClick={() => doiKho((k) => gieoHat(k, chon, d.id))}>

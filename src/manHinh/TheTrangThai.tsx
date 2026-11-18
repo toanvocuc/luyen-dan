@@ -9,16 +9,16 @@ const NOI_DUNG: Record<Loai, { ten: string; chu: () => string }> = {
   'tau-hoa': {
     ten: 'Tẩu hỏa nhập ma',
     chu: () =>
-      `Linh khí đang dồn lên quan ải bỗng đảo ngược, xé dọc kinh mạch như lửa đốt. Ngươi gượng ép được nó về đan điền, nhưng kinh mạch đã tổn thương: trong ${Math.round(LUAT.daiDotPha.tauHoaGiay / 60)} phút tới, tu luyện chỉ còn một nửa.`,
+      `Linh khí đảo ngược, xé dọc kinh mạch. Trong ${Math.round(LUAT.daiDotPha.tauHoaGiay / 60)} phút tới, tu luyện chỉ còn một nửa.`,
   },
   'trung-doc': {
     ten: 'Đan độc công tâm',
     chu: () =>
-      `Đan độc tích tụ đã vượt ngưỡng thân thể chịu nổi. Mạch máu nổi đen, đầu óc quay cuồng: mọi chỉ số đều giảm, độc càng nặng càng yếu. Độc tự tan khoảng ${Math.round(3600 / LUAT.doc.giayMoiDiem)} điểm mỗi giờ.`,
+      `Đan độc vượt ngưỡng: mọi chỉ số giảm, độc càng nặng càng yếu. Độc tự tan dần theo thời gian.`,
   },
   'mat-hon': {
     ten: 'Hồn lìa khỏi xác',
-    chu: () => 'Thân xác ngã gục, hồn phách trôi ra khỏi nhục thân, chập chờn giữa hai cõi. Phải tĩnh dưỡng một thời gian hồn mới nhập lại xác, trong lúc đó không thể du ngoạn.',
+    chu: () => 'Hồn lìa khỏi xác. Phải tĩnh dưỡng một thời gian, trong lúc đó không thể du ngoạn.',
   },
 };
 

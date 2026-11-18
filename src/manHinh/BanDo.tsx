@@ -198,7 +198,7 @@ export function BanDo({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho) 
       {(!duBuoc || !khoeManh) && (
         <p className="bao-ban-do">
           {!khoeManh
-            ? `Thương thế chưa lành: cần ít nhất ${Math.round(LUAT.kyNgo.mauVao * 100)}% máu mới đi tiếp được.`
+            ? `Thương chưa lành: cần ${Math.round(LUAT.kyNgo.mauVao * 100)}% máu mới đi tiếp.`
             : `Hết thể lực. Đủ cho một bước sau ${dongHo(giayDuBuoc(kho, luc))}.`}
         </p>
       )}
@@ -290,14 +290,13 @@ export function BanDo({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho) 
             <>
               {mo.kq.matHonNhe ? (
                 <p className="loi-ke nguy">
-                  Ngươi ngã gục, hồn phách rời khỏi thân xác. Đây là lần đầu nên hồn về nhập xác nhanh: chỉ cần tĩnh dưỡng {Math.round(LUAT.kyNgo.matHon.khoaGiayLanDau / 60)} phút ở
-                  động phủ, chỉ số không bị ảnh hưởng. Từ lần sau, mất hồn sẽ khoá du ngoạn {Math.round(LUAT.kyNgo.matHon.khoaGiay / 3600)} giờ và mọi chỉ số chỉ còn một nửa trong{' '}
-                  {Math.round(LUAT.kyNgo.matHon.yeuGiay / 3600)} giờ. Tỉ lệ thấp thì nên chọn phương án chắc chắn hoặc rút lui.
+                  Ngươi ngã gục, hồn lìa khỏi xác. Lần đầu nên chỉ cần tĩnh dưỡng {Math.round(LUAT.kyNgo.matHon.khoaGiayLanDau / 60)} phút. Từ lần sau sẽ bị khoá du ngoạn{' '}
+                  {Math.round(LUAT.kyNgo.matHon.khoaGiay / 3600)} giờ và chỉ số giảm một nửa.
                 </p>
               ) : (
                 <p className="loi-ke nguy">
-                  Ngươi ngã gục, hồn phách rời khỏi thân xác. Khi tỉnh lại đã nằm trong động phủ: {Math.round(LUAT.kyNgo.matHon.khoaGiay / 3600)} giờ tới không thể du ngoạn, và
-                  trong {Math.round(LUAT.kyNgo.matHon.yeuGiay / 3600)} giờ mọi chỉ số chỉ còn một nửa.
+                  Ngươi ngã gục, hồn lìa khỏi xác. Khoá du ngoạn {Math.round(LUAT.kyNgo.matHon.khoaGiay / 3600)} giờ, chỉ số giảm một nửa trong{' '}
+                  {Math.round(LUAT.kyNgo.matHon.yeuGiay / 3600)} giờ.
                 </p>
               )}
               <button className="nut-ke chinh" onClick={onVe}>
@@ -326,7 +325,7 @@ export function BanDo({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho) 
               <DanhSachNhanMat nhan={mo.nhan} mat={[]} />
             </>
           ) : (
-            <p className="loi-ke">Ruộng linh thảo bỏ hoang trên sườn núi, vài gốc thuốc đã đủ tuổi để hái. Mỗi kỳ chỉ hái được một lần.</p>
+            <p className="loi-ke">Ruộng linh thảo bỏ hoang, vài gốc đã đủ tuổi. Mỗi kỳ hái một lần.</p>
           )}
           <div className="day-lua-chon">
             {!mo.nhan && (

@@ -130,7 +130,7 @@ export function DanThu({ kho, onDong, onLuyen }: { kho: Kho; onDong: () => void;
     <div className="lop-phu" onClick={onDong}>
       <div className="bang tam dan-thu" onClick={(e) => e.stopPropagation()}>
         <h2>Đan thư</h2>
-        <p className="chu-nho">Mọi đan phương trong thiên hạ: luyện bằng gì, uống vào được gì. Đan chưa mở vẫn xem trước được.</p>
+        <p className="chu-nho">Mọi đan phương: luyện bằng gì, uống được gì.</p>
         <div className="hang-chon">
           <button className={`the nho ${loc === 'uong' ? 'chon' : ''}`} onClick={() => datLoc('uong')}>
             Đan uống

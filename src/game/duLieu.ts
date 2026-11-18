@@ -740,12 +740,12 @@ export interface LoDan {
 export const LO_DAN: readonly LoDan[] = [
   { id: 'thanh-dong-lo', ten: 'Thanh Đồng Lô', moTa: 'Lò đồng xanh của người mới học. Không có gì đặc biệt.', gia: 0 },
   { id: 'han-ngoc-lo', ten: 'Hàn Ngọc Lô', moTa: 'Ngọc lạnh trấn hỏa: áp lò dâng chậm đi bốn phần mười, nhưng mỗi mẻ ít hơn một viên.', gia: 2500, heSoAp: 0.6, soVien: -1 },
-  { id: 'hoa-long-lo', ten: 'Hỏa Long Lô', moTa: 'Long hỏa mãnh liệt: phẩm đan cao hơn hẳn, nhưng áp lò dâng nhanh gấp rưỡi và vùng hỏa hầu hẹp lại.', gia: 4000, phamCong: 0.35, heSoAp: 1.5, rongVung: -3 },
-  { id: 'bat-quai-lo', ten: 'Bát Quái Lô', moTa: 'Trận văn ổn định: vùng hỏa hầu và khoảng xanh đều rộng ra, nhưng phẩm đan kém đi một chút.', gia: 5000, rongVung: 4, xanh: 0.03, phamCong: -0.15 },
+  { id: 'hoa-long-lo', ten: 'Hỏa Long Lô', moTa: 'Phẩm đan cao hơn hẳn, nhưng áp lò dâng nhanh gấp rưỡi, vùng hỏa hầu hẹp lại.', gia: 4000, phamCong: 0.35, heSoAp: 1.5, rongVung: -3 },
+  { id: 'bat-quai-lo', ten: 'Bát Quái Lô', moTa: 'Vùng hỏa hầu và khoảng xanh rộng ra, phẩm đan kém đi một chút.', gia: 5000, rongVung: 4, xanh: 0.03, phamCong: -0.15 },
   { id: 'tu-kim-lo', ten: 'Tử Kim Lô', moTa: 'Lò lớn bằng tử kim: mỗi mẻ thêm hai viên, nhưng con lắc tôi đan chạy nhanh hơn.', gia: 8000, soVien: 2, heSoQuet: 0.85 },
   // chỉ rơi từ boss Vực Thẳm, không bán ở phường thị
-  { id: 'lo-vuc-tham', ten: 'Lò Đan Vực Thẳm', moTa: 'Lò xương sắt nhặt từ đáy vực, lửa tím không bao giờ tắt: phẩm đan cao nhất, dễ vượt đan kiếp, thêm hai viên mỗi mẻ; áp lò dâng nhanh hơn một phần mười.', gia: 0, chiRoi: true, phamCong: 0.7, vuotKiep: 0.3, soVien: 2, heSoAp: 1.1, rongVung: 2 },
-  { id: 'cuu-long-than-lo', ten: 'Cửu Long Thần Lô', moTa: 'Thần lô thượng cổ: phẩm đan cao, dễ vượt đan kiếp, thêm một viên mỗi mẻ; áp lò dâng nhanh hơn hai phần mười.', gia: 30000, phamCong: 0.5, vuotKiep: 0.2, soVien: 1, heSoAp: 1.2 },
+  { id: 'lo-vuc-tham', ten: 'Lò Đan Vực Thẳm', moTa: 'Lò từ đáy vực: phẩm đan cao nhất, dễ vượt đan kiếp, thêm hai viên mỗi mẻ.', gia: 0, chiRoi: true, phamCong: 0.7, vuotKiep: 0.3, soVien: 2, heSoAp: 1.1, rongVung: 2 },
+  { id: 'cuu-long-than-lo', ten: 'Cửu Long Thần Lô', moTa: 'Phẩm đan cao, dễ vượt đan kiếp, thêm một viên mỗi mẻ; áp lò dâng nhanh hơn.', gia: 30000, phamCong: 0.5, vuotKiep: 0.2, soVien: 1, heSoAp: 1.2 },
 ];
 export const timLoDan = (id: string) => LO_DAN.find((l) => l.id === id) ?? LO_DAN[0];
 export const anhLoDan = (id: string) => `./hinh/lo/${id}.webp`;
