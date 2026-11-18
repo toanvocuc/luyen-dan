@@ -1481,11 +1481,12 @@ button {
   flex: 1;
   min-height: 0;
   display: grid;
-  place-items: center;
-  padding-bottom: 2%;
+  /* nhân vật ngồi sát đáy, lên đúng bệ đá của ảnh nền động phủ */
+  place-items: end center;
+  padding-bottom: 7%;
 }
 .san-tu-luyen .bup-be {
-  height: min(92%, 380px);
+  height: min(80%, 340px);
   filter: drop-shadow(0 16px 14px rgba(0, 0, 0, 0.65));
 }
 .hao-quang {

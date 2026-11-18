@@ -109,7 +109,7 @@ export function ManThienMenh({ onXong }: { onXong: (nv: NhanVat) => void }) {
       </header>
 
       <div className={`khung-bup-be ${xong ? 'hien' : ''}`}>
-        <BupBe dang={nv.dang} gioiTinh={nv.gioiTinh} an={!xong} />
+        <BupBe gioiTinh={nv.gioiTinh} an={!xong} />
         <div className="ten-nhan-vat">{xong ? nv.ten : '· · ·'}</div>
       </div>
 

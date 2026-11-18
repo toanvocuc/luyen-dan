@@ -176,7 +176,7 @@ export function TuTien({
       {/* mất hồn (kể cả lần đầu, lần nhẹ chỉ khoá du ngoạn): nhân vật mờ đi */}
       <div className={`san-tu-luyen ${yeuMatHon > 0 || giayKhoaMatHon(kho, luc) > 0 ? 'mat-hon' : ''}`}>
         <div className={`hao-quang ${day ? 'day' : ''}`} />
-        <BupBe dang={nhanVat.dang} gioiTinh={nhanVat.gioiTinh} />
+        <BupBe gioiTinh={nhanVat.gioiTinh} canhGioi={kho.tuVi.canhGioi} />
         {thu && (
           <button className={`thu-dong-phu dang-${thu.dang}`} onClick={onLinhThu} aria-label={timLoaiThu(thu.loai).ten}>
             <AnhThu src={anhThu(thu.loai, thu.dang)} ten={timLoaiThu(thu.loai).ten} />

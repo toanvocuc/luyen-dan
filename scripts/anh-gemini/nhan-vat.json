@@ -1,0 +1,94 @@
+{
+  "thuMuc": "Hinh_anh/_gemini/nhan-vat",
+  "model": "gemini-3-pro-image",
+  "tiLe": "2:3",
+  "chung": "Original character illustration for a xianxia cultivation game. Art style: Chinese ink-wash (shuimo) painting blended with refined semi-realistic digital illustration; delicate confident brush linework, soft watercolor washes, muted desaturated palette of ink black, warm grey and rice-paper white with ONE restrained accent color; beautiful refined face with detailed realistic eyes, flowing layered hanfu robes whose hems dissolve into ink-bleed brush strokes. Full body, standing, the whole figure visible from head to feet with empty margin around it, three-quarter view facing slightly left, calm graceful pose, hands relaxed. Plain pure white background, no scenery, no ground shadow, no text, no logo, no watermark, no frame.",
+  "anh": [
+    {
+      "ten": "nam-a-pham-y",
+      "loi": "A young male cultivator, about 22, long black hair tied in a high topknot with a plain wooden hairpin, a few loose strands, calm clear eyes, lean build. Clothing: a plain coarse undyed linen robe with simple cloth belt and straw sandals, humble mortal clothing; accent color: faded brown."
+    },
+    {
+      "ten": "nam-b-pham-y",
+      "loi": "A young male cultivator, about 22, long silver-grey hair worn loose with a thin black ribbon, half-closed serene eyes, tall slender build. Clothing: a plain coarse undyed linen robe with simple cloth belt and straw sandals, humble mortal clothing; accent color: faded brown."
+    },
+    {
+      "ten": "nam-a-thanh-van",
+      "loi": "Use the attached image as the reference for this exact same character: keep the SAME face, SAME hairstyle and hair color, SAME body, SAME pose, SAME framing, SAME art style. Change ONLY the clothing and accessories to: a sect disciple robe in white and pale celadon green with cloud patterns on the sleeves, a celadon sash and a small jade pendant; accent color: celadon green.",
+      "theo": [
+        "nam-a-pham-y"
+      ]
+    },
+    {
+      "ten": "nam-a-dan-su",
+      "loi": "Use the attached image as the reference for this exact same character: keep the SAME face, SAME hairstyle and hair color, SAME body, SAME pose, SAME framing, SAME art style. Change ONLY the clothing and accessories to: an alchemist robe in cinnabar red and ink black with flame embroidery, wide sleeves, a gourd of pills at the waist, a small bronze furnace charm; accent color: cinnabar red.",
+      "theo": [
+        "nam-a-pham-y"
+      ]
+    },
+    {
+      "ten": "nam-a-kiem-tu",
+      "loi": "Use the attached image as the reference for this exact same character: keep the SAME face, SAME hairstyle and hair color, SAME body, SAME pose, SAME framing, SAME art style. Change ONLY the clothing and accessories to: a black and white sword cultivator outfit with a short dark cape, leather bracers, a long sword sheathed on the back; accent color: steel blue.",
+      "theo": [
+        "nam-a-pham-y"
+      ]
+    },
+    {
+      "ten": "nam-a-ma-tu",
+      "loi": "Use the attached image as the reference for this exact same character: keep the SAME face, SAME hairstyle and hair color, SAME body, SAME pose, SAME framing, SAME art style. Change ONLY the clothing and accessories to: a dark abyss outfit of black and deep violet layered robes with torn hems, bone-white ornaments and faint violet mist around the hands, mysterious but not gory; accent color: deep violet.",
+      "theo": [
+        "nam-a-pham-y"
+      ]
+    },
+    {
+      "ten": "nam-a-tien-bao",
+      "loi": "Use the attached image as the reference for this exact same character: keep the SAME face, SAME hairstyle and hair color, SAME body, SAME pose, SAME framing, SAME art style. Change ONLY the clothing and accessories to: a celestial immortal robe of ivory white silk with gold embroidery, long translucent floating ribbons, an ornate gold-and-jade crown; accent color: pale gold.",
+      "theo": [
+        "nam-a-pham-y"
+      ]
+    },
+    {
+      "ten": "nu-a-pham-y",
+      "loi": "A young female cultivator, about 20, long black hair half tied up with a simple jade hairpin, gentle but determined eyes, slender build. Clothing: a plain coarse undyed linen robe with simple cloth belt and straw sandals, humble mortal clothing; accent color: faded brown."
+    },
+    {
+      "ten": "nu-b-pham-y",
+      "loi": "A young female cultivator, about 20, long dark hair in a low braid over one shoulder with small white flower ornaments, lively bright eyes, slender build. Clothing: a plain coarse undyed linen robe with simple cloth belt and straw sandals, humble mortal clothing; accent color: faded brown."
+    },
+    {
+      "ten": "nu-a-thanh-van",
+      "loi": "Use the attached image as the reference for this exact same character: keep the SAME face, SAME hairstyle and hair color, SAME body, SAME pose, SAME framing, SAME art style. Change ONLY the clothing and accessories to: a sect disciple robe in white and pale celadon green with cloud patterns on the sleeves, a celadon sash and a small jade pendant; accent color: celadon green.",
+      "theo": [
+        "nu-a-pham-y"
+      ]
+    },
+    {
+      "ten": "nu-a-dan-su",
+      "loi": "Use the attached image as the reference for this exact same character: keep the SAME face, SAME hairstyle and hair color, SAME body, SAME pose, SAME framing, SAME art style. Change ONLY the clothing and accessories to: an alchemist robe in cinnabar red and ink black with flame embroidery, wide sleeves, a gourd of pills at the waist, a small bronze furnace charm; accent color: cinnabar red.",
+      "theo": [
+        "nu-a-pham-y"
+      ]
+    },
+    {
+      "ten": "nu-a-kiem-tu",
+      "loi": "Use the attached image as the reference for this exact same character: keep the SAME face, SAME hairstyle and hair color, SAME body, SAME pose, SAME framing, SAME art style. Change ONLY the clothing and accessories to: a black and white sword cultivator outfit with a short dark cape, leather bracers, a long sword sheathed on the back; accent color: steel blue.",
+      "theo": [
+        "nu-a-pham-y"
+      ]
+    },
+    {
+      "ten": "nu-a-ma-tu",
+      "loi": "Use the attached image as the reference for this exact same character: keep the SAME face, SAME hairstyle and hair color, SAME body, SAME pose, SAME framing, SAME art style. Change ONLY the clothing and accessories to: a dark abyss outfit of black and deep violet layered robes with torn hems, bone-white ornaments and faint violet mist around the hands, mysterious but not gory; accent color: deep violet.",
+      "theo": [
+        "nu-a-pham-y"
+      ]
+    },
+    {
+      "ten": "nu-a-tien-bao",
+      "loi": "Use the attached image as the reference for this exact same character: keep the SAME face, SAME hairstyle and hair color, SAME body, SAME pose, SAME framing, SAME art style. Change ONLY the clothing and accessories to: a celestial immortal robe of ivory white silk with gold embroidery, long translucent floating ribbons, an ornate gold-and-jade crown; accent color: pale gold.",
+      "theo": [
+        "nu-a-pham-y"
+      ]
+    }
+  ]
+}

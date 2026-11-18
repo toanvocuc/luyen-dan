@@ -1,18 +1,29 @@
-// Búp bê nhân vật: các lớp ảnh cùng khung hình chồng lên nhau theo thứ tự thân -> áo -> mặt -> tóc.
+// Nhân vật ngồi thiền: mỗi bộ trang phục là một ảnh trọn vẹn (public/hinh/nhan-vat-thien/<gioi>-<bo>.webp).
+// Trang phục đổi theo bậc cảnh giới, cùng nhịp với ảnh nền động phủ (bacNen).
+import { bacNen } from '../game/duLieu.ts';
 import type { NhanVat } from '../game/nhanVat.ts';
 
-export function BupBe({ dang, gioiTinh = 'Nam', an = false }: { dang: NhanVat['dang'] | null; gioiTinh?: NhanVat['gioiTinh']; /** Chưa định hình: chỉ hiện bóng thân. */ an?: boolean }) {
-  const anh = (ten: string) => `./hinh/${gioiTinh === 'Nữ' ? 'nhan-vat-nu' : 'nhan-vat'}/${ten}.webp`;
+/** Bộ trang phục theo bậc nền 1–5. Bộ "ma-tu" đã có ảnh, để dành cho Vực Thẳm / cửa hàng trang phục. */
+const BO_THEO_BAC = ['pham-y', 'thanh-van', 'dan-su', 'kiem-tu', 'tien-bao'] as const;
+
+/** Đường dẫn ảnh nhân vật ngồi thiền theo giới tính và cảnh giới. */
+export function anhNhanVat(gioiTinh: NhanVat['gioiTinh'] | undefined, canhGioi: number): string {
+  return `./hinh/nhan-vat-thien/${gioiTinh === 'Nữ' ? 'nu' : 'nam'}-${BO_THEO_BAC[bacNen(canhGioi) - 1]}.webp`;
+}
+
+export function BupBe({
+  gioiTinh = 'Nam',
+  canhGioi = 0,
+  an = false,
+}: {
+  gioiTinh?: NhanVat['gioiTinh'];
+  canhGioi?: number;
+  /** Chưa định hình: chỉ hiện bóng thân. */
+  an?: boolean;
+}) {
   return (
-    <div className={`bup-be ${an || !dang ? 'chua-dinh-hinh' : ''}`}>
-      <img src={anh('than')} alt="" draggable={false} />
-      {dang && !an && (
-        <>
-          <img src={anh(`ao-${dang.ao}`)} alt="" draggable={false} />
-          <img src={anh(`mat-${dang.mat}`)} alt="" draggable={false} />
-          <img src={anh(`toc-${dang.toc}`)} alt="" draggable={false} />
-        </>
-      )}
+    <div className={`bup-be ${an ? 'chua-dinh-hinh' : ''}`}>
+      <img src={anhNhanVat(gioiTinh, canhGioi)} alt="" draggable={false} />
     </div>
   );
 }

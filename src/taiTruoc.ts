@@ -45,7 +45,7 @@ async function taiLoat(ds: readonly string[], song: number, baoTienDo?: (x: numb
 
 /** Ảnh cần ngay khi vào game (theo nhân vật và lò đang dùng). */
 export function anhCot(k: Kho): string[] {
-  const thuMucNv = k.nhanVat?.gioiTinh === 'Nữ' ? 'hinh/nhan-vat-nu/' : 'hinh/nhan-vat/';
+  const thuMucNv = `hinh/nhan-vat-thien/${k.nhanVat?.gioiTinh === 'Nữ' ? 'nu' : 'nam'}-`;
   const lo = `hinh/lo/${k.loDan.dung}.webp`;
   return DANH_SACH_ANH.filter(
     (d) =>
