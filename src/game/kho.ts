@@ -110,6 +110,10 @@ export interface Kho {
   /** Vực Thẳm (xem game/vucTham.ts) và vật phẩm Vực Thẳm đã mang ra ngoài. */
   vuc: VucTrangThai;
   vatVuc: Record<string, number>;
+  /** Lần cuối (ms) nhịp tu luyện chạy; dùng để tính bế quan khi vắng mặt. 0 = chưa có. */
+  lucTuLuyen: number;
+  /** Kết quả bế quan khi vắng mặt, chờ người chơi xem. */
+  beQuan: { giay: number; diem: number; tangTruoc: number; tangSau: number } | null;
 }
 
 /** Loại viên đan dưỡng được: thượng phẩm, cực phẩm, hoặc đan văn. */
@@ -168,6 +172,8 @@ export function khoMoi(nv: NhanVat | null = null): Kho {
     nhanVat: nv,
     // bắt đầu là Phàm Nhân: lần đột phá đầu tiên (Dẫn Khí Đan) chính là bài nhập môn
     tuVi: { canhGioi: 0, tang: 1, diem: 0 },
+    lucTuLuyen: 0,
+    beQuan: null,
     linhThach: xt?.linhThach ?? 120,
     duocLieu,
     phuLieu: { 'hoa-tinh': 0, 'ngung-than-thao': 0 },
@@ -266,6 +272,8 @@ function buKho(k: Kho | null): Kho | null {
       thuMoiNo: k.thuMoiNo ?? null,
       vuc: buVuc(k.vuc),
       vatVuc: { ...k.vatVuc },
+      lucTuLuyen: k.lucTuLuyen ?? 0,
+      beQuan: k.beQuan ?? null,
   });
 }
 
@@ -888,7 +896,8 @@ export const soTang = (canhGioi: number) => (canhGioi === 0 ? LUAT.soTangPhamNha
 export function tuViCan(tang: number, canhGioi: number): number {
   const heSo =
     (canhGioi === 0 ? LUAT.heSoTuViPhamNhan : LUAT.heSoTuViMoiCanhGioi ** Math.max(0, canhGioi - 1)) * (canhGioi >= LUAT.tuViCaoCapTu ? LUAT.heSoTuViCaoCap : 1);
-  return Math.round(tang * LUAT.tuViMoiTang * heSo);
+  const nhan = LUAT.nhanTuVi.find((m) => canhGioi >= m.tu)?.heSo ?? 1;
+  return Math.round(tang * LUAT.tuViMoiTang * heSo * nhan);
 }
 /** Đã viên mãn tầng cuối chưa (phải dùng đan đột phá mới lên tiếp được). */
 export const vienMan = (k: Kho) => k.tuVi.tang >= soTang(k.tuVi.canhGioi) && k.tuVi.diem >= tuViCan(k.tuVi.tang, k.tuVi.canhGioi);
@@ -921,6 +930,30 @@ export function tuLuyen(k: Kho, giay: number): Kho {
   const conGiay = k.tangToc.giay - giayNhanh;
   const tangToc = giayNhanh > 0 ? { nhan: conGiay > 0 ? k.tangToc.nhan : 0, giay: conGiay } : k.tangToc;
   return { ...k, tuVi: { ...k.tuVi, tang, diem }, tangToc };
+}
+
+/** Tổng tu vi đã tích trong cảnh giới hiện tại (các tầng đã qua + điểm tầng đang tu). */
+const tongTuVi = (k: Kho) => {
+  let t = k.tuVi.diem;
+  for (let i = 1; i < k.tuVi.tang; i++) t += tuViCan(i, k.tuVi.canhGioi);
+  return t;
+};
+
+/**
+ * Nhịp tu luyện mỗi giây của game. Từ Hóa Thần, khoảng vắng từ lần chạy trước (tắt game, tab bị treo) được bù lại
+ * như bế quan, tối đa LUAT.beQuan.gioToiDa giờ; dưới Hóa Thần khoảng vắng bỏ qua như trước.
+ */
+export function nhipTuLuyen(k: Kho, luc = Date.now()): Kho {
+  const bq = LUAT.beQuan;
+  const vang = k.lucTuLuyen > 0 ? Math.floor((luc - k.lucTuLuyen) / 1000) : 0;
+  if (k.tuVi.canhGioi < bq.tu || vang <= 2) return { ...tuLuyen(k, 1), lucTuLuyen: luc };
+  const giay = Math.min(vang, bq.gioToiDa * 3600);
+  const sau = tuLuyen(k, giay);
+  const diem = Math.round(tongTuVi(sau) - tongTuVi(k));
+  const beQuan = giay >= bq.giayBao && diem > 0
+    ? { giay: giay + (k.beQuan?.giay ?? 0), diem: diem + (k.beQuan?.diem ?? 0), tangTruoc: k.beQuan?.tangTruoc ?? k.tuVi.tang, tangSau: sau.tuVi.tang }
+    : k.beQuan;
+  return { ...sau, lucTuLuyen: luc, beQuan };
 }
 
 /** Lợi thế luyện đan của người chơi: bẩm sinh (thiên mệnh), cộng phần do cảnh giới mang lại, cộng tính chất của lò đang dùng. */

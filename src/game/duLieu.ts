@@ -208,7 +208,7 @@ const DAN_GOC: readonly DanPhuong[] = [
     ten: 'Phá Chướng Đan',
     moTa: 'Phá vỡ bình cảnh. Đan khó luyện nhất, cũng quý nhất.',
     bac: 'Trúc Cơ',
-    uong: { loai: 'tu-vi', giaTri: [0.2, 0.35, 0.6, 1, 1], doc: 1.5 },
+    uong: { loai: 'tu-vi', giaTri: [0.03, 0.05, 0.08, 0.12, 0.16], doc: 1.5 },
     chiSo: { luc: 0.3, thanPhap: 0.3 },
     lieu: ['huyet-lien', 'long-tu-thao', 'kim-diep-truc'],
     doKho: 1.25,
@@ -498,6 +498,13 @@ export const LUAT = {
   /** Từ cảnh giới tuViCaoCapTu (Kim Đan) trở lên, tu vi cần nhân thêm heSoTuViCaoCap — ba cảnh giới đầu giữ nhịp nhanh cho người mới. */
   heSoTuViCaoCap: 2.5,
   tuViCaoCapTu: 3,
+  /** Nhân thêm tu vi cần theo cảnh giới (cảnh giới từ `tu` trở lên): Trúc Cơ → Nguyên Anh ×2, từ Hóa Thần ×5. Duyệt từ mốc cao xuống. */
+  nhanTuVi: [
+    { tu: 5, heSo: 5 },
+    { tu: 2, heSo: 2 },
+  ],
+  /** Bế quan khi vắng mặt: từ cảnh giới `tu` (Hóa Thần), tắt game vẫn tu luyện, tối đa `gioToiDa` giờ; vắng dưới `giayBao` giây thì cộng lặng lẽ, không báo. */
+  beQuan: { tu: 5, gioToiDa: 12, giayBao: 300 },
 
   /**
    * Đột phá: tỉ lệ thành công theo phẩm viên đan [hạ, trung, thượng, cực]; đan văn chắc chắn thành.

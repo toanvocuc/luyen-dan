@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { datNhac, phat } from './amThanh.ts';
-import { DAN_PHUONG, anhNen } from './game/duLieu.ts';
+import { DAN_PHUONG, LUAT, anhNen } from './game/duLieu.ts';
 import { danhDauXong, nhiemVuNay, vuaXong, type NoiLam } from './game/danDuong.ts';
 import { lyDoKhongDi, vaoBanDo } from './game/kyNgo.ts';
 import { taiCot, taiNgam } from './taiTruoc.ts';
-import { dsChuyen, khoMoi, lamMoiDon, luuKho, napKho, soVienHopDon, tuLuyen, type Kho } from './game/kho.ts';
+import { dsChuyen, khoMoi, lamMoiDon, luuKho, napKho, nhipTuLuyen, soVienHopDon, type Kho } from './game/kho.ts';
 import { BanDo } from './manHinh/BanDo.tsx';
 import { VucTham } from './manHinh/VucTham.tsx';
 import { ChonVung } from './manHinh/ChonVung.tsx';
@@ -108,7 +108,9 @@ export function UngDung() {
   useEffect(() => {
     if (!coNhanVat || man === 'mo-dau' || man === 'thien-menh') return;
     datKho((k) => lamMoiDon(k));
-    const id = setInterval(() => datKho((k) => lamMoiDon(tuLuyen(k, 1))), 1000);
+    // vừa vào game: bù ngay phần bế quan lúc vắng mặt (nếu đủ cảnh giới)
+    datKho((k) => nhipTuLuyen(k));
+    const id = setInterval(() => datKho((k) => lamMoiDon(nhipTuLuyen(k))), 1000);
     return () => clearInterval(id);
   }, [coNhanVat, man]);
 
@@ -224,7 +226,12 @@ export function UngDung() {
     if (noi === 'lo-dan' || noi === 'vuon') datMan(noi);
   };
   // thẻ trạng thái (tẩu hỏa, trúng độc, mất hồn): phủ lên mọi màn chính, bấm "Đã hiểu" mới tắt
-  const theTrangThai = kho.thongBao && <TheTrangThai key={kho.thongBao.luc} thongBao={kho.thongBao} onXong={() => datKho((k) => ({ ...k, thongBao: null }))} />;
+  const theTrangThai = (
+    <>
+      {kho.thongBao && <TheTrangThai key={kho.thongBao.luc} thongBao={kho.thongBao} onXong={() => datKho((k) => ({ ...k, thongBao: null }))} />}
+      {kho.beQuan && !kho.thongBao && <TheBeQuan bq={kho.beQuan} onXong={() => datKho((k) => ({ ...k, beQuan: null }))} />}
+    </>
+  );
   // chỉ tay lần đầu: phủ lên mọi màn chính
   const chiTay = <ChiTay daXem={kho.daChiTay} bat={!!kho.nhanVat} onXem={(ids) => datKho((k) => ({ ...k, daChiTay: [...new Set([...k.daChiTay, ...ids])] }))} />;
 
@@ -333,6 +340,28 @@ export function UngDung() {
       {theBao}
       {theTrangThai}
       {chiTay}
+    </div>
+  );
+}
+
+/** Báo kết quả bế quan khi vắng mặt (từ Hóa Thần). */
+function TheBeQuan({ bq, onXong }: { bq: NonNullable<Kho['beQuan']>; onXong: () => void }) {
+  const gio = Math.floor(bq.giay / 3600);
+  const phut = Math.floor((bq.giay % 3600) / 60);
+  return (
+    <div className="lop-phu" onClick={onXong}>
+      <div className="bang tam bang-be-quan" onClick={(e) => e.stopPropagation()}>
+        <h2>Bế quan xuất quan</h2>
+        <p>
+          Vắng {gio ? `${gio} giờ ` : ''}
+          {phut} phút · +{bq.diem.toLocaleString('vi-VN')} tu vi
+          {bq.tangSau > bq.tangTruoc ? ` · tầng ${bq.tangTruoc} → ${bq.tangSau}` : ''}
+        </p>
+        <small>Tối đa {LUAT.beQuan.gioToiDa} giờ mỗi lần.</small>
+        <button className="nut-nho" onClick={onXong}>
+          Nhận
+        </button>
+      </div>
     </div>
   );
 }
