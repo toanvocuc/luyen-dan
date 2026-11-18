@@ -482,7 +482,12 @@ export function TuTien({
                 <div key={d.nhan} className="dong da-hien">
                   <span className="nhan">{d.nhan}</span>
                   <span className={`gia-tri hiem-${d.hiem}`}>{d.giaTri}</span>
-                  {d.moTa && <small>{d.moTa}</small>}
+                  {d.moTa && (
+                    <small className={d.anh ? 'co-anh' : ''}>
+                      {d.anh && <img src={d.anh} alt="" draggable={false} />}
+                      {d.moTa}
+                    </small>
+                  )}
                 </div>
               ))}
             </div>

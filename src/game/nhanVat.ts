@@ -1,6 +1,6 @@
 // Thiên mệnh: mọi thuộc tính của nhân vật đều quay ngẫu nhiên theo bảng có trọng số — người chơi không được chọn.
 // Mỗi thuộc tính gắn với một lợi thế cụ thể trong luyện đan hoặc tu luyện (hàm loiThe ở cuối file).
-import { LOI_THE_GOC, type LoiThe } from './duLieu.ts';
+import { LOI_THE_GOC, type ChiSo, type LoiThe } from './duLieu.ts';
 
 /** Độ hiếm để tô màu: 0 thường, 1 khá, 2 hiếm, 3 cực hiếm. */
 export type DoHiem = 0 | 1 | 2 | 3;
@@ -40,16 +40,29 @@ export interface XuatThan extends Muc {
   heSoMua: number;
   /** Mở sẵn đan phương thứ hai. */
   moSanPhuong: boolean;
+  /** Nhân chỉ số gốc (vd lực 1.15 = +15%, thần thức 0.92 = −8%). */
+  chiSo?: Partial<Record<ChiSo, number>>;
+  /** Nhân tốc độ tu luyện. */
+  tocDo?: number;
+  /** Có ảnh public/hinh/xuat-than/<id>.webp. */
+  anh?: boolean;
 }
 export const XUAT_THAN: readonly XuatThan[] = [
-  { id: 'nong-ho', ten: 'Nông hộ nghèo', trong: 22, hiem: 0, moTa: 'Tay trắng lập nghiệp, chỉ có 80 linh thạch.', linhThach: 80, heSoDuocLieu: 1, tayNghe: 0, lo: 0, tuChat: 0, khiVan: 0, heSoMua: 1, moSanPhuong: false },
-  { id: 'co-nhi', ten: 'Cô nhi', trong: 10, hiem: 0, moTa: 'Gần như không có gì, nhưng trời thương: khí vận +20.', linhThach: 40, heSoDuocLieu: 1, tayNghe: 0, lo: 0, tuChat: 0, khiVan: 20, heSoMua: 1, moSanPhuong: false },
-  { id: 'duoc-nong', ten: 'Con nhà dược nông', trong: 16, hiem: 1, moTa: 'Kho dược liệu đầy gấp ba, mua dược liệu rẻ hơn 15%.', linhThach: 120, heSoDuocLieu: 3, tayNghe: 0, lo: 0, tuChat: 0, khiVan: 0, heSoMua: 0.85, moSanPhuong: false },
-  { id: 'y-su', ten: 'Gia đình y sư', trong: 14, hiem: 1, moTa: 'Quen mùi thuốc từ nhỏ: tư chất +8, có 160 linh thạch.', linhThach: 160, heSoDuocLieu: 1, tayNghe: 0, lo: 0, tuChat: 8, khiVan: 0, heSoMua: 1, moSanPhuong: false },
-  { id: 'tap-dich', ten: 'Tạp dịch tông môn', trong: 14, hiem: 1, moTa: 'Được tông môn cho mượn lò tốt: lò chịu áp cấp 1.', linhThach: 120, heSoDuocLieu: 1, tayNghe: 0, lo: 1, tuChat: 0, khiVan: 0, heSoMua: 1, moSanPhuong: false },
-  { id: 'tan-tu', ten: 'Hậu duệ tán tu', trong: 10, hiem: 1, moTa: 'Thừa hưởng chút cơ duyên của tiền nhân: tư chất +5, khí vận +5.', linhThach: 150, heSoDuocLieu: 1, tayNghe: 0, lo: 0, tuChat: 5, khiVan: 5, heSoMua: 1, moSanPhuong: false },
-  { id: 'thuong-gia', ten: 'Thương gia giàu có', trong: 8, hiem: 2, moTa: 'Gia tài sung túc: khởi đầu với 500 linh thạch.', linhThach: 500, heSoDuocLieu: 2, tayNghe: 0, lo: 0, tuChat: 0, khiVan: 0, heSoMua: 1, moSanPhuong: false },
-  { id: 'dan-su', ten: 'Thế gia luyện đan', trong: 6, hiem: 3, moTa: 'Nghề gia truyền: giữ lửa và tôi đan dễ hơn hẳn, mở sẵn Hồi Xuân Đan.', linhThach: 250, heSoDuocLieu: 2, tayNghe: 2, lo: 0, tuChat: 0, khiVan: 0, heSoMua: 1, moSanPhuong: true },
+  // tám xuất thân có ảnh: mỗi cái mạnh một chỉ số, yếu nhẹ một chỉ số khác
+  { id: 'nong-ho', ten: 'Nông gia', trong: 18, hiem: 0, anh: true, moTa: 'Quen gánh gồng: lực +15%, thần thức −8%. Vốn 80 linh thạch.', linhThach: 80, heSoDuocLieu: 1, tayNghe: 0, lo: 0, tuChat: 0, khiVan: 0, heSoMua: 1, moSanPhuong: false, chiSo: { luc: 1.15, thanThuc: 0.92 } },
+  { id: 'thu-huong', ten: 'Thư hương môn đệ', trong: 12, hiem: 1, anh: true, moTa: 'Con nhà dạy chữ: thần thức +15%, tư chất +5, lực −8%.', linhThach: 120, heSoDuocLieu: 1, tayNghe: 0, lo: 0, tuChat: 5, khiVan: 0, heSoMua: 1, moSanPhuong: false, chiSo: { thanThuc: 1.15, luc: 0.92 } },
+  { id: 'thuong-gia', ten: 'Thương gia giàu có', trong: 8, hiem: 2, anh: true, moTa: 'Gia tài sung túc: 500 linh thạch, dược liệu gấp đôi. Khí huyết −8%.', linhThach: 500, heSoDuocLieu: 2, tayNghe: 0, lo: 0, tuChat: 0, khiVan: 0, heSoMua: 1, moSanPhuong: false, chiSo: { khiHuyet: 0.92 } },
+  { id: 'tho-san', ten: 'Con nhà thợ săn', trong: 14, hiem: 0, anh: true, moTa: 'Lớn lên giữa rừng: thân pháp +15%, phòng ngự −8%.', linhThach: 120, heSoDuocLieu: 1, tayNghe: 0, lo: 0, tuChat: 0, khiVan: 0, heSoMua: 1, moSanPhuong: false, chiSo: { thanPhap: 1.15, phongNgu: 0.92 } },
+  { id: 'y-su', ten: 'Gia đình y sư', trong: 12, hiem: 1, anh: true, moTa: 'Quen mùi thuốc từ nhỏ: khí huyết +15%, tư chất +5, lực −8%.', linhThach: 160, heSoDuocLieu: 1, tayNghe: 0, lo: 0, tuChat: 5, khiVan: 0, heSoMua: 1, moSanPhuong: false, chiSo: { khiHuyet: 1.15, luc: 0.92 } },
+  { id: 'tho-ren', ten: 'Con nhà thợ rèn', trong: 12, hiem: 1, anh: true, moTa: 'Rành lửa lò: phòng ngự +15%, lò chịu áp cấp 1, thân pháp −8%.', linhThach: 100, heSoDuocLieu: 1, tayNghe: 0, lo: 1, tuChat: 0, khiVan: 0, heSoMua: 1, moSanPhuong: false, chiSo: { phongNgu: 1.15, thanPhap: 0.92 } },
+  { id: 'co-nhi', ten: 'Cô nhi', trong: 10, hiem: 0, anh: true, moTa: 'Gần như không có gì, nhưng trời thương: khí vận +20.', linhThach: 40, heSoDuocLieu: 1, tayNghe: 0, lo: 0, tuChat: 0, khiVan: 20, heSoMua: 1, moSanPhuong: false },
+  { id: 'dao-dong', ten: 'Đạo đồng', trong: 6, hiem: 2, anh: true, moTa: 'Được đạo trưởng nhặt về nuôi: tu luyện nhanh hơn 15%. Vốn 60 linh thạch.', linhThach: 60, heSoDuocLieu: 1, tayNghe: 0, lo: 0, tuChat: 0, khiVan: 0, heSoMua: 1, moSanPhuong: false, tocDo: 1.15 },
+  // xuất thân hiếm nhất, giữ từ bản cũ (chưa có ảnh)
+  { id: 'dan-su', ten: 'Thế gia luyện đan', trong: 4, hiem: 3, moTa: 'Nghề gia truyền: giữ lửa và tôi đan dễ hơn hẳn, mở sẵn Hồi Xuân Đan.', linhThach: 250, heSoDuocLieu: 2, tayNghe: 2, lo: 0, tuChat: 0, khiVan: 0, heSoMua: 1, moSanPhuong: true },
+  // bản cũ, không còn quay ra (trong = 0) nhưng giữ để nhân vật đã tạo vẫn nhận đúng ưu đãi
+  { id: 'duoc-nong', ten: 'Con nhà dược nông', trong: 0, hiem: 1, moTa: 'Kho dược liệu đầy gấp ba, mua dược liệu rẻ hơn 15%.', linhThach: 120, heSoDuocLieu: 3, tayNghe: 0, lo: 0, tuChat: 0, khiVan: 0, heSoMua: 0.85, moSanPhuong: false },
+  { id: 'tap-dich', ten: 'Tạp dịch tông môn', trong: 0, hiem: 1, moTa: 'Được tông môn cho mượn lò tốt: lò chịu áp cấp 1.', linhThach: 120, heSoDuocLieu: 1, tayNghe: 0, lo: 1, tuChat: 0, khiVan: 0, heSoMua: 1, moSanPhuong: false },
+  { id: 'tan-tu', ten: 'Hậu duệ tán tu', trong: 0, hiem: 1, moTa: 'Thừa hưởng chút cơ duyên của tiền nhân: tư chất +5, khí vận +5.', linhThach: 150, heSoDuocLieu: 1, tayNghe: 0, lo: 0, tuChat: 5, khiVan: 5, heSoMua: 1, moSanPhuong: false },
 ];
 
 export interface LinhCan extends Muc {
@@ -113,12 +126,20 @@ const kep = (x: number, a: number, b: number) => Math.min(b, Math.max(a, x));
 const gieoChiSo = (rng: () => number) => Math.round(1 + ((rng() + rng()) / 2) * 99);
 const boc = <T>(ds: readonly T[], rng: () => number) => ds[Math.floor(rng() * ds.length)];
 
-export function taoNhanVat(rng: () => number = Math.random): NhanVat {
+/** Tên ngẫu nhiên theo giới tính. */
+export const tenNgauNhien = (gioiTinh: NhanVat['gioiTinh'], rng: () => number = Math.random) => `${boc(HO, rng)} ${boc(gioiTinh === 'Nữ' ? TEN_NU : TEN, rng)}`;
+
+/** Số lần được tạo lại nhân vật ở màn thiên mệnh. */
+export const SO_LAN_TAO_LAI = 5;
+
+/** Quay một nhân vật mới. Truyền `gioiTinh` khi người chơi đã tự chọn; không truyền thì quay ngẫu nhiên. */
+export function taoNhanVat(rng: () => number = Math.random, gioiTinh?: NhanVat['gioiTinh']): NhanVat {
   const gd = chonTheoTrong(GIOI_DIEN, rng);
   const xt = chonTheoTrong(XUAT_THAN, rng);
-  const nu = rng() < 0.5;
+  const ngauNhienNu = rng() < 0.5;
+  const nu = gioiTinh ? gioiTinh === 'Nữ' : ngauNhienNu;
   return {
-    ten: `${boc(HO, rng)} ${boc(nu ? TEN_NU : TEN, rng)}`,
+    ten: tenNgauNhien(nu ? 'Nữ' : 'Nam', rng),
     gioiTinh: nu ? 'Nữ' : 'Nam',
     gioiDien: gd.id,
     xuatThan: xt.id,
@@ -160,7 +181,7 @@ export function loiThe(nv: NhanVat | null): LoiThe {
     phamCong: (nv.khiVan - 50) * 0.003,
     heSoMua: gd.heSoMua * xt.heSoMua,
     heSoBan: gd.heSoBan,
-    tocDoTuLuyen: timLinhCan(nv.linhCan).tocDo,
+    tocDoTuLuyen: timLinhCan(nv.linhCan).tocDo * (xt.tocDo ?? 1),
     soVien: 0,
   };
 }

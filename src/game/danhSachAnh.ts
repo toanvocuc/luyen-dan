@@ -258,4 +258,12 @@ export const DANH_SACH_ANH: readonly string[] = [
   'hinh/vuon/cay-non.webp',
   'hinh/vuon/mam.webp',
   'hinh/vuon/o-dat.webp',
+  'hinh/xuat-than/co-nhi.webp',
+  'hinh/xuat-than/dao-dong.webp',
+  'hinh/xuat-than/nong-ho.webp',
+  'hinh/xuat-than/tho-ren.webp',
+  'hinh/xuat-than/tho-san.webp',
+  'hinh/xuat-than/thu-huong.webp',
+  'hinh/xuat-than/thuong-gia.webp',
+  'hinh/xuat-than/y-su.webp',
 ];

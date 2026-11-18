@@ -1003,6 +1003,7 @@ function heSoBamSinh(k: Kho, cs: ChiSo): number {
   if (cs === 'thanThuc' && nv.theChat === 'bang-tam') hs *= 1.25;
   if (nv.theChat === 'dan-the') hs *= cs === 'thanThuc' ? 1.2 : cs === 'khiHuyet' ? 1.1 : 1;
   if (cs === 'thanThuc') hs *= 0.9 + nv.tuChat / 500;
+  hs *= timXuatThan(nv.xuatThan).chiSo?.[cs] ?? 1;
   return hs;
 }
 /** Phần gốc của một chỉ số, do cảnh giới, tầng và bẩm sinh quyết định. */

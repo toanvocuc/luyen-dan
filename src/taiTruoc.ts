@@ -53,6 +53,7 @@ export function anhCot(k: Kho): string[] {
       d.startsWith('hinh/mo-dau/') ||
       d.startsWith('hinh/hieu-ung/') ||
       d.startsWith('hinh/nen/') ||
+      d.startsWith('hinh/xuat-than/') ||
       d.startsWith(thuMucNv) ||
       d === lo ||
       d === 'hinh/lo-dan.webp' ||

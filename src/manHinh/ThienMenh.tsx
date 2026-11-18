@@ -1,12 +1,14 @@
-// Màn mở đầu và màn thiên mệnh (tạo nhân vật hoàn toàn ngẫu nhiên — người chơi không được chọn gì).
+// Màn mở đầu và màn thiên mệnh (số mệnh quay ngẫu nhiên; người chơi tự chọn giới tính và được tạo lại 5 lần).
 import { useEffect, useMemo, useState } from 'react';
 import {
   GIOI_DIEN,
   LINH_CAN,
   THE_CHAT,
   XUAT_THAN,
+  SO_LAN_TAO_LAI,
   hiemChiSo,
   taoNhanVat,
+  tenNgauNhien,
   timGioiDien,
   timLinhCan,
   timTheChat,
@@ -59,6 +61,8 @@ export interface DongThienMenh {
   hiem: DoHiem;
   /** Các giá trị có thể ra — dùng cho hiệu ứng chữ nhảy lúc đang quay. */
   kho: string[];
+  /** Ảnh minh hoạ (xuất thân). */
+  anh?: string;
 }
 
 /** Bảy dòng thuộc tính của một nhân vật, dùng cho cả màn tạo lẫn bảng xem lại. */
@@ -71,7 +75,7 @@ export function dongThienMenh(nv: NhanVat): DongThienMenh[] {
   return [
     { nhan: 'Giới diện', giaTri: gd.ten, moTa: gd.moTa, hiem: gd.hiem, kho: GIOI_DIEN.map((d) => d.ten) },
     { nhan: 'Giới tính', giaTri: nv.gioiTinh, moTa: '', hiem: 0, kho: ['Nam', 'Nữ'] },
-    { nhan: 'Xuất thân', giaTri: xt.ten, moTa: xt.moTa, hiem: xt.hiem, kho: XUAT_THAN.map((d) => d.ten) },
+    { nhan: 'Xuất thân', giaTri: xt.ten, moTa: xt.moTa, hiem: xt.hiem, kho: XUAT_THAN.filter((d) => d.trong > 0).map((d) => d.ten), anh: xt.anh ? `./hinh/xuat-than/${xt.id}.webp` : undefined },
     { nhan: 'Linh căn', giaTri: lc.ten, moTa: lc.moTa, hiem: lc.hiem, kho: LINH_CAN.map((d) => d.ten) },
     { nhan: 'Thể chất', giaTri: tc.ten, moTa: tc.moTa, hiem: tc.hiem, kho: THE_CHAT.map((d) => d.ten) },
     { nhan: 'Tư chất', giaTri: `${nv.tuChat} / 100`, moTa: 'Tư chất cao thì con lắc chậm hơn và khoảng xanh rộng hơn khi tôi đan.', hiem: hiemChiSo(nv.tuChat), kho: so },
@@ -81,9 +85,36 @@ export function dongThienMenh(nv: NhanVat): DongThienMenh[] {
 
 const NHIP_MOI_DONG = 700; // mili giây quay mỗi dòng
 
+/** Nhân vật đang quay dở và số lần tạo lại đã dùng: lưu riêng để nạp lại trang không được quay thêm miễn phí. */
+const KHOA_DANG_TAO = 'luyen-dan-thien-menh';
+interface DangTao {
+  nv: NhanVat;
+  daDung: number;
+}
+function docDangTao(): DangTao | null {
+  try {
+    const s = localStorage.getItem(KHOA_DANG_TAO);
+    const d = s ? (JSON.parse(s) as DangTao) : null;
+    return d?.nv?.xuatThan ? d : null;
+  } catch {
+    return null;
+  }
+}
+function ghiDangTao(d: DangTao | null) {
+  try {
+    if (d) localStorage.setItem(KHOA_DANG_TAO, JSON.stringify(d));
+    else localStorage.removeItem(KHOA_DANG_TAO);
+  } catch {
+    // trình duyệt chặn lưu trữ: vẫn chơi được, chỉ là nạp lại trang thì quay lại từ đầu
+  }
+}
+
 export function ManThienMenh({ onXong }: { onXong: (nv: NhanVat) => void }) {
-  // số mệnh đã định ngay từ lúc mở màn; phần "quay" chỉ là lật từng dòng ra
-  const nv = useMemo(() => taoNhanVat(), []);
+  // số mệnh định sẵn rồi mới "lật" từng dòng ra; được tạo lại SO_LAN_TAO_LAI lần, giới tính thì tự chọn
+  const [dangTao, datDangTao] = useState<DangTao>(() => docDangTao() ?? { nv: taoNhanVat(), daDung: 0 });
+  useEffect(() => ghiDangTao(dangTao), [dangTao]);
+  const { nv, daDung } = dangTao;
+  const conLai = SO_LAN_TAO_LAI - daDung;
   const dong = useMemo(() => dongThienMenh(nv), [nv]);
   const [soHien, datSoHien] = useState(0);
   const [nhay, datNhay] = useState(0);
@@ -101,6 +132,16 @@ export function ManThienMenh({ onXong }: { onXong: (nv: NhanVat) => void }) {
     return () => clearInterval(id);
   }, [xong]);
 
+  const taoLai = () => {
+    if (conLai <= 0) return;
+    datDangTao({ nv: taoNhanVat(Math.random, nv.gioiTinh), daDung: daDung + 1 });
+    datSoHien(0);
+  };
+  // đổi giới tính không tốn lượt: chỉ đổi dáng và tên, giữ nguyên số mệnh
+  const doiGioi = (g: NhanVat['gioiTinh']) => {
+    if (g !== nv.gioiTinh) datDangTao({ nv: { ...nv, gioiTinh: g, ten: tenNgauNhien(g) }, daDung });
+  };
+
   return (
     <div className="man-thien-menh">
       <header>
@@ -117,11 +158,30 @@ export function ManThienMenh({ onXong }: { onXong: (nv: NhanVat) => void }) {
         {dong.map((d, i) => {
           const daHien = i < soHien;
           const dangQuay = i === soHien;
+          if (d.nhan === 'Giới tính' && xong) {
+            return (
+              <div key={d.nhan} className="dong da-hien">
+                <span className="nhan">{d.nhan}</span>
+                <span className="chon-gioi">
+                  {(['Nam', 'Nữ'] as const).map((g) => (
+                    <button key={g} className={`nut-nho ${nv.gioiTinh === g ? 'dang-chon' : ''}`} onClick={() => doiGioi(g)}>
+                      {g}
+                    </button>
+                  ))}
+                </span>
+              </div>
+            );
+          }
           return (
             <div key={d.nhan} className={`dong ${daHien ? 'da-hien' : ''}`}>
               <span className="nhan">{d.nhan}</span>
               <span className={`gia-tri ${daHien ? `hiem-${d.hiem}` : 'cho'}`}>{daHien ? d.giaTri : dangQuay ? d.kho[nhay % d.kho.length] : '—'}</span>
-              {daHien && d.moTa && <small>{d.moTa}</small>}
+              {daHien && d.moTa && (
+                <small className={d.anh ? 'co-anh' : ''}>
+                  {d.anh && <img src={d.anh} alt="" draggable={false} />}
+                  {d.moTa}
+                </small>
+              )}
             </div>
           );
         })}
@@ -129,9 +189,20 @@ export function ManThienMenh({ onXong }: { onXong: (nv: NhanVat) => void }) {
 
       <div className="chan-thien-menh">
         {xong ? (
-          <button className="nut chinh" onClick={() => onXong(nv)}>
-            Bước vào tiên lộ
-          </button>
+          <>
+            <button className="nut tao-lai" disabled={conLai <= 0} onClick={taoLai}>
+              Tạo lại ({conLai})
+            </button>
+            <button
+              className="nut chinh"
+              onClick={() => {
+                ghiDangTao(null);
+                onXong(nv);
+              }}
+            >
+              Bước vào tiên lộ
+            </button>
+          </>
         ) : (
           <p className="chu-nho">Đang dệt số mệnh…</p>
         )}
