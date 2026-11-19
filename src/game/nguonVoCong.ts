@@ -24,8 +24,11 @@ export const LUAT_BT = {
   cho: { so: 3, trong: [60, 32, 8, 0, 0, 0] },
   tongMon: { so: 4, trong: [28, 36, 29, 7, 0, 0], danhVong: [15, 30, 60, 120, 0, 0], heSoGia: 0.5 },
   dauGia: { so: 3, ngayMoiPhien: 3, trong: [0, 0, 0, 60, 30, 10], khoiDiem: 0.7, giaAnTu: 0.9, giaAnDen: 1.6 },
-  /** Đổi tông môn: phải theo tông cũ ít nhất bấy nhiêu ngày. */
+  /** Rời tông môn: mất bấy nhiêu phần danh vọng với tông đó, và phải đợi bấy nhiêu ngày mới vào tông khác. */
   ngayDoiTongMon: 3,
+  matDanhVongKhiRoi: 0.5,
+  /** Danh vọng đủ để vào tông mà không cần thiên phú hợp. */
+  danhVongVao: 100,
   /** Ngộ Đạo Đan: điểm luyện thục theo phẩm [hạ, trung, thượng, cực, đan văn]. Tẩy Cốt Đan: tỉ lệ thành theo phẩm. */
   ngoDao: [4, 6, 9, 14, 20],
   tayCot: [0.25, 0.4, 0.6, 0.85, 1],
@@ -60,11 +63,11 @@ export interface MonBt {
   /** Danh vọng của tông môn đang theo (chỉ hàng tông môn). */
   danhVong?: number;
 }
-function quayMon(k: Kho, hat: string, so: number, trong: readonly number[], tienTo: string): MonBt[] {
+function quayMon(k: Kho, hat: string, so: number, trong: readonly number[], tienTo: string, nguon: readonly (typeof BI_TICH)[number][] = BI_TICH): MonBt[] {
   const rng = rngHat(bam(hat));
   const ra: MonBt[] = [];
   for (let i = 0; i < so; i++) {
-    const g = BI_TICH[Math.floor(rng() * BI_TICH.length)];
+    const g = nguon[Math.floor(rng() * nguon.length)];
     const pham = chonTrong(trong, rng);
     const nt = quayNguyenTo(rng);
     ra.push({ khoa: `${tienTo}|${i}`, id: g.id, pham, nguyenTo: g.loai === 'vo-ky' || g.loai === 'tuyet-chieu' ? nt : undefined, gia: Math.round(heGia(k) * LUAT_BT.giaPham[pham]) });
@@ -79,7 +82,11 @@ export function hangBtTongMon(k: Kho, luc = Date.now()): MonBt[] {
   const tm = k.voCong.tongMon;
   if (!tm) return [];
   const c = LUAT_BT.tongMon;
-  return quayMon(k, `${k.nhanVat?.ten}|bt-${tm}|${kyCho(luc)}`, c.so, c.trong, 'tm').map((m) => ({ ...m, gia: Math.round(m.gia * c.heSoGia), danhVong: c.danhVong[m.pham] }));
+  const he = TONG_MON_INFO[tm]?.he ?? [];
+  // Tàng Kinh Các chỉ có võ công hai hệ của tông, cùng thân pháp và tâm pháp
+  const nguon = BI_TICH.filter((b) => !b.he || he.includes(b.he));
+  const giam = tm === 'van-bao' ? 0.85 : 1;
+  return quayMon(k, `${k.nhanVat?.ten}|bt-${tm}|${kyCho(luc)}`, c.so, c.trong, 'tm', nguon).map((m) => ({ ...m, gia: Math.round(m.gia * c.heSoGia * giam), danhVong: c.danhVong[m.pham] }));
 }
 export const daMuaBt = (k: Kho, khoa: string, luc = Date.now()) => k.voCong.mua.ky === kyCho(luc) && k.voCong.mua.ds.includes(khoa);
 /** Mua một cuốn (phường thị hoặc tông môn). Thiếu tiền / danh vọng / đã mua thì trả lại kho cũ. */
@@ -100,12 +107,40 @@ export function muaBt(k: Kho, mon: MonBt, luc = Date.now()): Kho {
 // ---------- tông môn ----------
 
 export const TONG_MON_DS = TONG_MON;
-/** Còn bao nhiêu giây nữa mới được đổi tông môn (0 = đổi được). */
+export type MonQuy = 'tu-luyen' | 'sat-thuong' | 'hoi-mau' | 'bi-tich' | 'hac-hoa';
+/** Võ học chính, tôn chỉ và môn quy (ưu đãi khi là đệ tử) của từng tông. */
+export const TONG_MON_INFO: Record<string, { he: He[]; tonChi: string; monQuy: string; uuDai: MonQuy }> = {
+  'thanh-van': { he: ['kiem', 'chi'], tonChi: 'Thuận theo tự nhiên, tâm như mây trôi.', monQuy: 'Tu luyện nhanh hơn 5%.', uuDai: 'tu-luyen' },
+  'thien-kiem': { he: ['kiem', 'dao'], tonChi: 'Kiếm ra không hối, thẳng tới cùng.', monQuy: 'Sát thương võ công +5%.', uuDai: 'sat-thuong' },
+  'duoc-vuong': { he: ['chuong', 'chi'], tonChi: 'Cứu người trước, tu mình sau.', monQuy: 'Hồi máu (đan, chiêu) mạnh hơn 15%.', uuDai: 'hoi-mau' },
+  'van-bao': { he: ['thuong', 'quyen'], tonChi: 'Vật quý tìm người có duyên.', monQuy: 'Bí tịch ở Tàng Kinh Các rẻ hơn 15%.', uuDai: 'bi-tich' },
+  'huyen-am': { he: ['chuong', 'dao'], tonChi: 'Đi trong bóng tối mà lòng không tối.', monQuy: 'Ở Vực Thẳm hắc hoá tăng chậm hơn 20%.', uuDai: 'hac-hoa' },
+};
+/** Người chơi có đang hưởng môn quy này không. */
+export const coMonQuy = (k: Kho, u: MonQuy) => !!k.voCong?.tongMon && TONG_MON_INFO[k.voCong.tongMon]?.uuDai === u;
+/** Còn bao nhiêu giây nữa mới được vào tông môn mới (sau lần rời gần nhất). */
 export const giayDoiTongMon = (k: Kho, luc = Date.now()) =>
-  k.voCong.tongMon ? Math.max(0, Math.ceil((k.voCong.lucGiaNhap + LUAT_BT.ngayDoiTongMon * 86400000 - luc) / 1000)) : 0;
+  k.voCong.lucRoi ? Math.max(0, Math.ceil((k.voCong.lucRoi + LUAT_BT.ngayDoiTongMon * 86400000 - luc) / 1000)) : 0;
+/** Lý do chưa vào được tông này (null = vào được): cần thiên phú Khá ở một hệ tông dạy, hoặc đủ danh vọng. */
+export function lyDoKhongVao(k: Kho, id: string, luc = Date.now()): string | null {
+  if (k.voCong.tongMon) return 'Đang là đệ tử tông khác. Rời tông ở Sơn Môn trước.';
+  if (giayDoiTongMon(k, luc) > 0) return 'Vừa rời tông môn, chưa thể bái sư nơi khác.';
+  const tp = thienPhuCua(k.nhanVat);
+  const info = TONG_MON_INFO[id];
+  if (info.he.some((h) => tp[h] >= 2)) return null;
+  if ((k.danhVong[id] ?? 0) >= LUAT_BT.danhVongVao) return null;
+  return `Cần thiên phú Khá ở ${info.he.map((h) => HE[h].dao).join(' hoặc ')}, hoặc ${LUAT_BT.danhVongVao} danh vọng với tông này.`;
+}
 export function giaNhapTongMon(k: Kho, id: string, luc = Date.now()): Kho {
-  if (k.voCong.tongMon === id || giayDoiTongMon(k, luc) > 0) return k;
+  if (lyDoKhongVao(k, id, luc)) return k;
   return { ...k, voCong: { ...k.voCong, tongMon: id, lucGiaNhap: luc } };
+}
+/** Rời tông môn: mất một phần danh vọng với tông đó, phải đợi mới vào tông khác. */
+export function roiTongMon(k: Kho, luc = Date.now()): Kho {
+  const tm = k.voCong.tongMon;
+  if (!tm) return k;
+  const dv = k.danhVong[tm] ?? 0;
+  return { ...k, danhVong: { ...k.danhVong, [tm]: Math.floor(dv * (1 - LUAT_BT.matDanhVongKhiRoi)) }, voCong: { ...k.voCong, tongMon: null, lucRoi: luc } };
 }
 
 // ---------- đấu giá ----------

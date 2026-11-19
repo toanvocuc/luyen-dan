@@ -1,6 +1,5 @@
 // Túi đan: giao đan theo đơn hàng của tông môn (trả đủ giá) hoặc bán lẻ ở phường thị (mất nửa giá).
 import { useState } from 'react';
-import { QuayTongMon } from './ChoBiTich.tsx';
 import { daHetLuotThu } from '../anhLoi.ts';
 import { DAN_DUOC, DAN_PHUONG, LUAT, TEN_MOC, TEN_PHAM, TONG_MON, anhDan, bacSo, giaBan, mocChuyen, timDanPhuong, timTongMon, type PhamThat } from '../game/duLieu.ts';
 import { ANH_TRUNG_CHUA_RO, LUAT_THU, giaTrung, muaTrung } from '../game/linhThu.ts';
@@ -157,8 +156,6 @@ export function TuiDan({ kho, doiKho, onDong, trangDau = 'don' }: { kho: Kho; do
 
         {trang === 'tang-bao' && (
           <>
-            <QuayTongMon kho={kho} doiKho={doiKho} />
-            <h3>Đổi danh vọng</h3>
             <p className="chu-nho">
               Đổi danh vọng lấy dẫn dược (cần khi đột phá từ Kim Đan). Giao đơn cho tông môn nào thì có danh vọng tông môn đó.
             </p>

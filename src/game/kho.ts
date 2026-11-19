@@ -911,7 +911,9 @@ export const vienMan = (k: Kho) => k.tuVi.tang >= soTang(k.tuVi.canhGioi) && k.t
 /** Tu vi mỗi giây khi không có đan trợ lực (linh căn quyết định). */
 export const tocDoGoc = (k: Kho, luc = Date.now()) =>
   LUAT.tuViMoiGiay * loiThe(k.nhanVat).tocDoTuLuyen * (1 + (k.tocDoCong ?? 0)) * (k.trung ? 1 + LUAT.qua.trung.tocDo : 1) * (dangTauHoa(k, luc) ? LUAT.daiDotPha.tauHoaHeSo : 1) *
-  (1 + (k.linhThu?.length ? tacDungThu(k, luc).tuLuyen : 0));
+  (1 + (k.linhThu?.length ? tacDungThu(k, luc).tuLuyen : 0)) *
+  // môn quy Thanh Vân Tông
+  (k.voCong?.tongMon === 'thanh-van' ? 1.05 : 1);
 /** Còn bao nhiêu giây tẩu hỏa (0 = không). */
 export const giayTauHoa = (k: Kho, luc = Date.now()) => Math.max(0, Math.ceil(((k.tauHoa ?? 0) + LUAT.daiDotPha.tauHoaGiay * 1000 - luc) / 1000));
 export const dangTauHoa = (k: Kho, luc = Date.now()) => (k.tauHoa ?? 0) > 0 && giayTauHoa(k, luc) > 0;
@@ -1034,6 +1036,7 @@ export function hoSoChien(k: Kho, chuanThanPhap: number, luc = Date.now()): HoSo
     rThanPhap: chiSo(k, 'thanPhap', luc) / Math.max(1, chuanThanPhap),
     mauMax: mauToiDa(k),
     mauNay: mauHienTai(k, luc),
+    heSoSatThuong: k.voCong?.tongMon === 'thien-kiem' ? 1.05 : 1,
   };
 }
 

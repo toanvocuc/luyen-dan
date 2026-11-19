@@ -398,6 +398,8 @@ export const buVuc = (v: Partial<VucTrangThai> | undefined): VucTrangThai => {
 // ---------- tiện ích ----------
 
 const kep = (x: number, a: number, b: number) => Math.min(b, Math.max(a, x));
+/** Môn quy Huyền Âm Giáo: hắc hoá tăng chậm hơn. */
+const heSoHac = (k: Kho) => (k.voCong?.tongMon === 'huyen-am' ? 0.8 : 1);
 const datVuc = (k: Kho, sua: Partial<VucTrangThai>): Kho => ({ ...k, vuc: { ...k.vuc, ...sua } });
 /** Cảnh giới chuẩn (số thực) của một tầng. */
 export const canhGioiTang = (t: number) => LUAT_VUC.canhGioiDau + ((LUAT_VUC.canhGioiCuoi - LUAT_VUC.canhGioiDau) * Math.max(0, t - 1)) / (LUAT_VUC.soTang - 1);
@@ -428,7 +430,8 @@ function truMau(k: Kho, so: number, luc: number): Kho {
   const nay = mauHienTai(k, luc);
   return { ...k, mau: { thieu: Math.min(toiDa, toiDa - nay + Math.max(0, Math.round(so))), luc } };
 }
-function hoiMau(k: Kho, phan: number, luc: number): Kho {
+function hoiMau(k: Kho, phan0: number, luc: number): Kho {
+  const phan = phan0 * (k.voCong?.tongMon === 'duoc-vuong' ? 1.15 : 1);
   const toiDa = mauToiDa(k);
   const nay = mauHienTai(k, luc);
   return { ...k, mau: { thieu: Math.max(0, toiDa - nay - Math.round(toiDa * phan)), luc } };
@@ -452,10 +455,10 @@ function catTui(k: Kho): Kho {
   }
   return { ...k, linhThach, vatVuc, vuc: { ...k.vuc, tui: {} } };
 }
-function themTrangThai(tt: VucTrangThai['tt'], them: Partial<Record<TrangThaiId, number>>, heSo = 1): VucTrangThai['tt'] {
+function themTrangThai(tt: VucTrangThai['tt'], them: Partial<Record<TrangThaiId, number>>, heSo = 1, heSoHac = 1): VucTrangThai['tt'] {
   const m = { ...tt };
   for (const [id, n] of Object.entries(them) as [TrangThaiId, number][]) {
-    if (id === 'hac') m.hac = Math.min(LUAT_VUC.hacToiDa, m.hac + Math.round(n * heSo));
+    if (id === 'hac') m.hac = Math.min(LUAT_VUC.hacToiDa, m.hac + Math.round(n * heSo * heSoHac));
     else m[id] = Math.max(m[id], Math.round(n * heSo));
   }
   return m;
@@ -662,7 +665,7 @@ export function danhQuai(k: Kho, rng: () => number = Math.random, luc = Date.now
   const mat: string[] = [];
   if (td.trung > 0 && rng() < 1 - 0.65 ** td.trung) {
     dinh = quai.tt;
-    kho = datVuc(kho, { tt: themTrangThai(kho.vuc.tt, { [quai.tt]: LUAT_VUC.tt[quai.tt] }) });
+    kho = datVuc(kho, { tt: themTrangThai(kho.vuc.tt, { [quai.tt]: LUAT_VUC.tt[quai.tt] }, 1, heSoHac(kho)) });
     mat.push(quai.tt === 'hac' ? `hắc hoá +${LUAT_VUC.tt.hac}%` : TRANG_THAI[quai.tt].ten);
   }
   const matMau = nay - td.mauMinh;
@@ -959,7 +962,7 @@ export function bossDanh(k: Kho, rng: () => number = Math.random, luc = Date.now
     else dong.push(`${b.ten} dùng ${chieu.ten}: ngươi mất ${dmg} máu.${dangDo ? ' (đã đỡ)' : ''}`, ...h.dong);
     if (chieu.loai === 'lon' && !h.ne) vfx.push({ loai: 'rung' });
     if (chieu.tt && !h.ne) {
-      kho = datVuc(kho, { tt: themTrangThai(kho.vuc.tt, chieu.tt, dangDo ? 0.5 : 1) });
+      kho = datVuc(kho, { tt: themTrangThai(kho.vuc.tt, chieu.tt, dangDo ? 0.5 : 1, heSoHac(kho)) });
       for (const id of Object.keys(chieu.tt) as TrangThaiId[]) dinh.push(id);
     }
     if (dangDo && chieu.loai === 'lon') {

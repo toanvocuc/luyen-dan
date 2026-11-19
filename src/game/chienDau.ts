@@ -87,6 +87,8 @@ export interface HoSo {
   rThanPhap: number;
   mauMax: number;
   mauNay: number;
+  /** Nhân sát thương mọi đòn (môn quy tông môn…). */
+  heSoSatThuong?: number;
 }
 
 const coTam = (hs: HoSo, id: string) => hs.tamPhap.includes(id);
@@ -143,7 +145,7 @@ export function raDon(hs: HoSo, st0: ChienTran, loai0: 'vo-ky' | 'tuyet-chieu' |
   const coThem = coTam(hs, 'thanh-tam') ? 0.1 : 0;
   const lt = luotTt(hs);
   // hệ số chung của mọi đòn trong lượt này
-  let chung = 1 + 0.1 * tang(st.minh, 'lien-kich');
+  let chung = (1 + 0.1 * tang(st.minh, 'lien-kich')) * (hs.heSoSatThuong ?? 1);
   chung *= 1 + 0.1 * tang(st.dich, 'pha-giap');
   if (st.dich['han-khi']) chung *= 1.1;
   if (coTam(hs, 'cuong-huyet') && hs.mauNay < hs.mauMax * 0.3) chung *= 1.2;

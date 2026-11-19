@@ -27,6 +27,7 @@ export function TuTien({
   onDiToi,
   onDanThu,
   onTangBao,
+  onTongMon,
   onLinhThu,
   onLuyenDan,
   onMonPhai,
@@ -44,6 +45,8 @@ export function TuTien({
   onDiToi: (noi: NoiLam) => void;
   /** Mở Tàng Bảo Các (đổi danh vọng lấy dẫn dược). */
   onTangBao: () => void;
+  /** Mở màn tông môn (bản đồ các toà nhà). */
+  onTongMon: () => void;
   /** Mở Linh Thú Viên (nuôi thú, ấp trứng). */
   onLinhThu: () => void;
   onLuyenDan: () => void;
@@ -149,7 +152,7 @@ export function TuTien({
                 ['thien-menh', 'Nhân vật & võ công', '武', () => datBang('nhan-vat'), 0, false],
                 ['mon-phai', 'Đơn hàng', '門', onMonPhai, donDu, false],
                 ['dan-thu', 'Đan thư', '書', onDanThu, 0, false],
-                ['tang-bao-cac', 'Tông môn · Tàng Bảo', '寶', onTangBao, 0, false],
+                ['tang-bao-cac', 'Tông môn', '寶', onTongMon, 0, false],
                 ['linh-thu', 'Linh thú', '獸', onLinhThu, 0, chamThu],
               ] as [string, string, string, () => void, number, boolean][]
             ).map(([anh, ten, chu, bam, so, cham]) => (

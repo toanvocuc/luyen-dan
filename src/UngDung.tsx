@@ -20,6 +20,7 @@ import { LoDan } from './manHinh/LoDan.tsx';
 import { PhuongThi } from './manHinh/PhuongThi.tsx';
 import { SaoLuu } from './manHinh/SaoLuu.tsx';
 import { ManMoDau, ManThienMenh } from './manHinh/ThienMenh.tsx';
+import { TongMon } from './manHinh/TongMon.tsx';
 import { TuiDan } from './manHinh/TuiDan.tsx';
 import { TuTien } from './manHinh/TuTien.tsx';
 import { LinhThuVien } from './manHinh/LinhThuVien.tsx';
@@ -33,6 +34,8 @@ export function UngDung() {
   const [kho, datKho] = useState<Kho>(napKho);
   const [man, datMan] = useState<Man>('mo-dau');
   const [bang, datBang] = useState<Bang>(null);
+  /** Màn tông môn (bản đồ); các bảng đơn hàng / Tàng Bảo mở chồng lên trên nó. */
+  const [moTongMon, datMoTongMon] = useState(false);
   const [dangLuyen, datDangLuyen] = useState(false);
   /** Quà người chơi mới chọn ở đoạn mở đầu, chờ tạo xong nhân vật ở màn thiên mệnh. */
   const [quaCho, datQuaCho] = useState<LoaiQua | null>(null);
@@ -246,6 +249,7 @@ export function UngDung() {
           onDanThu={() => datBang('dan-thu')}
           onDiToi={diToi}
           onTangBao={() => datBang('tang-bao')}
+          onTongMon={() => datMoTongMon(true)}
           onLinhThu={() => datBang('linh-thu')}
           onLuyenDan={() => datMan('lo-dan')}
           onMonPhai={() => datBang('tui')}
@@ -256,6 +260,7 @@ export function UngDung() {
           }}
         />
         {thanhDay}
+        {moTongMon && <TongMon kho={kho} doiKho={doiKho} onDong={() => datMoTongMon(false)} onDonHang={() => datBang('tui')} onTangBao={() => datBang('tang-bao')} />}
         {bang === 'tui' && <TuiDan kho={kho} doiKho={doiKho} onDong={() => datBang(null)} />}
         {bang === 'tang-bao' && <TuiDan kho={kho} doiKho={doiKho} onDong={() => datBang(null)} trangDau="tang-bao" />}
         {bang === 'linh-thu' && <LinhThuVien kho={kho} doiKho={doiKho} onDong={() => datBang(null)} />}

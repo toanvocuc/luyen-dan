@@ -199,6 +199,8 @@ export interface VoCongKho {
   /** Tông môn đang theo (bán bí tịch bằng danh vọng của tông môn đó) và lúc gia nhập. */
   tongMon: string | null;
   lucGiaNhap: number;
+  /** Lúc rời tông môn gần nhất (0 = chưa rời lần nào); rời xong phải đợi mới vào tông khác. */
+  lucRoi: number;
   /** Đã mua những món nào trong kỳ hàng `ky` (phường thị và tông môn, khoá "cho|i" / "tm|i"). */
   mua: { ky: number; ds: string[] };
   /** Đấu giá: phiên hiện tại và giá đã ra cho từng món (thắng hay thua). */
@@ -222,7 +224,7 @@ export function voCongKhoiDau(nv: NhanVat | null): VoCongKho {
     { uid: 1, id: VO_KY_CUA[he], pham: 0, cap: 1, kn: 0, nguyenTo: nt },
     { uid: 2, id: TUYET_CHIEU_CUA[he], pham: 0, cap: 1, kn: 0, nguyenTo: nt },
   ];
-  return { tui, lap: { voKy: 1, tuyetChieu: 2, thanPhap: null, tamPhap: [null, null] }, uidKe: 3, tongMon: null, lucGiaNhap: 0, mua: { ky: -1, ds: [] }, dauGia: { phien: -1, ra: {} } };
+  return { tui, lap: { voKy: 1, tuyetChieu: 2, thanPhap: null, tamPhap: [null, null] }, uidKe: 3, tongMon: null, lucGiaNhap: 0, lucRoi: 0, mua: { ky: -1, ds: [] }, dauGia: { phien: -1, ra: {} } };
 }
 export function buVoCong(v: Partial<VoCongKho> | undefined, nv: NhanVat | null): VoCongKho {
   if (!v?.tui || !v.lap) return voCongKhoiDau(nv);
@@ -232,6 +234,7 @@ export function buVoCong(v: Partial<VoCongKho> | undefined, nv: NhanVat | null):
     uidKe: v.uidKe ?? 1 + Math.max(0, ...v.tui.map((b) => b.uid)),
     tongMon: v.tongMon ?? null,
     lucGiaNhap: v.lucGiaNhap ?? 0,
+    lucRoi: v.lucRoi ?? 0,
     mua: v.mua ?? { ky: -1, ds: [] },
     dauGia: v.dauGia ?? { phien: -1, ra: {} },
   };
