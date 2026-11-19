@@ -1,6 +1,6 @@
 // Vực Thẳm: bản đồ mê cung đi XUỐNG 50 tầng. Chạm điểm kề để đi; gặp quái thì Đánh / Bỏ chạy / Từ bỏ;
 // boss đánh theo lượt (linh thú xuất chiến cùng đánh và hộ thể). Luật nằm ở game/vucTham.ts.
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { datNhac, phat, type Tieng } from '../amThanh.ts';
 import { LUAT } from '../game/duLieu.ts';
 import { mauHienTai, mauToiDa, type Kho } from '../game/kho.ts';
@@ -38,18 +38,21 @@ import {
   nguoiDanh,
   nghiNgoi,
   roiVuc,
-  satThuong,
   thayVuc,
   thuRaTran,
   tiLeChay,
-  tiLeDanh,
   timQuai,
   tuBo,
+  tuyetChieuBossSan,
+  uocTiLeDanh,
   type HanhDong,
   type TrangThaiId,
 } from '../game/vucTham.ts';
 import { dongHo, useBayGio } from './PhuongThi.tsx';
 import { AnhThu } from './LinhThuVien.tsx';
+import { HangTrangThai, LopHieuUng, useHieuUng } from './HieuUngTran.tsx';
+import { MO_O, timBiTich, timTrongTui } from '../game/voCong.ts';
+import type { KetTuDong } from '../game/chienDau.ts';
 
 const KC = 92; // khoảng cách giữa hai tầng trên bản đồ (px)
 const DINH = 56; // lề trên của tầng 0
@@ -79,10 +82,11 @@ function KhungVuc({ tieuDe, children }: { tieuDe: string; children: ReactNode })
   );
 }
 /** Sân đấu: nền theo tầng lớp, sinh vật đứng giữa. */
-function SanDau({ lop, anh, rung, lon }: { lop: number; anh: string; rung?: number; lon?: boolean }) {
+function SanDau({ lop, anh, rung, lon, children }: { lop: number; anh: string; rung?: number; lon?: boolean; children?: ReactNode }) {
   return (
     <div className={`san-dau-vuc ${lon ? 'lon' : ''}`} style={{ backgroundImage: `url(${anhNen(NEN_TRAN[lop])}), url(${anhNen(NEN_TRAN[0])})` }}>
       <img key={`${anh}|${rung ?? 0}`} className={`sinh-vat ${rung ? 'rung' : ''}`} src={anh} alt="" draggable={false} />
+      {children}
     </div>
   );
 }
@@ -146,6 +150,11 @@ export function VucTham({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho
   const duBuoc = tl >= LUAT.kyNgo.theLucMoiBuoc;
   const tran = v.tran;
   const gap = v.gap;
+  const hu = useHieuUng(() => datRung((x) => x + 1));
+  /** Trận tự đánh với quái đang phát lại từng lượt (kết quả đã ghi vào kho từ trước). */
+  const [phatLai, datPhatLai] = useState<{ td: KetTuDong; i: number; quai: string; lop: number; ket: () => void } | null>(null);
+  const voKy = timTrongTui(kho.voCong, kho.voCong.lap.voKy);
+  const tuyet = kho.tuVi.canhGioi >= MO_O.tuyetChieu ? timTrongTui(kho.voCong, kho.voCong.lap.tuyetChieu) : null;
 
   // nhạc theo chỗ đứng: boss > chỗ nghỉ > tầng lớp
   useEffect(() => {
@@ -205,6 +214,24 @@ export function VucTham({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho
   const xuLyGap = (r: ReturnType<typeof danhQuai>, tieuDe: string, chuThanh: string, chuBai: string) => {
     if (!r || !quai) return;
     doiKho(() => r.kho);
+    // trận tự đánh: phát lại từng lượt rồi mới báo kết quả
+    if (r.tuDong) {
+      const td = r.tuDong;
+      const q = quai;
+      const ket = () => {
+        datPhatLai(null);
+        if (r.chet) {
+          phat('chet-vuc');
+          return datBao({ loai: 'chet', mat: [...chuTui(kho.vuc.tui), ...r.mat] });
+        }
+        if (r.thanh) phat('thang-vuc');
+        else if (r.dinh) phat(TIENG_TT[r.dinh]);
+        const chu = r.thanh ? chuThanh : r.hoa ? `${q.ten} gầm gừ rồi lùi vào bóng tối.` : chuBai;
+        datBao({ loai: 'ket-gap', tieuDe: `${q.ten} · ${r.thanh ? 'Thắng' : r.hoa ? 'Bất phân' : 'Bị đánh lui'}`, anh: anhQuai(q.id), lop: q.lop, chu, nhan: r.nhan, mat: r.mat });
+      };
+      datPhatLai({ td, i: 0, quai: q.id, lop: q.lop, ket });
+      return;
+    }
     if (r.chet) {
       phat('chet-vuc');
       return datBao({ loai: 'chet', mat: [...chuTui(kho.vuc.tui), ...r.mat] });
@@ -237,11 +264,13 @@ export function VucTham({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho
     const r = nguoiDanh(kho, hd);
     if (!r) return;
     doiKho(() => r.kho);
-    if (hd.loai === 'luc' || hd.loai === 'thanThuc') {
+    if (hd.loai === 'vo-ky' || hd.loai === 'tuyet-chieu') {
       phat('danh-trung-vuc');
+      if (hd.loai === 'tuyet-chieu') setTimeout(() => phat('gam-boss'), 150);
       datRung((x) => x + 1);
     } else if (hd.loai === 'do') phat('do-don');
     else phat('hao-cam');
+    hu.phat(r.vfx);
     ketTran(r, tran.boss, kho.vuc.tui);
   };
   // boss đánh trả chậm một giây sau đòn của người chơi (cả khi tải lại trang giữa chừng)
@@ -256,6 +285,7 @@ export function VucTham({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho
       const r = bossDanh(k0);
       if (!r) return;
       doiKho(() => r.kho);
+      hu.phat(r.vfx);
       if (r.chieu && r.chieu.loai !== 'thuong') phat('gam-boss');
       else if (r.chieu?.dmg && !r.thuDo) phat('bi-danh');
       if (r.chieu?.dmg && !r.thuDo) datRungNguoi((x) => x + 1);
@@ -264,6 +294,22 @@ export function VucTham({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho
     }, 1000);
     return () => clearTimeout(id);
   }, [tran?.choBoss, tran?.luot]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!phatLai) return;
+    const l = phatLai.td.luot[phatLai.i];
+    if (l) {
+      hu.phat(l.vfx);
+      if (l.vfx.some((x) => x.loai === 'so' && x.ben === 'dich')) phat('danh-trung-vuc');
+      if (l.vfx.some((x) => x.loai === 'so' && x.ben === 'minh' && x.kieu === 'thuong')) setTimeout(() => phat('bi-danh'), 350);
+    }
+    const id = setTimeout(() => {
+      if (phatLai.i + 1 >= phatLai.td.luot.length) phatLai.ket();
+      else datPhatLai((c) => (c ? { ...c, i: c.i + 1 } : c));
+    }, 900);
+    return () => clearTimeout(id);
+  }, [phatLai?.i, !!phatLai]); // eslint-disable-line react-hooks/exhaustive-deps
+  const tlDanh = useMemo(() => (gap ? uocTiLeDanh(kho, 80) : 0), [gap?.quai, gap?.diem, gap?.langThang, Math.round(mau / Math.max(1, mauMax) * 20), kho.tuVi.canhGioi, kho.voCong, v.tt.yeu > 0]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ---- bản đồ ----
   const H = DINH * 2 + LUAT_VUC.soTang * KC;
@@ -378,7 +424,7 @@ export function VucTham({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho
       </footer>
 
       {/* ---- quái chặn đường ---- */}
-      {gap && quai && !bao && !moDan && (
+      {gap && quai && !bao && !moDan && !phatLai && (
         <KhungVuc tieuDe={`${quai.ten}${gap.langThang ? ' · lang thang' : diemVuc(kho, gap.diem).cut ? ' · giữ ngõ cụt' : ''}`}>
           <SanDau lop={quai.lop} anh={anhQuai(quai.id)} rung={rung} />
           <p className="loi-ke">{quai.mo}</p>
@@ -387,7 +433,8 @@ export function VucTham({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho
             <button data-im className="lua-chon" onClick={() => xuLyGap(danhQuai(kho), 'Thắng', `${quai.ten} đổ gục. Ngươi lục lọi những gì nó để lại.`, `Ngươi không địch nổi. ${quai.ten} vẫn chắn lối.`)}>
               <b>Đánh</b>
               <small>
-                {quai.kiem === 'luc' ? 'Lực' : 'Thần thức'} · <span className={`ti-le-kn ${mauTiLe(tiLeDanh(kho, luc))}`}>{phanTram(tiLeDanh(kho, luc))}</span> · thua thì dính {TRANG_THAI[quai.tt].ten.toLowerCase()}
+                Tự đánh bằng {voKy ? timBiTich(voKy.id).ten : 'quyền cước'}
+                {tuyet ? ` + ${timBiTich(tuyet.id).ten}` : ''} · thắng ~<span className={`ti-le-kn ${mauTiLe(tlDanh)}`}>{phanTram(tlDanh)}</span> · yếu trước {quai.kiem === 'luc' ? 'ngoại công' : 'nội công'} · trúng đòn dễ dính {TRANG_THAI[quai.tt].ten.toLowerCase()}
               </small>
             </button>
             <button data-im className="lua-chon" onClick={() => xuLyGap(chayTron(kho), 'Thoát thân', 'Ngươi lùi vào bóng tối, nó không đuổi theo.', 'Nó vồ trúng ngươi trước khi ngươi kịp lùi lại.')}>
@@ -409,6 +456,34 @@ export function VucTham({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho
           </div>
         </KhungVuc>
       )}
+
+      {/* ---- trận tự đánh đang phát lại ---- */}
+      {phatLai && (() => {
+        const l = phatLai.td.luot[phatLai.i];
+        const q = timQuai(phatLai.quai);
+        return (
+          <KhungVuc tieuDe={`${q.ten} · lượt ${phatLai.i + 1}`}>
+            <SanDau lop={phatLai.lop} anh={anhQuai(q.id)} rung={rung}>
+              <LopHieuUng ds={hu.ds} ben="dich" />
+              <LopHieuUng ds={hu.ds} ben="minh" />
+            </SanDau>
+            <ThanhMau loai="mau-boss" nay={l?.mauDich ?? 0} max={phatLai.td.mauMaxDich} chu={q.ten} />
+            <ThanhMau loai="mau" nay={l?.mauMinh ?? 0} max={mauMax} chu={`Máu ${Math.round(l?.mauMinh ?? 0)}/${mauMax}`} />
+            <div className="nhat-ky tu-dong">
+              {phatLai.td.luot.slice(0, phatLai.i + 1).reverse().map((x, j) => (
+                <p key={phatLai.i - j} className={j === 0 ? 'moi' : ''}>
+                  Lượt {phatLai.i + 1 - j}: {x.dong.join(' ')}
+                </p>
+              ))}
+            </div>
+            <div className="hang-nut">
+              <button className="nut-nho" onClick={() => phatLai.ket()}>
+                Bỏ qua
+              </button>
+            </div>
+          </KhungVuc>
+        );
+      })()}
 
       {/* ---- cổng boss ---- */}
       {coCong && d.boss && (
@@ -441,8 +516,12 @@ export function VucTham({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho
           <div className="dau-tran">
             <b>{BOSS[tran.boss].ten}</b>
             <ThanhMau loai="mau-boss" nay={tran.mau} max={tran.mauMax} chu={`${tran.mau}/${tran.mauMax}${tran.giap > 0 ? ' · giáp hoá' : ''}${tran.cuong ? ' · hoá ma' : ''}`} />
+            <HangTrangThai bang={tran.chien?.dich} />
           </div>
-          <SanDau lop={lopTang(BOSS[tran.boss].tang)} anh={anhBoss(tran.boss, tran.anh)} rung={rung} lon />
+          <SanDau lop={lopTang(BOSS[tran.boss].tang)} anh={anhBoss(tran.boss, tran.anh)} rung={rung} lon>
+            <LopHieuUng ds={hu.ds} ben="dich" />
+            <LopHieuUng ds={hu.ds} ben="minh" />
+          </SanDau>
           <p className={`y-do ${!tran.choBoss && chieuBoss(tran, tran.yDo).loai === 'lon' ? 'nguy' : ''} ${tran.choBoss ? 'cho' : ''}`}>
             {tran.choBoss ? `${BOSS[tran.boss].ten} đang ra đòn…` : `Lượt ${tran.luot + 1}: ${chieuBoss(tran, tran.yDo).bao}`}
           </p>
@@ -458,6 +537,7 @@ export function VucTham({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho
           </div>
           <div className="nguoi-tran">
             <ThanhMau loai="mau" nay={mau} max={mauMax} chu={`Máu ${mau}/${mauMax}`} />
+            <HangTrangThai bang={tran.chien?.minh} khien={tran.chien?.khien} />
             <DongTrangThai kho={kho} />
             {thu && (
               <div className="thu-tran">
@@ -469,17 +549,21 @@ export function VucTham({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho
             )}
           </div>
           <div className="nut-tran">
-            <button data-im className="nut" disabled={!!tran.choBoss} onClick={() => hanhDong({ loai: 'luc' })}>
-              Đánh bằng sức mạnh
-              <small>~{Math.round(satThuong(kho, tran, 'luc', luc))}</small>
+            <button data-im className="nut nut-chieu" disabled={!!tran.choBoss} onClick={() => hanhDong({ loai: 'vo-ky' })}>
+              {voKy && timBiTich(voKy.id).he && <img src={`./hinh/combat/loai/${timBiTich(voKy.id).he}.webp`} alt="" />}
+              {voKy ? timBiTich(voKy.id).ten : 'Quyền cước'}
+              <small>{voKy ? timBiTich(voKy.id).moTa : 'Chưa lắp võ kỹ'}</small>
             </button>
-            <button data-im className="nut" disabled={!!tran.choBoss} onClick={() => hanhDong({ loai: 'thanThuc' })}>
-              Đánh bằng thần thức
-              <small>~{Math.round(satThuong(kho, tran, 'thanThuc', luc))}</small>
+            <button data-im className="nut nut-chieu tuyet" disabled={!!tran.choBoss || !tuyetChieuBossSan(kho, tran, luc)} onClick={() => hanhDong({ loai: 'tuyet-chieu' })}>
+              {tuyet && timBiTich(tuyet.id).he && <img src={`./hinh/combat/icon-tc/${timBiTich(tuyet.id).he}.webp`} alt="" />}
+              {tuyet ? timBiTich(tuyet.id).ten : 'Tuyệt chiêu'}
+              <small>
+                {kho.tuVi.canhGioi < MO_O.tuyetChieu ? 'Mở ở Trúc Cơ' : !tuyet ? 'Chưa lắp' : (tran.chien?.hoi ?? 0) > 0 ? `Hồi chiêu: còn ${tran.chien!.hoi} lượt` : timBiTich(tuyet.id).moTa}
+              </small>
             </button>
             <button data-im className="nut" disabled={!!tran.choBoss} onClick={() => hanhDong({ loai: 'do' })}>
-              Đỡ đòn
-              <small>chỉ nhận {phanTram(LUAT_VUC.doDon)}</small>
+              Thủ
+              <small>chỉ nhận {phanTram(LUAT_VUC.doDon)} · +1 Khí thế</small>
             </button>
             <button className="nut" disabled={!!tran.choBoss} onClick={() => datMoDan(true)}>
               Dùng đan

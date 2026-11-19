@@ -1,6 +1,7 @@
 // Thiên mệnh: mọi thuộc tính của nhân vật đều quay ngẫu nhiên theo bảng có trọng số — người chơi không được chọn.
 // Mỗi thuộc tính gắn với một lợi thế cụ thể trong luyện đan hoặc tu luyện (hàm loiThe ở cuối file).
 import { LOI_THE_GOC, type ChiSo, type LoiThe } from './duLieu.ts';
+import { quayThienPhu, type BacThienPhu, type He } from './voCong.ts';
 
 /** Độ hiếm để tô màu: 0 thường, 1 khá, 2 hiếm, 3 cực hiếm. */
 export type DoHiem = 0 | 1 | 2 | 3;
@@ -111,6 +112,8 @@ export interface NhanVat {
   /** 1–100. */
   khiVan: number;
   dang: { mat: number; toc: number; ao: number };
+  /** Thiên phú võ học từng hệ (voCong.ts). Nhân vật tạo trước khi có võ công thì không có: quay cố định theo tên. */
+  thienPhu?: Record<He, BacThienPhu>;
 }
 
 function chonTheoTrong<T extends { trong: number }>(ds: readonly T[], rng: () => number): T {
@@ -138,7 +141,7 @@ export function taoNhanVat(rng: () => number = Math.random, gioiTinh?: NhanVat['
   const xt = chonTheoTrong(XUAT_THAN, rng);
   const ngauNhienNu = rng() < 0.5;
   const nu = gioiTinh ? gioiTinh === 'Nữ' : ngauNhienNu;
-  return {
+  const nv: NhanVat = {
     ten: tenNgauNhien(nu ? 'Nữ' : 'Nam', rng),
     gioiTinh: nu ? 'Nữ' : 'Nam',
     gioiDien: gd.id,
@@ -153,6 +156,8 @@ export function taoNhanVat(rng: () => number = Math.random, gioiTinh?: NhanVat['
       ao: 1 + Math.floor(rng() * SO_KIEU.ao),
     },
   };
+  // quay sau cùng để các thuộc tính cũ giữ nguyên thứ tự gieo
+  return { ...nv, thienPhu: quayThienPhu(xt.id, rng) };
 }
 
 export const timGioiDien = (id: string) => GIOI_DIEN.find((d) => d.id === id) ?? GIOI_DIEN[0];

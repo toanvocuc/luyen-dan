@@ -17,6 +17,7 @@ import {
   type NhanVat,
 } from '../game/nhanVat.ts';
 import { BupBe } from './BupBe.tsx';
+import { CAC_HE, HE, NGUYEN_TO, THIEN_PHU, heChinh, linhCanCua, thienPhuCua } from '../game/voCong.ts';
 
 export function ManMoDau({
   daCoNhanVat,
@@ -76,7 +77,20 @@ export function dongThienMenh(nv: NhanVat): DongThienMenh[] {
     { nhan: 'Giới diện', giaTri: gd.ten, moTa: gd.moTa, hiem: gd.hiem, kho: GIOI_DIEN.map((d) => d.ten) },
     { nhan: 'Giới tính', giaTri: nv.gioiTinh, moTa: '', hiem: 0, kho: ['Nam', 'Nữ'] },
     { nhan: 'Xuất thân', giaTri: xt.ten, moTa: xt.moTa, hiem: xt.hiem, kho: XUAT_THAN.filter((d) => d.trong > 0).map((d) => d.ten), anh: xt.anh ? `./hinh/xuat-than/${xt.id}.webp` : undefined },
-    { nhan: 'Linh căn', giaTri: lc.ten, moTa: lc.moTa, hiem: lc.hiem, kho: LINH_CAN.map((d) => d.ten) },
+    { nhan: 'Linh căn', giaTri: lc.ten, moTa: `${lc.moTa} Hệ: ${linhCanCua(nv).he.map((h) => NGUYEN_TO[h].ten).join(', ')}.`, hiem: lc.hiem, kho: LINH_CAN.map((d) => d.ten) },
+    (() => {
+      const tp = thienPhuCua(nv);
+      const he = heChinh(tp);
+      const b = THIEN_PHU[tp[he]];
+      const phu = CAC_HE.filter((h) => h !== he && tp[h] >= 2).map((h) => HE[h].dao);
+      return {
+        nhan: 'Thiên phú',
+        giaTri: `${HE[he].dao} (${b.ten})`,
+        moTa: `Võ công hệ ${HE[he].ten} luyện nhanh ×${b.luyenThuc}, sát thương +${Math.round(b.satThuong * 100)}%.${phu.length ? ` Khá: ${phu.join(', ')}.` : ''}`,
+        hiem: (tp[he] >= 4 ? 3 : tp[he] >= 3 ? 2 : 1) as DoHiem,
+        kho: CAC_HE.map((h) => HE[h].dao),
+      };
+    })(),
     { nhan: 'Thể chất', giaTri: tc.ten, moTa: tc.moTa, hiem: tc.hiem, kho: THE_CHAT.map((d) => d.ten) },
     { nhan: 'Tư chất', giaTri: `${nv.tuChat} / 100`, moTa: 'Tư chất cao thì con lắc chậm hơn và khoảng xanh rộng hơn khi tôi đan.', hiem: hiemChiSo(nv.tuChat), kho: so },
     { nhan: 'Khí vận', giaTri: `${nv.khiVan} / 100`, moTa: 'Khí vận cao thì phẩm đan khi mở lò tốt hơn và dễ vượt đan kiếp hơn.', hiem: hiemChiSo(nv.khiVan), kho: so },

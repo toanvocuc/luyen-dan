@@ -1380,6 +1380,12 @@ button {
 .bang-thien-menh {
   display: flex;
   flex-direction: column;
+  /* màn thấp: bảng tự cuộn, nút Tạo lại / Bước vào tiên lộ luôn nằm trong màn */
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  padding-right: 6px;
 }
 .bang-thien-menh .dong {
   display: grid;
@@ -5443,4 +5449,142 @@ p.nhan-mat.vuc {
     width: 48px;
     height: 48px;
   }
+}
+
+/* ---------- hiệu ứng trận đánh (HieuUngTran.tsx) ---------- */
+.san-dau-vuc {
+  position: relative;
+}
+.lop-hieu-ung {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.lop-hieu-ung .vfx {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: 62%;
+  max-width: 260px;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  mix-blend-mode: screen;
+  animation: vfx-bung 0.75s ease-out forwards;
+}
+.lop-hieu-ung .vfx-tuyet {
+  width: 92%;
+  max-width: 380px;
+  animation-duration: 1s;
+}
+.lop-hieu-ung .vfx-nguyen-to {
+  width: 44%;
+  animation-delay: 0.12s;
+  opacity: 0;
+}
+.lop-hieu-ung .vfx-phu {
+  width: 40%;
+}
+.lop-hieu-ung.ben-minh .vfx {
+  top: 78%;
+  width: 38%;
+}
+@keyframes vfx-bung {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.55) rotate(-8deg); }
+  25% { opacity: 1; transform: translate(-50%, -50%) scale(1.05) rotate(0deg); }
+  70% { opacity: 0.9; }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.25); }
+}
+.so-bay {
+  position: absolute;
+  top: 40%;
+  transform: translateX(-50%);
+  font-weight: 700;
+  font-size: 22px;
+  color: #fff3e0;
+  text-shadow: 0 0 6px #000, 0 2px 2px #000;
+  animation: so-bay 1s ease-out forwards;
+  white-space: nowrap;
+}
+.lop-hieu-ung.ben-minh .so-bay {
+  top: 72%;
+  color: #ff8a80;
+}
+.so-bay.bao {
+  font-size: 32px;
+  color: #ffd54f;
+}
+.so-bay.dot {
+  font-size: 17px;
+  color: #ff9e7a;
+}
+.so-bay.hoi,
+.lop-hieu-ung.ben-minh .so-bay.hoi {
+  color: #8ef0a0;
+}
+.so-bay.ne,
+.lop-hieu-ung.ben-minh .so-bay.ne {
+  color: #b3e5ff;
+}
+.so-bay.khien,
+.lop-hieu-ung.ben-minh .so-bay.khien {
+  color: #ffe9a8;
+  font-size: 16px;
+}
+@keyframes so-bay {
+  0% { opacity: 0; transform: translate(-50%, 10px) scale(0.7); }
+  15% { opacity: 1; transform: translate(-50%, 0) scale(1.15); }
+  100% { opacity: 0; transform: translate(-50%, -46px) scale(1); }
+}
+.hang-tt-tran {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+.tt-tran {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: rgba(10, 8, 12, 0.7);
+  border: 1px solid rgba(190, 160, 110, 0.35);
+}
+.tt-tran img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.tt-tran b {
+  position: absolute;
+  right: -3px;
+  bottom: -4px;
+  font-size: 11px;
+  line-height: 1;
+  padding: 1px 3px;
+  border-radius: 6px;
+  background: #1a0f0f;
+  color: #ffd27a;
+}
+.nut-tran .nut-chieu {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 6px;
+  align-items: center;
+  text-align: left;
+}
+.nut-tran .nut-chieu img {
+  grid-row: span 2;
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+}
+.nut-tran .nut-chieu small {
+  grid-column: 2;
+}
+.nut-tran .nut-chieu.tuyet:not(:disabled) {
+  box-shadow: 0 0 10px rgba(255, 196, 90, 0.55);
+}
+.nhat-ky.tu-dong {
+  max-height: 120px;
 }

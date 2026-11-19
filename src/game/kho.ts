@@ -5,6 +5,8 @@ import { loiThe, timXuatThan, type NhanVat } from './nhanVat.ts';
 import type { QuaMoDau } from './quaMoDau.ts';
 import { tacDungThu, type Thu } from './linhThu.ts';
 import { buVuc, vatCanDotPha, timVatVuc, vucMoi, type VucTrangThai } from './vucTham.ts';
+import { buVoCong, linhCanCua, MO_O, thienPhuCua, timTrongTui, voCongKhoiDau, type VoCongKho } from './voCong.ts';
+import type { HoSo } from './chienDau.ts';
 
 export interface Kho {
   phienBan: 3;
@@ -110,6 +112,8 @@ export interface Kho {
   /** Vực Thẳm (xem game/vucTham.ts) và vật phẩm Vực Thẳm đã mang ra ngoài. */
   vuc: VucTrangThai;
   vatVuc: Record<string, number>;
+  /** Võ công: bí tịch đang giữ và các ô đang lắp (voCong.ts). */
+  voCong: VoCongKho;
   /** Lần cuối (ms) nhịp tu luyện chạy; dùng để tính bế quan khi vắng mặt. 0 = chưa có. */
   lucTuLuyen: number;
   /** Kết quả bế quan khi vắng mặt, chờ người chơi xem. */
@@ -219,6 +223,7 @@ export function khoMoi(nv: NhanVat | null = null): Kho {
     thuMoiNo: null,
     vuc: vucMoi(),
     vatVuc: {},
+    voCong: voCongKhoiDau(nv),
   };
 }
 
@@ -272,6 +277,7 @@ function buKho(k: Kho | null): Kho | null {
       thuMoiNo: k.thuMoiNo ?? null,
       vuc: buVuc(k.vuc),
       vatVuc: { ...k.vatVuc },
+      voCong: buVoCong(k.voCong, k.nhanVat),
       lucTuLuyen: k.lucTuLuyen ?? 0,
       beQuan: k.beQuan ?? null,
   });
@@ -993,6 +999,44 @@ export function loiTheKho(k: Kho): LoiThe {
 // ---------- chỉ số nhân vật ----------
 
 /** Hệ số bẩm sinh của từng chỉ số: thể chất cho điểm mạnh riêng, tư chất nâng thần thức, còn lại là căn cốt mỗi người một khác. */
+/** Tâm pháp đang lắp nhân chỉ số gốc (Kim Cương Kinh khí huyết +12%…). */
+const TAM_PHAP_CHI_SO: Record<string, [ChiSo, number]> = {
+  'kim-cuong': ['khiHuyet', 1.12],
+  'thanh-tam': ['thanThuc', 1.12],
+  'thiet-bo': ['phongNgu', 1.15],
+  'cuong-huyet': ['luc', 1.12],
+};
+/** Các tâm pháp đang lắp và đã mở ô. */
+export function tamPhapDangLap(k: Kho): string[] {
+  const v = k.voCong;
+  if (!v) return [];
+  return v.lap.tamPhap
+    .map((uid, i) => (k.tuVi.canhGioi >= MO_O.tamPhap[i] ? timTrongTui(v, uid)?.id : undefined))
+    .filter((x): x is string => !!x);
+}
+function heSoTamPhap(k: Kho, cs: ChiSo): number {
+  let hs = 1;
+  for (const id of tamPhapDangLap(k)) if (TAM_PHAP_CHI_SO[id]?.[0] === cs) hs *= TAM_PHAP_CHI_SO[id][1];
+  return hs;
+}
+
+/** Hồ sơ chiến đấu của người chơi (chienDau.ts). `chuanThanPhap`: thân pháp chuẩn của đối thủ. */
+export function hoSoChien(k: Kho, chuanThanPhap: number, luc = Date.now()): HoSo {
+  const v = k.voCong;
+  const cg = k.tuVi.canhGioi;
+  return {
+    voKy: timTrongTui(v, v.lap.voKy),
+    tuyetChieu: cg >= MO_O.tuyetChieu ? timTrongTui(v, v.lap.tuyetChieu) : null,
+    thanPhap: cg >= MO_O.thanPhap ? timTrongTui(v, v.lap.thanPhap)?.id ?? null : null,
+    tamPhap: tamPhapDangLap(k),
+    thienPhu: thienPhuCua(k.nhanVat),
+    linhCan: linhCanCua(k.nhanVat),
+    rThanPhap: chiSo(k, 'thanPhap', luc) / Math.max(1, chuanThanPhap),
+    mauMax: mauToiDa(k),
+    mauNay: mauHienTai(k, luc),
+  };
+}
+
 function heSoBamSinh(k: Kho, cs: ChiSo): number {
   const nv = k.nhanVat;
   if (!nv) return 1;
@@ -1003,6 +1047,7 @@ function heSoBamSinh(k: Kho, cs: ChiSo): number {
   if (cs === 'thanThuc' && nv.theChat === 'bang-tam') hs *= 1.25;
   if (nv.theChat === 'dan-the') hs *= cs === 'thanThuc' ? 1.2 : cs === 'khiHuyet' ? 1.1 : 1;
   if (cs === 'thanThuc') hs *= 0.9 + nv.tuChat / 500;
+  hs *= heSoTamPhap(k, cs);
   hs *= timXuatThan(nv.xuatThan).chiSo?.[cs] ?? 1;
   return hs;
 }
