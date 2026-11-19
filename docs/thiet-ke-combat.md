@@ -192,6 +192,44 @@ Như vậy chỉ cần ~20 biểu tượng chiêu nhưng có hàng trăm biến 
 
 ---
 
+## 5b. Thiên phú võ học (căn cốt)
+
+Như Tale of Immortal: mỗi nhân vật có **căn cốt riêng cho từng hệ võ**, quay lúc tạo nhân vật. Người chơi nhìn vào đó mà chọn đi theo thiên phú, hoặc cố tình đi đường khác (chậm hơn, nhưng vẫn đi được).
+
+**Năm bậc căn cốt cho mỗi hệ** (Kiếm, Đao, Thương, Quyền, Chưởng, Chỉ):
+
+| Bậc | Luyện thục | Sát thương hệ đó | Màu |
+|---|---|---|---|
+| Kém | ×0,7 | −5% | xám |
+| Thường | ×1 | 0 | trắng |
+| Khá | ×1,3 | +5% | lục |
+| Giỏi | ×1,6 | +10% | lam |
+| Thiên tài | ×2 | +15%, mở thêm 1 phụ hiệu | vàng |
+
+**Luật quay:**
+- Mỗi nhân vật có đúng **1 thiên phú chính** (ít nhất Khá; 10% ra Thiên tài).
+- Có thể có thêm 1 hệ phụ (Khá), còn lại phần lớn Thường, 1–2 hệ Kém.
+- **Xuất thân nghiêng thiên phú chính** về một hệ (không bắt buộc, 60%):
+
+| Xuất thân | Nghiêng về |
+|---|---|
+| Nông gia | Quyền |
+| Thư hương môn đệ | Chỉ |
+| Con nhà thợ săn | Thương |
+| Gia đình y sư | Chưởng |
+| Con nhà thợ rèn | Đao |
+| Đạo đồng | Kiếm |
+| Cô nhi, Thương gia, Thế gia luyện đan | ngẫu nhiên |
+
+**Hiển thị:**
+- Màn tạo nhân vật: thêm **một dòng** "Thiên phú: Kiếm đạo (Giỏi)" — nằm trong 5 lần tạo lại.
+- Bảng nhân vật: đủ 6 hệ dạng thanh màu.
+- Bí tịch hợp thiên phú có dấu ★ trong túi để người chơi nhận ra ngay.
+
+**Nhân vật đã tạo trước bản này:** quay căn cốt cố định theo tên (không đổi khi nạp lại), cùng luật trên.
+
+**Đổi hướng về sau:** đan hiếm **Tẩy Cốt Đan** nâng một hệ lên một bậc (tối đa Giỏi) — thêm một đầu ra cho luyện đan.
+
 ## 6. Trận theo lượt — giao diện
 
 ```
@@ -252,5 +290,6 @@ Tổng ≈ **3 tuần** làm việc (chưa tính thần khí, trang phục).
 ## 10. Cần chốt
 
 1. Linh căn thêm **hệ** (mục 4.2) — đồng ý?
+4. Thiên phú võ học (mục 5b): 5 bậc, xuất thân nghiêng thiên phú — đồng ý?
 2. Kiểu B: có cho "tự uống đan" không, hay uống đan chỉ khi đánh tay?
 3. 20 bí tịch gốc với tên như mục 5.3 — có muốn đổi tên / thêm bớt hệ không?
