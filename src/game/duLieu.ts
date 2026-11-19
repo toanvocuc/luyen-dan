@@ -246,7 +246,6 @@ const DAN_GOC: readonly DanPhuong[] = [
   {
     id: 'giai-doc-dan',
     ten: 'Giải Độc Đan',
-    anh: 'tay-tuy-dan',
     moTa: 'Dùng trong Vực Thẳm: giải nhiễm độc và hồi chút máu. Phẩm càng cao hồi càng nhiều.',
     bac: 'Trúc Cơ',
     lieu: ['linh-thao', 'han-bang-hoa', 'chu-qua'],
@@ -263,7 +262,6 @@ const DAN_GOC: readonly DanPhuong[] = [
   {
     id: 'chi-huyet-dan',
     ten: 'Chỉ Huyết Đan',
-    anh: 'pha-chuong-dan',
     moTa: 'Dùng trong Vực Thẳm: cầm chảy máu và hồi máu. Phẩm càng cao hồi càng nhiều.',
     bac: 'Trúc Cơ',
     lieu: ['huyet-lien', 'chu-qua', 'dia-tam-sam'],
@@ -280,7 +278,6 @@ const DAN_GOC: readonly DanPhuong[] = [
   {
     id: 'thanh-tam-dan',
     ten: 'Thanh Tâm Đan',
-    anh: 'bang-tam-dan',
     moTa: 'Dùng trong Vực Thẳm: trấn ma khí, giảm hắc hoá. Phẩm càng cao giảm càng nhiều.',
     bac: 'Trúc Cơ',
     lieu: ['han-bang-hoa', 'long-tu-thao', 'linh-thao'],
@@ -299,7 +296,6 @@ const DAN_GOC: readonly DanPhuong[] = [
   {
     id: 'hoi-nguyen-dan',
     ten: 'Hồi Nguyên Đan',
-    anh: 'bang-tam-dan',
     moTa: 'Dùng trong trận: hồi chân nguyên. Phẩm càng cao hồi càng nhiều.',
     bac: 'Luyện Khí',
     lieu: ['linh-thao', 'han-bang-hoa', 'linh-thao'],
@@ -316,7 +312,6 @@ const DAN_GOC: readonly DanPhuong[] = [
   {
     id: 'ngo-dao-dan',
     ten: 'Ngộ Đạo Đan',
-    anh: 'huyen-nguyen-dan',
     moTa: 'Ngộ ra tinh tuý một bí tịch: cộng điểm luyện thục. Dùng ở trang Nhân vật.',
     bac: 'Trúc Cơ',
     lieu: ['tu-van-chi', 'linh-thao', 'kim-diep-truc'],
@@ -334,7 +329,6 @@ const DAN_GOC: readonly DanPhuong[] = [
   {
     id: 'tay-cot-dan',
     ten: 'Tẩy Cốt Đan',
-    anh: 'de-menh-dan',
     moTa: 'Gột rửa căn cốt: nâng thiên phú một hệ võ lên một bậc (tối đa Giỏi). Dùng ở trang Nhân vật.',
     bac: 'Nguyên Anh',
     tuoiToiThieu: 1,
