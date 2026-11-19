@@ -149,7 +149,7 @@ export function TuTien({
             {(
               [
                 ['tui-do', 'Túi đồ', '囊', () => datBang('hanh-trang'), 0, false],
-                ['thien-menh', 'Nhân vật & võ công', '武', () => datBang('nhan-vat'), 0, false],
+                ['nhan-vat', 'Nhân vật & võ công', '武', () => datBang('nhan-vat'), 0, false],
                 ['mon-phai', 'Đơn hàng', '門', onMonPhai, donDu, false],
                 ['dan-thu', 'Đan thư', '書', onDanThu, 0, false],
                 ['tang-bao-cac', 'Tông môn', '寶', onTongMon, 0, false],
