@@ -7,6 +7,8 @@ import { anhHuongChiSo, chiSoChuaGiam, chiSo, chiSoDan, danBinhCanh, dangBinhCan
 import type { NhanVat } from '../game/nhanVat.ts';
 import { dongHo, useBayGio } from './PhuongThi.tsx';
 import { BupBe } from './BupBe.tsx';
+import { NhanVatTrang, chuBiTich } from './NhanVatTrang.tsx';
+import { PHAM_BI_TICH, TEN_LOAI_BT, anhBiTich, oDangLap, timBiTich, HE } from '../game/voCong.ts';
 import { dongThienMenh } from './ThienMenh.tsx';
 import { giayKhoaMatHon, giayYeuMatHon } from '../game/kyNgo.ts';
 import { NutAnh } from './DieuHuong.tsx';
@@ -15,7 +17,7 @@ import { VAT_VUC, anhVatVuc, dotBua, timVatVuc } from '../game/vucTham.ts';
 import { anhThu, noHienTai, thuXuatChien, timLoaiThu } from '../game/linhThu.ts';
 import { NHIEM_VU, chuThuong, nhanThuongDan, nhiemVuNay, type NoiLam } from '../game/danDuong.ts';
 
-type Bang = null | 'hanh-trang' | 'thien-menh' | 'dot-pha' | 'chi-so' | 'binh-canh';
+type Bang = null | 'hanh-trang' | 'thien-menh' | 'dot-pha' | 'chi-so' | 'binh-canh' | 'nhan-vat';
 
 export function TuTien({
   kho,
@@ -52,6 +54,12 @@ export function TuTien({
   onChoiLai: () => void;
 }) {
   const [bang, datBang] = useState<Bang>(null);
+  /** Menu Hành trang (gom các nút phụ của động phủ). */
+  const [moMenu, datMoMenu] = useState(false);
+  /** Cuốn bí tịch chọn sẵn khi mở trang nhân vật từ túi đồ. */
+  const [btChon, datBtChon] = useState<number | null>(null);
+  /** Cách xếp bí tịch trong túi đồ. */
+  const [xepBt, datXepBt] = useState<'pham' | 'he' | 'loai'>('pham');
   const can = tuViCan(kho.tuVi.tang, kho.tuVi.canhGioi);
   /** Kết quả lần đột phá vừa rồi, để dựng cảnh báo tin; bấm vào là tắt. */
   const [ketQuaDotPha, datKetQuaDotPha] = useState<null | { thanh: boolean; ten: string; luot: number; giuLai: number; hoDao: boolean; dai: boolean; binhCanh?: boolean }>(null);
@@ -130,16 +138,43 @@ export function TuTien({
         </span>
       </header>
 
+      {/* các nút phụ gom vào một menu; chấm đỏ của mục bên trong hiện luôn trên nút gom */}
       <div className="cot-nut">
-        <NutAnh anh="tui-do" ten="Túi đồ" chu="囊" onClick={() => datBang('hanh-trang')} />
-        <NutAnh anh="mon-phai" ten="Đơn hàng" chu="門" so={donDu} onClick={onMonPhai} />
-        <NutAnh anh="dan-thu" ten="Đan thư" chu="書" onClick={onDanThu} />
-        <NutAnh anh="tang-bao-cac" ten="Tàng Bảo" chu="寶" onClick={onTangBao} />
+        <NutAnh anh="tui-do" ten={`Hành trang ${moMenu ? '▴' : '▾'}`} chu="囊" dang={moMenu} cham={donDu > 0 || chamThu} onClick={() => datMoMenu((x) => !x)} />
+        {moMenu && (
+          <div className="menu-hanh-trang">
+            {(
+              [
+                ['tui-do', 'Túi đồ', '囊', () => datBang('hanh-trang'), 0, false],
+                ['thien-menh', 'Nhân vật & võ công', '武', () => datBang('nhan-vat'), 0, false],
+                ['mon-phai', 'Đơn hàng', '門', onMonPhai, donDu, false],
+                ['dan-thu', 'Đan thư', '書', onDanThu, 0, false],
+                ['tang-bao-cac', 'Tông môn · Tàng Bảo', '寶', onTangBao, 0, false],
+                ['linh-thu', 'Linh thú', '獸', onLinhThu, 0, chamThu],
+              ] as [string, string, string, () => void, number, boolean][]
+            ).map(([anh, ten, chu, bam, so, cham]) => (
+              <button
+                key={anh}
+                className="muc-menu nut-tron"
+                onClick={() => {
+                  datMoMenu(false);
+                  bam();
+                }}
+              >
+                <span className="mat-nut">
+                  <img src={`./hinh/ui/nut-${anh}.webp`} alt="" draggable={false} />
+                  {cham && <i className="cham-do" />}
+                </span>
+                <span className="ten-nut">{ten}</span>
+                {so > 0 && <em className="so-menu">{so}</em>}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="cot-nut trai nut-nhiem-vu">
         {nhiemVu && <NutAnh anh="nhiem-vu" ten="Nhiệm vụ" chu="卷" dang={moNhiemVu} cham={kho.danDuong.xong} onClick={() => datMoNhiemVu((x) => !x)} />}
-        <NutAnh anh="linh-thu" ten="Linh thú" chu="獸" cham={chamThu} onClick={onLinhThu} />
       </div>
       {nhiemVu && moNhiemVu && (
         <section className={`the-nhiem-vu ${kho.danDuong.xong ? 'xong' : ''}`}>
@@ -508,6 +543,20 @@ export function TuTien({
         </div>
       )}
 
+      {bang === 'nhan-vat' && (
+        <NhanVatTrang
+          kho={kho}
+          doiKho={doiKho}
+          chonDau={btChon}
+          onDong={() => {
+            datBang(null);
+            datBtChon(null);
+          }}
+          onChiSo={() => datBang('chi-so')}
+          onThienMenh={() => datBang('thien-menh')}
+        />
+      )}
+
       {bang === 'hanh-trang' && (
         <div className="lop-phu" onClick={() => datBang(null)}>
           <div className="bang tam" onClick={(e) => e.stopPropagation()}>
@@ -539,6 +588,57 @@ export function TuTien({
                     </div>
                   </div>
                 )}
+              </>
+            )}
+
+            {kho.voCong.tui.length > 0 && (
+              <>
+                <h3>Bí tịch</h3>
+                <div className="hang-chon loc-tui">
+                  {(
+                    [
+                      ['pham', 'Theo phẩm'],
+                      ['he', 'Theo hệ'],
+                      ['loai', 'Theo loại'],
+                    ] as const
+                  ).map(([id, ten]) => (
+                    <button key={id} className={`the nho ${xepBt === id ? 'chon' : ''}`} onClick={() => datXepBt(id)}>
+                      {ten}
+                    </button>
+                  ))}
+                </div>
+                {[...kho.voCong.tui]
+                  .sort((a, b) => {
+                    const ga = timBiTich(a.id);
+                    const gb = timBiTich(b.id);
+                    if (xepBt === 'he') return (ga.he ?? 'z').localeCompare(gb.he ?? 'z') || b.pham - a.pham;
+                    if (xepBt === 'loai') return ga.loai.localeCompare(gb.loai) || b.pham - a.pham;
+                    return b.pham - a.pham || b.cap - a.cap;
+                  })
+                  .map((b) => (
+                    <div key={b.uid} className="dong-tui dong-bi-tich" style={{ borderLeftColor: PHAM_BI_TICH[b.pham].mau }}>
+                      <img src={anhBiTich(b.id)} alt="" />
+                      <div className="than-dong">
+                        <b style={{ color: PHAM_BI_TICH[b.pham].mau }}>{timBiTich(b.id).ten}</b>
+                        <div className="hang-pham">
+                          <span>
+                            {TEN_LOAI_BT[timBiTich(b.id).loai]}
+                            {timBiTich(b.id).he ? ` · ${HE[timBiTich(b.id).he!].ten}` : ''} · {chuBiTich(b)}
+                            {oDangLap(kho.voCong, b.uid) ? ' · đang lắp' : ''}
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        className="nut-nho"
+                        onClick={() => {
+                          datBtChon(b.uid);
+                          datBang('nhan-vat');
+                        }}
+                      >
+                        Lắp / xem
+                      </button>
+                    </div>
+                  ))}
               </>
             )}
 

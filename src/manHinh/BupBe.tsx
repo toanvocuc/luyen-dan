@@ -11,6 +11,11 @@ export function anhNhanVat(gioiTinh: NhanVat['gioiTinh'] | undefined, canhGioi: 
   return `./hinh/nhan-vat-thien/${gioiTinh === 'Nữ' ? 'nu' : 'nam'}-${BO_THEO_BAC[bacNen(canhGioi) - 1]}.webp`;
 }
 
+/** Ảnh nhân vật đứng (trang nhân vật), cùng bộ trang phục với ảnh ngồi thiền. */
+export function anhNhanVatDung(gioiTinh: NhanVat['gioiTinh'] | undefined, canhGioi: number): string {
+  return `./hinh/nhan-vat-dung/${gioiTinh === 'Nữ' ? 'nu' : 'nam'}-${BO_THEO_BAC[bacNen(canhGioi) - 1]}.webp`;
+}
+
 export function BupBe({
   gioiTinh = 'Nam',
   canhGioi = 0,

@@ -68,3 +68,19 @@ for ten in sorted(os.listdir(VAO)):
     nen.alpha_composite(hinh, ((KHUNG - hinh.width) // 2, KHUNG - hinh.height))
     nen.save(os.path.join(RA, goc_ten + '.webp'), 'WEBP', quality=86, alpha_quality=90, method=6)
     print('ok', goc_ten, hinh.size)
+
+# ảnh đứng (trang nhân vật): Hinh_anh/nhan-vat-dung/<gioi>-<bo>.png -> public/hinh/nhan-vat-dung/, cao 720, cắt sát hình
+VAO2 = os.path.join(GOC, 'Hinh_anh', 'nhan-vat-dung')
+RA2 = os.path.join(GOC, 'public', 'hinh', 'nhan-vat-dung')
+if os.path.isdir(VAO2):
+    os.makedirs(RA2, exist_ok=True)
+    for ten in sorted(os.listdir(VAO2)):
+        goc_ten, duoi = os.path.splitext(ten)
+        if duoi.lower() != '.png':
+            continue
+        hinh = tach_nen_mep(Image.open(os.path.join(VAO2, ten)).convert('RGB'))
+        hinh = hinh.crop(hinh.getbbox())
+        tl = 720 / hinh.height
+        hinh = hinh.resize((round(hinh.width * tl), 720), Image.LANCZOS)
+        hinh.save(os.path.join(RA2, goc_ten + '.webp'), 'WEBP', quality=86, alpha_quality=90, method=6)
+        print('ok dung', goc_ten, hinh.size)

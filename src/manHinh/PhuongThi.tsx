@@ -28,8 +28,9 @@ import {
   nhanTroCap,
   type Kho,
 } from '../game/kho.ts';
+import { DauGia, QuayBiTichCho } from './ChoBiTich.tsx';
 
-type Quay = 'duoc-lieu' | 'dan' | 'phu-lieu' | 'lo-dan';
+type Quay = 'duoc-lieu' | 'dan' | 'phu-lieu' | 'lo-dan' | 'bi-tich' | 'dau-gia';
 
 /** Đồng hồ đếm ngược: "2g 05p" khi còn trên một giờ, "4:32" khi dưới một giờ. */
 export function dongHo(giay: number): string {
@@ -84,7 +85,15 @@ export function PhuongThi({ kho, doiKho, onDong }: { kho: Kho; doiKho: (ham: (k:
           <button className={`the nho ${quay === 'lo-dan' ? 'chon' : ''}`} onClick={() => datQuay('lo-dan')}>
             Lò đan
           </button>
+          <button className={`the nho ${quay === 'bi-tich' ? 'chon' : ''}`} onClick={() => datQuay('bi-tich')}>
+            Bí tịch
+          </button>
+          <button className={`the nho ${quay === 'dau-gia' ? 'chon' : ''}`} onClick={() => datQuay('dau-gia')}>
+            Đấu giá
+          </button>
         </div>
+        {quay === 'bi-tich' && <QuayBiTichCho kho={kho} doiKho={doiKho} />}
+        {quay === 'dau-gia' && <DauGia kho={kho} doiKho={doiKho} luc={luc} />}
 
         {quay === 'duoc-lieu' &&
           DUOC_LIEU.map((d) => {

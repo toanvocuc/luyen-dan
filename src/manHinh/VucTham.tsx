@@ -43,6 +43,7 @@ import {
   tiLeChay,
   timQuai,
   tuBo,
+  hoSoBoss,
   tuyetChieuBossSan,
   uocTiLeDanh,
   type HanhDong,
@@ -51,8 +52,8 @@ import {
 import { dongHo, useBayGio } from './PhuongThi.tsx';
 import { AnhThu } from './LinhThuVien.tsx';
 import { HangTrangThai, LopHieuUng, useHieuUng } from './HieuUngTran.tsx';
-import { MO_O, timBiTich, timTrongTui } from '../game/voCong.ts';
-import type { KetTuDong } from '../game/chienDau.ts';
+import { MO_O, anhBiTich, nguyenCua, timBiTich, timTrongTui } from '../game/voCong.ts';
+import { chienMoi, duNguyen, nguyenNay, nguyenToiDa, type KetTuDong } from '../game/chienDau.ts';
 
 const KC = 92; // khoảng cách giữa hai tầng trên bản đồ (px)
 const DINH = 56; // lề trên của tầng 0
@@ -139,6 +140,8 @@ export function VucTham({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho
   const d = diemVuc(kho, v.viTri);
   const [bao, datBao] = useState<Bao>(null);
   const [moDan, datMoDan] = useState(false);
+  /** Khay kỹ năng trong trận boss. */
+  const [moKhay, datMoKhay] = useState(false);
   const [boQuaCong, datBoQuaCong] = useState<number | null>(null);
   const [rung, datRung] = useState(0);
   /** Người chơi trúng đòn: rung màn trận. */
@@ -548,25 +551,74 @@ export function VucTham({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho
               </div>
             )}
           </div>
-          <div className="nut-tran">
-            <button data-im className="nut nut-chieu" disabled={!!tran.choBoss} onClick={() => hanhDong({ loai: 'vo-ky' })}>
-              {voKy && timBiTich(voKy.id).he && <img src={`./hinh/combat/loai/${timBiTich(voKy.id).he}.webp`} alt="" />}
-              {voKy ? timBiTich(voKy.id).ten : 'Quyền cước'}
-              <small>{voKy ? timBiTich(voKy.id).moTa : 'Chưa lắp võ kỹ'}</small>
+          {(() => {
+            const hs = hoSoBoss(kho, tran, luc);
+            const st = tran.chien ?? chienMoi(nguyenToiDa(hs));
+            const nguyen = nguyenNay(st, hs);
+            const max = nguyenToiDa(hs);
+            const chieu = (
+              loai: 'vo-ky' | 'tuyet-chieu' | 'thuong',
+              ten: string,
+              anh: string | null,
+              moTa: string,
+              tieu: number,
+              duoc: boolean,
+            ) => (
+              <button
+                key={loai}
+                data-im
+                className={`dong-chieu ${loai === 'tuyet-chieu' && duoc ? 'san' : ''}`}
+                disabled={!duoc || !!tran.choBoss}
+                onClick={() => {
+                  datMoKhay(false);
+                  hanhDong({ loai });
+                }}
+              >
+                {anh ? <img src={anh} alt="" draggable={false} /> : <i />}
+                <span>
+                  <b>{ten}</b>
+                  <small>{moTa}</small>
+                </span>
+                <em>{tieu ? `${tieu} 💧` : 'Miễn phí'}</em>
+              </button>
+            );
+            const moTuyet = kho.tuVi.canhGioi >= MO_O.tuyetChieu;
+            return (
+              <>
+                <ThanhMau loai="nguyen" nay={nguyen} max={max} chu={`Chân nguyên ${Math.round(nguyen)}/${max}`} />
+                {moKhay && (
+                  <div className="khay-chieu">
+                    <h4>
+                      Kỹ năng <span>Chân nguyên {Math.round(nguyen)}</span>
+                    </h4>
+                    {voKy && chieu('vo-ky', timBiTich(voKy.id).ten, anhBiTich(voKy.id), timBiTich(voKy.id).moTa, nguyenCua(voKy.id), duNguyen(hs, st, 'vo-ky'))}
+                    {tuyet
+                      ? chieu(
+                          'tuyet-chieu',
+                          timBiTich(tuyet.id).ten,
+                          anhBiTich(tuyet.id),
+                          st.hoi > 0 ? `Hồi chiêu: còn ${st.hoi} lượt` : nguyen < nguyenCua(tuyet.id) ? 'Thiếu chân nguyên' : timBiTich(tuyet.id).moTa,
+                          nguyenCua(tuyet.id),
+                          tuyetChieuBossSan(kho, tran, luc),
+                        )
+                      : chieu('tuyet-chieu', 'Tuyệt chiêu', null, moTuyet ? 'Chưa lắp. Lắp ở Hành trang › Nhân vật & võ công.' : 'Mở ở Trúc Cơ', 0, false)}
+                    {chieu('thuong', 'Quyền cước', './hinh/combat/loai/quyen.webp', 'Đánh thường, không tốn chân nguyên', 0, true)}
+                  </div>
+                )}
+              </>
+            );
+          })()}
+          <div className="nut-tran ba-nut">
+            <button data-im className={`nut chinh ${moKhay ? 'dang' : ''}`} disabled={!!tran.choBoss} onClick={() => datMoKhay((x) => !x)}>
+              Kỹ năng {moKhay ? '▾' : '▴'}
+              <small>{voKy ? timBiTich(voKy.id).ten : 'Quyền cước'}</small>
             </button>
-            <button data-im className="nut nut-chieu tuyet" disabled={!!tran.choBoss || !tuyetChieuBossSan(kho, tran, luc)} onClick={() => hanhDong({ loai: 'tuyet-chieu' })}>
-              {tuyet && timBiTich(tuyet.id).he && <img src={`./hinh/combat/icon-tc/${timBiTich(tuyet.id).he}.webp`} alt="" />}
-              {tuyet ? timBiTich(tuyet.id).ten : 'Tuyệt chiêu'}
-              <small>
-                {kho.tuVi.canhGioi < MO_O.tuyetChieu ? 'Mở ở Trúc Cơ' : !tuyet ? 'Chưa lắp' : (tran.chien?.hoi ?? 0) > 0 ? `Hồi chiêu: còn ${tran.chien!.hoi} lượt` : timBiTich(tuyet.id).moTa}
-              </small>
-            </button>
-            <button data-im className="nut" disabled={!!tran.choBoss} onClick={() => hanhDong({ loai: 'do' })}>
+            <button data-im className="nut" disabled={!!tran.choBoss} onClick={() => { datMoKhay(false); hanhDong({ loai: 'do' }); }}>
               Thủ
-              <small>chỉ nhận {phanTram(LUAT_VUC.doDon)} · +1 Khí thế</small>
+              <small>nhận {phanTram(LUAT_VUC.doDon)} · +Khí thế</small>
             </button>
-            <button className="nut" disabled={!!tran.choBoss} onClick={() => datMoDan(true)}>
-              Dùng đan
+            <button className="nut" disabled={!!tran.choBoss} onClick={() => { datMoKhay(false); datMoDan(true); }}>
+              Đan ▴
               <small>mất lượt</small>
             </button>
           </div>

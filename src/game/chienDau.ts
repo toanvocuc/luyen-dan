@@ -4,7 +4,9 @@
 // Thiết kế: docs/thiet-ke-combat.md.
 import {
   HE,
+  NGUYEN,
   THIEN_PHU,
+  nguyenCua,
   heSoChieu,
   timBiTich,
   type BacThienPhu,
@@ -50,8 +52,18 @@ export interface ChienTran {
   choangCho: number;
   /** Số lượt người chơi đã đi (để tính Lăng Ba Bộ). */
   luot: number;
+  /** Chân nguyên còn lại (thiếu ở trận cũ thì coi như đầy). */
+  nguyen?: number;
 }
-export const chienMoi = (): ChienTran => ({ dich: {}, minh: {}, khien: 0, hoi: 0, choangCho: 0, luot: 0 });
+export const chienMoi = (nguyen: number = NGUYEN.toiDa): ChienTran => ({ dich: {}, minh: {}, khien: 0, hoi: 0, choangCho: 0, luot: 0, nguyen });
+/** Chân nguyên tối đa của người chơi. */
+export const nguyenToiDa = (hs: { tamPhap: string[] }) => NGUYEN.toiDa + (hs.tamPhap.includes('thanh-tam') ? NGUYEN.thanhTam : 0);
+export const nguyenNay = (st: ChienTran, hs: { tamPhap: string[] }) => st.nguyen ?? nguyenToiDa(hs);
+/** Chiêu có đủ chân nguyên để dùng không. */
+export const duNguyen = (hs: HoSo, st: ChienTran, loai: 'vo-ky' | 'tuyet-chieu') => {
+  const bt = loai === 'vo-ky' ? hs.voKy : hs.tuyetChieu;
+  return !bt || nguyenNay(st, hs) >= nguyenCua(bt.id);
+};
 
 // ---------- hình ảnh ----------
 
@@ -101,7 +113,7 @@ function thongTinChieu(hs: HoSo, bt: BiTich | null) {
   return { ten: g.ten, he, heSo: heSoChieu(bt) * (1 + THIEN_PHU[hs.thienPhu[he]].satThuong), id: g.id, nguyenTo: bt.nguyenTo, hoi: g.hoi ?? 3 };
 }
 /** Tuyệt chiêu có dùng được lúc này không (đã lắp, đã mở ô, hết hồi). */
-export const tuyetChieuSan = (hs: HoSo, st: ChienTran, moO: boolean) => moO && !!hs.tuyetChieu && st.hoi <= 0;
+export const tuyetChieuSan = (hs: HoSo, st: ChienTran, moO: boolean) => moO && !!hs.tuyetChieu && st.hoi <= 0 && nguyenNay(st, hs) >= nguyenCua(hs.tuyetChieu.id);
 
 export interface KetDon {
   st: ChienTran;
@@ -117,10 +129,14 @@ export interface KetDon {
  * Người chơi ra một đòn. `donChuan(ngoai)` = sát thương 100% của đòn ngoại gia (Lực) hoặc nội gia (Thần thức) lên địch này.
  * `heSoGiap`: địch đang thủ giáp thì < 1 (Nhất Dương Chỉ xuyên qua).
  */
-export function raDon(hs: HoSo, st0: ChienTran, loai: 'vo-ky' | 'tuyet-chieu', donChuan: (ngoai: boolean) => number, mauMaxDich: number, heSoGiap: number, rng: () => number): KetDon {
-  const bt = loai === 'tuyet-chieu' ? hs.tuyetChieu : hs.voKy;
+export function raDon(hs: HoSo, st0: ChienTran, loai0: 'vo-ky' | 'tuyet-chieu' | 'thuong', donChuan: (ngoai: boolean) => number, mauMaxDich: number, heSoGiap: number, rng: () => number): KetDon {
+  // đánh thường (quyền cước) = võ kỹ khi chưa lắp gì: không tốn chân nguyên
+  const loai = loai0 === 'thuong' ? 'vo-ky' : loai0;
+  const bt = loai0 === 'thuong' ? null : loai === 'tuyet-chieu' ? hs.tuyetChieu : hs.voKy;
   const c = thongTinChieu(hs, bt);
-  let st: ChienTran = { ...st0, dich: { ...st0.dich }, minh: { ...st0.minh }, luot: st0.luot + 1 };
+  const toiDa = nguyenToiDa(hs);
+  const tieu = bt ? nguyenCua(bt.id) : 0;
+  let st: ChienTran = { ...st0, dich: { ...st0.dich }, minh: { ...st0.minh }, luot: st0.luot + 1, nguyen: Math.min(toiDa, nguyenNay(st0, hs) - tieu + NGUYEN.hoiMoiLuot) };
   const dong: string[] = [];
   const vfx: Vfx[] = [];
   const goc = donChuan(HE[c.he].ngoai);
@@ -246,12 +262,14 @@ export function raDon(hs: HoSo, st0: ChienTran, loai: 'vo-ky' | 'tuyet-chieu', d
 }
 
 /** Người chơi thủ thế: mất Liên kích, +1 Khí thế, tuyệt chiêu vẫn hồi. */
-export function thuThe(st: ChienTran): ChienTran {
-  return { ...st, minh: them(bo(st.minh, 'lien-kich'), 'khi-the', 1, 0), hoi: Math.max(0, st.hoi - 1), luot: st.luot + 1 };
+export function thuThe(st: ChienTran, hs: HoSo): ChienTran {
+  const nguyen = Math.min(nguyenToiDa(hs), nguyenNay(st, hs) + NGUYEN.hoiMoiLuot + NGUYEN.hoiKhiThu);
+  return { ...st, minh: them(bo(st.minh, 'lien-kich'), 'khi-the', 1, 0), hoi: Math.max(0, st.hoi - 1), luot: st.luot + 1, nguyen };
 }
-/** Dùng đan: mất Liên kích, tuyệt chiêu vẫn hồi. */
-export function dungDanTran(st: ChienTran): ChienTran {
-  return { ...st, minh: bo(st.minh, 'lien-kich'), hoi: Math.max(0, st.hoi - 1), luot: st.luot + 1 };
+/** Dùng đan: mất Liên kích, tuyệt chiêu vẫn hồi. `nguyenThem`: Hồi Nguyên Đan. */
+export function dungDanTran(st: ChienTran, hs: HoSo, nguyenThem = 0): ChienTran {
+  const nguyen = Math.min(nguyenToiDa(hs), nguyenNay(st, hs) + NGUYEN.hoiMoiLuot + nguyenThem);
+  return { ...st, minh: bo(st.minh, 'lien-kich'), hoi: Math.max(0, st.hoi - 1), luot: st.luot + 1, nguyen };
 }
 
 /** Đầu lượt của địch: trạng thái rút máu, đếm lùi thời hạn. Trả về địch có đang choáng không (mất lượt). */
@@ -306,8 +324,9 @@ export function hungDon(hs: HoSo, st0: ChienTran, dmgGoc: number, rng: () => num
 }
 
 /** Máy chọn chiêu khi tự đánh: tuyệt chiêu khi sẵn và đáng dùng, còn lại võ kỹ. */
-export function mayChon(hs: HoSo, st: ChienTran, moTuyet: boolean): 'vo-ky' | 'tuyet-chieu' {
-  if (!tuyetChieuSan(hs, st, moTuyet)) return 'vo-ky';
+export function mayChon(hs: HoSo, st: ChienTran, moTuyet: boolean): 'vo-ky' | 'tuyet-chieu' | 'thuong' {
+  if (!tuyetChieuSan(hs, st, moTuyet)) return duNguyen(hs, st, 'vo-ky') ? 'vo-ky' : 'thuong';
+  if (!duNguyen(hs, st, 'vo-ky')) return 'tuyet-chieu';
   const id = hs.tuyetChieu!.id;
   if (id === 'van-kiem') return tang(st.dich, 'kiem-thuong') >= 3 ? 'tuyet-chieu' : 'vo-ky';
   if (id === 'pha-thien') return tang(st.dich, 'pha-giap') >= 2 ? 'tuyet-chieu' : 'vo-ky';
@@ -358,7 +377,7 @@ export interface ThuTuDong {
 /** Mô phỏng trọn một trận tự đánh (tối đa `toiDa` lượt). Không đổi kho: nơi gọi tự trừ máu, gieo trạng thái. */
 export function tuDanh(hs0: HoSo, dich: DichTuDong, moTuyet: boolean, thu: ThuTuDong | null, rng: () => number, toiDa = 12): KetTuDong {
   let hs = { ...hs0 };
-  let st = chienMoi();
+  let st = chienMoi(nguyenToiDa(hs0));
   let mauDich = dich.mauMax;
   const luot: LuotTuDong[] = [];
   let trung = 0;
@@ -367,7 +386,7 @@ export function tuDanh(hs0: HoSo, dich: DichTuDong, moTuyet: boolean, thu: ThuTu
     const dong: string[] = [];
     const vfx: Vfx[] = [];
     const chon = mayChon(hs, st, moTuyet);
-    daDung[chon === 'vo-ky' ? 'voKy' : 'tuyetChieu'] = true;
+    if (chon !== 'thuong') daDung[chon === 'vo-ky' ? 'voKy' : 'tuyetChieu'] = true;
     const d = raDon(hs, st, chon, dich.donChuan, dich.mauMax, 1, rng);
     st = d.st;
     mauDich -= d.dmg;
