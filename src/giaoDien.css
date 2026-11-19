@@ -6138,3 +6138,136 @@ p.nhan-mat.vuc {
   opacity: 0.6;
   border: 0;
 }
+
+/* ---------- lực chiến ---------- */
+.luc-chien .so-lc {
+  font-family: 'Cinzel', 'Noto Serif', serif;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  background: linear-gradient(180deg, #fff6d6 0%, #ffd66b 38%, #e09a1f 62%, #fff0b8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 6px rgba(255, 190, 60, 0.55)) drop-shadow(0 2px 1px rgba(0, 0, 0, 0.9));
+}
+.luc-chien .nhan-lc {
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #f0d9a8;
+  text-shadow: 0 1px 2px #000;
+}
+.luc-chien.nho {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 2px;
+  padding: 2px 10px 3px;
+  border: 1px solid rgba(233, 196, 106, 0.55);
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(40, 24, 8, 0.85), rgba(70, 44, 12, 0.85), rgba(40, 24, 8, 0.85));
+  box-shadow: 0 0 10px rgba(255, 190, 60, 0.25);
+}
+.luc-chien.nho .nhan-lc {
+  font-size: 9.5px;
+}
+.luc-chien.nho .so-lc {
+  font-size: 17px;
+}
+.luc-chien.lon {
+  margin: 0 0 8px;
+}
+.the-luc-chien {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding: 8px 0 10px;
+  border: 0;
+  border-top: 1px solid rgba(233, 196, 106, 0.6);
+  border-bottom: 1px solid rgba(233, 196, 106, 0.6);
+  background: radial-gradient(ellipse at 50% 55%, rgba(255, 180, 60, 0.28), rgba(60, 30, 5, 0.15) 55%, transparent 75%);
+  overflow: hidden;
+}
+.the-luc-chien::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, rgba(255, 240, 200, 0.35) 50%, transparent 70%);
+  transform: translateX(-100%);
+  animation: lc-lap-lanh 3.2s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes lc-lap-lanh {
+  0%, 55% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.the-luc-chien .nhan-lc {
+  font-size: 11px;
+}
+.the-luc-chien .so-lc {
+  margin-top: 4px;
+  font-size: 40px;
+}
+.the-luc-chien .mo-lc {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  font-style: normal;
+  font-size: 13px;
+  color: #c9a96a;
+}
+.tang-lc {
+  position: absolute;
+  right: 6%;
+  top: 52%;
+  font-style: normal;
+  font-weight: 700;
+  font-size: 15px;
+  animation: so-bay 1.6s ease-out forwards;
+}
+.tang-lc.len {
+  color: #8ef0a0;
+}
+.tang-lc.xuong {
+  color: #ff8a80;
+}
+.chi-tiet-lc {
+  margin-top: 6px;
+  padding: 6px 8px;
+  border: 1px solid rgba(185, 147, 90, 0.35);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  animation: bat-ra 0.18s ease-out;
+}
+.chi-tiet-lc > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 0;
+  border-bottom: 1px dotted rgba(185, 147, 90, 0.3);
+}
+.chi-tiet-lc > div:last-child {
+  border-bottom: 0;
+}
+.chi-tiet-lc b {
+  font-size: 12.5px;
+}
+.chi-tiet-lc small {
+  display: block;
+  font-size: 10.5px;
+  color: var(--chu-mo);
+}
+.chi-tiet-lc em {
+  font-style: normal;
+  font-weight: 700;
+  color: #ffd66b;
+  white-space: nowrap;
+}
+.chi-tiet-lc .khong em {
+  color: var(--chu-mo);
+}

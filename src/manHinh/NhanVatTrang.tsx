@@ -31,6 +31,7 @@ import {
   type O,
 } from '../game/voCong.ts';
 import { anhNhanVatDung } from './BupBe.tsx';
+import { LucChienLon } from './LucChien.tsx';
 
 const O_HIEN: { o: O; ten: string; loai: LoaiBiTich }[] = [
   { o: 'voKy', ten: 'Võ kỹ', loai: 'vo-ky' },
@@ -86,6 +87,7 @@ export function NhanVatTrang({
     <div className="lop-phu" onClick={onDong}>
       <div className="bang tam trang-nhan-vat" onClick={(e) => e.stopPropagation()}>
         <h2>{nv.ten}</h2>
+        <LucChienLon kho={kho} />
         <div className="hang-chon the-trang-nv">
           <button className="the nho chon">Võ công</button>
           <button className="the nho" onClick={onChiSo}>

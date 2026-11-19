@@ -8,6 +8,7 @@ import type { NhanVat } from '../game/nhanVat.ts';
 import { dongHo, useBayGio } from './PhuongThi.tsx';
 import { BupBe } from './BupBe.tsx';
 import { NhanVatTrang, chuBiTich } from './NhanVatTrang.tsx';
+import { LucChienNho } from './LucChien.tsx';
 import { PHAM_BI_TICH, TEN_LOAI_BT, anhBiTich, oDangLap, timBiTich, HE } from '../game/voCong.ts';
 import { dongThienMenh } from './ThienMenh.tsx';
 import { giayKhoaMatHon, giayYeuMatHon } from '../game/kyNgo.ts';
@@ -129,6 +130,7 @@ export function TuTien({
           <small>
             {CANH_GIOI[kho.tuVi.canhGioi]} tầng {kho.tuVi.tang}/{soTang(kho.tuVi.canhGioi)}
           </small>
+          <LucChienNho kho={kho} onClick={() => datBang('nhan-vat')} />
         </div>
         <span className="nhom-nut">
           <span className="linh-thach">
