@@ -27,6 +27,17 @@ export const NGUYEN_TO: Record<NguyenTo, { ten: string; tac: string }> = {
   tho: { ten: 'Thổ', tac: 'Hộ thể: nhận khiên 8% máu' },
   loi: { ten: 'Lôi', tac: 'Lôi kích: 25% đánh thêm một tia sét' },
 };
+/** Ngũ hành tương khắc (khắc nhẹ: hệ khác vẫn đánh được, chỉ kém hơn). Lôi là dị linh căn, không khắc ai. */
+export const KHAC: Partial<Record<NguyenTo, NguyenTo>> = { kim: 'moc', moc: 'tho', tho: 'thuy', thuy: 'hoa', hoa: 'kim' };
+export const LUAT_KHAC = { cuongKhac: 1.5, dmgKhac: 1.15, cuongBiKhac: 0.8, cuongLoi: 1.1 } as const;
+/** Đòn hệ `cong` đánh vào đấu thủ hệ `thu`: hệ số vào cương khí, vào sát thương, và kiểu (để hiện "Khắc!"). */
+export function khacHe(cong: NguyenTo | null | undefined, thu: NguyenTo | null | undefined): { cuong: number; dmg: number; kieu: 'khac' | 'bi-khac' | 'loi' | null } {
+  if (!cong || !thu) return { cuong: 1, dmg: 1, kieu: null };
+  if (KHAC[cong] === thu) return { cuong: LUAT_KHAC.cuongKhac, dmg: LUAT_KHAC.dmgKhac, kieu: 'khac' };
+  if (KHAC[thu] === cong) return { cuong: LUAT_KHAC.cuongBiKhac, dmg: 1, kieu: 'bi-khac' };
+  if (cong === 'loi') return { cuong: LUAT_KHAC.cuongLoi, dmg: 1, kieu: 'loi' };
+  return { cuong: 1, dmg: 1, kieu: null };
+}
 
 /** Số hệ và độ mạnh hiệu ứng nguyên tố theo loại linh căn (id trong LINH_CAN). */
 const HE_LINH_CAN: Record<string, { so: number; hieuLuc: number }> = {
@@ -125,8 +136,14 @@ export interface BiTichGoc {
   hoi?: number;
   /** Chân nguyên tiêu mỗi lần dùng (võ kỹ, tuyệt chiêu). */
   nguyen?: number;
+  /** Vai của võ kỹ: gieo tầng (võ kỹ chính cũ), phá / nổ, ngắt đòn đang gồng, hộ thân. */
+  vai?: VaiChieu;
+  /** Đánh vào cương khí mạnh gấp bấy nhiêu (mặc định 1). */
+  cuong?: number;
   moTa: string;
 }
+export type VaiChieu = 'gieo' | 'pha' | 'ngat' | 'ho';
+export const TEN_VAI: Record<VaiChieu, string> = { gieo: 'Gieo', pha: 'Phá', ngat: 'Ngắt', ho: 'Hộ thân' };
 export const BI_TICH: readonly BiTichGoc[] = [
   { id: 'luu-van-kiem', ten: 'Lưu Vân Kiếm Pháp', loai: 'vo-ky', he: 'kiem', heSo: 1, moTa: 'Mỗi đòn gieo 1 tầng Kiếm thương.' },
   { id: 'cuong-lan-dao', ten: 'Cuồng Lan Đao', loai: 'vo-ky', he: 'dao', heSo: 1.15, moTa: '60% gieo Phá giáp.' },
@@ -134,6 +151,19 @@ export const BI_TICH: readonly BiTichGoc[] = [
   { id: 'khai-son-quyen', ten: 'Khai Sơn Quyền', loai: 'vo-ky', he: 'quyen', heSo: 0.95, moTa: 'Mỗi đòn gieo 1 tầng Chấn động; đủ 3 tầng thì choáng.' },
   { id: 'han-bang-chuong', ten: 'Hàn Băng Chưởng', loai: 'vo-ky', he: 'chuong', heSo: 0.85, moTa: 'Mỗi đòn gieo 1 tầng Nội thương.' },
   { id: 'kinh-hong-chi', ten: 'Kinh Hồng Chỉ', loai: 'vo-ky', he: 'chi', heSo: 1, moTa: '70% gieo Điểm huyệt.' },
+  // võ kỹ phụ (đợt 1 combat theo lượt): mỗi hệ một chiêu phá / ngắt và một chiêu hộ thân; lắp ở ô chính hay ô phụ đều được
+  { id: 'kiem-khi-tram', ten: 'Kiếm Khí Trảm', loai: 'vo-ky', he: 'kiem', heSo: 0.9, vai: 'pha', cuong: 1.6, nguyen: 14, moTa: 'Kiếm khí chém liền: gieo 2 tầng Kiếm thương; cương khí ×1,6.' },
+  { id: 'kiem-vong', ten: 'Kiếm Võng', loai: 'vo-ky', he: 'kiem', heSo: 0.4, vai: 'ho', nguyen: 12, moTa: 'Giăng lưới kiếm: đòn kế tiếp của địch giảm 60%, phản lại 90%.' },
+  { id: 'doan-nhac-dao', ten: 'Đoạn Nhạc Đao', loai: 'vo-ky', he: 'dao', heSo: 1.2, vai: 'pha', cuong: 2.2, nguyen: 16, moTa: 'Một đao nặng như núi: gieo 1 Phá giáp; cương khí ×2,2.' },
+  { id: 'huyet-dao', ten: 'Huyết Ẩm Đao', loai: 'vo-ky', he: 'dao', heSo: 0.85, vai: 'ho', nguyen: 12, moTa: 'Hút máu: hồi bằng 50% sát thương gây ra.' },
+  { id: 'hoi-ma-thuong', ten: 'Hồi Mã Thương', loai: 'vo-ky', he: 'thuong', heSo: 0.9, vai: 'ngat', nguyen: 14, moTa: 'Ngắt đòn lớn địch đang gồng; +1 Liên kích.' },
+  { id: 'thuong-tran', ten: 'Tam Thương Trận', loai: 'vo-ky', he: 'thuong', heSo: 0.4, vai: 'ho', nguyen: 12, moTa: 'Dựng trận thương: khiên 15% máu, giữ Liên kích.' },
+  { id: 'bang-son-quyen', ten: 'Băng Sơn Quyền', loai: 'vo-ky', he: 'quyen', heSo: 0.85, vai: 'ngat', cuong: 1.5, nguyen: 14, moTa: 'Ngắt đòn đang gồng; gieo 1 Chấn động; cương khí ×1,5.' },
+  { id: 'kim-chung-trao', ten: 'Kim Chung Tráo', loai: 'vo-ky', he: 'quyen', heSo: 0, vai: 'ho', nguyen: 12, moTa: 'Chuông vàng hộ thể: khiên 25% máu.' },
+  { id: 'thai-cuc-thoi-thu', ten: 'Thái Cực Thôi Thủ', loai: 'vo-ky', he: 'chuong', heSo: 0.5, vai: 'ho', nguyen: 12, moTa: 'Mượn lực đánh lực: đòn kế tiếp của địch giảm 70%, phản lại 70%.' },
+  { id: 'hap-tinh-chuong', ten: 'Hấp Tinh Chưởng', loai: 'vo-ky', he: 'chuong', heSo: 0.8, vai: 'pha', nguyen: 0, moTa: 'Hút linh lực địch: +30 chân nguyên; gieo 1 Nội thương.' },
+  { id: 'pha-huyet-chi', ten: 'Phá Huyệt Chỉ', loai: 'vo-ky', he: 'chi', heSo: 0.8, vai: 'ngat', nguyen: 14, moTa: 'Ngắt đòn đang gồng; gieo 1 Điểm huyệt.' },
+  { id: 'giai-huyet-chi', ten: 'Giải Huyệt Chỉ', loai: 'vo-ky', he: 'chi', heSo: 0.4, vai: 'ho', nguyen: 12, moTa: 'Giải một trạng thái xấu (độc, chảy máu, yếu) và hồi 8% máu.' },
   { id: 'van-kiem', ten: 'Vạn Kiếm Quy Tông', loai: 'tuyet-chieu', he: 'kiem', heSo: 1.5, hoi: 4, moTa: 'Nổ toàn bộ Kiếm thương: mỗi tầng thêm 30%.' },
   { id: 'pha-thien', ten: 'Phá Thiên Nhất Đao', loai: 'tuyet-chieu', he: 'dao', heSo: 2.6, hoi: 4, moTa: 'Mỗi tầng Phá giáp thêm 25%.' },
   { id: 'long-dang', ten: 'Long Đằng Cửu Thiên', loai: 'tuyet-chieu', he: 'thuong', heSo: 0.8, hoi: 3, moTa: 'Đâm 3 lần, Liên kích tính cho từng lần.' },
@@ -154,13 +184,18 @@ export const timBiTich = (id: string) => BI_TICH.find((b) => b.id === id) ?? BI_
 export const NGUYEN = { toiDa: 100, thanhTam: 20, hoiMoiLuot: 12, hoiKhiThu: 25, voKy: 8 } as const;
 const NGUYEN_TUYET: Record<string, number> = { 'van-kiem': 40, 'pha-thien': 45, 'long-dang': 35, 'ba-vuong': 40, 'thai-cuc': 40, 'nhat-duong': 35 };
 /** Chân nguyên một chiêu tiêu. */
-export const nguyenCua = (id: string) => (timBiTich(id).loai === 'tuyet-chieu' ? NGUYEN_TUYET[id] ?? 40 : timBiTich(id).loai === 'vo-ky' ? NGUYEN.voKy : 0);
+export const nguyenCua = (id: string) => {
+  const g = timBiTich(id);
+  return g.loai === 'tuyet-chieu' ? NGUYEN_TUYET[id] ?? 40 : g.loai === 'vo-ky' ? g.nguyen ?? NGUYEN.voKy : 0;
+};
+/** Vai của một võ kỹ (võ kỹ chính cũ là "gieo"). */
+export const vaiCua = (id: string): VaiChieu => timBiTich(id).vai ?? 'gieo';
 export const TEN_LOAI_BT: Record<LoaiBiTich, string> = { 'vo-ky': 'Võ kỹ', 'tuyet-chieu': 'Tuyệt chiêu', 'than-phap': 'Thân pháp', 'tam-phap': 'Tâm pháp' };
 /** Ảnh biểu tượng của một bí tịch: võ kỹ theo hệ, tuyệt chiêu biểu tượng riêng, thân pháp / tâm pháp biểu tượng loại. */
 export function anhBiTich(id: string): string {
   const g = timBiTich(id);
   if (g.loai === 'tuyet-chieu') return `./hinh/combat/icon-tc/${g.he}.webp`;
-  if (g.loai === 'vo-ky') return `./hinh/combat/loai/${g.he}.webp`;
+  if (g.loai === 'vo-ky') return g.vai ? `./hinh/combat/bt/${g.id}.webp` : `./hinh/combat/loai/${g.he}.webp`;
   return `./hinh/combat/loai/${g.loai}.webp`;
 }
 /** Võ kỹ / tuyệt chiêu khởi đầu của từng hệ. */
@@ -194,7 +229,8 @@ export interface BiTich {
 }
 export interface VoCongKho {
   tui: BiTich[];
-  lap: { voKy: number | null; tuyetChieu: number | null; thanPhap: number | null; tamPhap: (number | null)[] };
+  /** phu: hai ô võ kỹ phụ (lắp được võ kỹ hệ khác). */
+  lap: { voKy: number | null; tuyetChieu: number | null; thanPhap: number | null; tamPhap: (number | null)[]; phu: (number | null)[] };
   uidKe: number;
   /** Tông môn đang theo (bán bí tịch bằng danh vọng của tông môn đó) và lúc gia nhập. */
   tongMon: string | null;
@@ -207,7 +243,7 @@ export interface VoCongKho {
   dauGia: { phien: number; ra: Record<string, { gia: number; thang: boolean }> };
 }
 /** Cảnh giới mở từng ô. */
-export const MO_O = { voKy: 0, tuyetChieu: 2, thanPhap: 3, tamPhap: [1, 5] } as const;
+export const MO_O = { voKy: 0, tuyetChieu: 2, thanPhap: 3, tamPhap: [1, 5], phu: [2, 4] } as const;
 
 /** Hệ số sát thương đầy đủ của một chiêu: gốc × phẩm × luyện thục. */
 export function heSoChieu(bt: BiTich): number {
@@ -224,13 +260,13 @@ export function voCongKhoiDau(nv: NhanVat | null): VoCongKho {
     { uid: 1, id: VO_KY_CUA[he], pham: 0, cap: 1, kn: 0, nguyenTo: nt },
     { uid: 2, id: TUYET_CHIEU_CUA[he], pham: 0, cap: 1, kn: 0, nguyenTo: nt },
   ];
-  return { tui, lap: { voKy: 1, tuyetChieu: 2, thanPhap: null, tamPhap: [null, null] }, uidKe: 3, tongMon: null, lucGiaNhap: 0, lucRoi: 0, mua: { ky: -1, ds: [] }, dauGia: { phien: -1, ra: {} } };
+  return { tui, lap: { voKy: 1, tuyetChieu: 2, thanPhap: null, tamPhap: [null, null], phu: [null, null] }, uidKe: 3, tongMon: null, lucGiaNhap: 0, lucRoi: 0, mua: { ky: -1, ds: [] }, dauGia: { phien: -1, ra: {} } };
 }
 export function buVoCong(v: Partial<VoCongKho> | undefined, nv: NhanVat | null): VoCongKho {
   if (!v?.tui || !v.lap) return voCongKhoiDau(nv);
   return {
     tui: v.tui,
-    lap: { voKy: v.lap.voKy ?? null, tuyetChieu: v.lap.tuyetChieu ?? null, thanPhap: v.lap.thanPhap ?? null, tamPhap: [v.lap.tamPhap?.[0] ?? null, v.lap.tamPhap?.[1] ?? null] },
+    lap: { voKy: v.lap.voKy ?? null, tuyetChieu: v.lap.tuyetChieu ?? null, thanPhap: v.lap.thanPhap ?? null, tamPhap: [v.lap.tamPhap?.[0] ?? null, v.lap.tamPhap?.[1] ?? null], phu: [v.lap.phu?.[0] ?? null, v.lap.phu?.[1] ?? null] },
     uidKe: v.uidKe ?? 1 + Math.max(0, ...v.tui.map((b) => b.uid)),
     tongMon: v.tongMon ?? null,
     lucGiaNhap: v.lucGiaNhap ?? 0,
@@ -261,13 +297,18 @@ export function themLuyenThuc(v: VoCongKho, uid: number, diem: number, nv: NhanV
 
 // ---------- lắp / tháo / thêm ----------
 
-export type O = 'voKy' | 'tuyetChieu' | 'thanPhap' | 'tamPhap0' | 'tamPhap1';
+export type O = 'voKy' | 'tuyetChieu' | 'thanPhap' | 'tamPhap0' | 'tamPhap1' | 'phu0' | 'phu1';
+export const CAC_O: readonly O[] = ['voKy', 'phu0', 'phu1', 'tuyetChieu', 'thanPhap', 'tamPhap0', 'tamPhap1'];
 /** Ô hợp với loại bí tịch. */
-export const oCua = (loai: LoaiBiTich): O[] => (loai === 'vo-ky' ? ['voKy'] : loai === 'tuyet-chieu' ? ['tuyetChieu'] : loai === 'than-phap' ? ['thanPhap'] : ['tamPhap0', 'tamPhap1']);
-export const canhGioiMoO = (o: O) => (o === 'tamPhap0' ? MO_O.tamPhap[0] : o === 'tamPhap1' ? MO_O.tamPhap[1] : MO_O[o]);
+export const oCua = (loai: LoaiBiTich): O[] =>
+  loai === 'vo-ky' ? ['voKy', 'phu0', 'phu1'] : loai === 'tuyet-chieu' ? ['tuyetChieu'] : loai === 'than-phap' ? ['thanPhap'] : ['tamPhap0', 'tamPhap1'];
+export const canhGioiMoO = (o: O) =>
+  o === 'tamPhap0' ? MO_O.tamPhap[0] : o === 'tamPhap1' ? MO_O.tamPhap[1] : o === 'phu0' ? MO_O.phu[0] : o === 'phu1' ? MO_O.phu[1] : MO_O[o];
 export function uidTaiO(v: VoCongKho, o: O): number | null {
   if (o === 'tamPhap0') return v.lap.tamPhap[0];
   if (o === 'tamPhap1') return v.lap.tamPhap[1];
+  if (o === 'phu0') return v.lap.phu?.[0] ?? null;
+  if (o === 'phu1') return v.lap.phu?.[1] ?? null;
   return v.lap[o];
 }
 function datO(v: VoCongKho, o: O, uid: number | null): VoCongKho {
@@ -276,26 +317,38 @@ function datO(v: VoCongKho, o: O, uid: number | null): VoCongKho {
     tp[o === 'tamPhap0' ? 0 : 1] = uid;
     return { ...v, lap: { ...v.lap, tamPhap: tp } };
   }
+  if (o === 'phu0' || o === 'phu1') {
+    const ph = [...(v.lap.phu ?? [null, null])];
+    ph[o === 'phu0' ? 0 : 1] = uid;
+    return { ...v, lap: { ...v.lap, phu: ph } };
+  }
   return { ...v, lap: { ...v.lap, [o]: uid } };
 }
 /** Bí tịch đang lắp ở ô nào (null = chưa lắp). */
 export function oDangLap(v: VoCongKho, uid: number): O | null {
-  for (const o of ['voKy', 'tuyetChieu', 'thanPhap', 'tamPhap0', 'tamPhap1'] as O[]) if (uidTaiO(v, o) === uid) return o;
+  for (const o of CAC_O) if (uidTaiO(v, o) === uid) return o;
   return null;
 }
-/** Lắp một cuốn vào ô hợp loại (tâm pháp: ô trống trước, không có thì thay ô 1). Hai tâm pháp trùng tên thì không lắp. */
-export function lapBiTich(v: VoCongKho, uid: number, canhGioi: number): VoCongKho {
+/** Các võ kỹ phụ đang lắp (đã mở ô), theo thứ tự ô. */
+export function voKyPhu(v: VoCongKho, canhGioi: number): (BiTich | null)[] {
+  return (['phu0', 'phu1'] as const).map((o) => (canhGioi >= canhGioiMoO(o) ? timTrongTui(v, uidTaiO(v, o)) : null));
+}
+/**
+ * Lắp một cuốn vào ô hợp loại. `muon`: ô người chơi chọn; không chọn thì ô trống trước, không có thì thay ô đầu.
+ * Hai cuốn trùng tên (tâm pháp, hay võ kỹ chính và phụ) thì không lắp.
+ */
+export function lapBiTich(v: VoCongKho, uid: number, canhGioi: number, muon?: O): VoCongKho {
   const bt = timTrongTui(v, uid);
   if (!bt) return v;
   const g = timBiTich(bt.id);
   const cac = oCua(g.loai).filter((o) => canhGioi >= canhGioiMoO(o));
   if (!cac.length) return v;
-  if (g.loai === 'tam-phap') {
+  if (g.loai === 'tam-phap' || g.loai === 'vo-ky') {
     const khac = cac.map((o) => timTrongTui(v, uidTaiO(v, o))).filter(Boolean);
     if (khac.some((b) => b!.id === bt.id && b!.uid !== uid)) return v;
   }
   const dang = oDangLap(v, uid);
-  const o = cac.find((x) => uidTaiO(v, x) == null) ?? cac[0];
+  const o = muon && cac.includes(muon) ? muon : cac.find((x) => uidTaiO(v, x) == null) ?? cac[0];
   let moi = dang ? datO(v, dang, null) : v;
   moi = datO(moi, o, uid);
   return moi;

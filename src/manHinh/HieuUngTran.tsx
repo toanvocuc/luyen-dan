@@ -45,7 +45,7 @@ export function LopHieuUng({ ds, ben }: { ds: MucVfx[]; ben: 'dich' | 'minh' }) 
         .map(({ khoa, v, lech }) =>
           v.loai === 'so' ? (
             <span key={khoa} className={`so-bay ${v.kieu}`} style={{ left: `${50 + lech * 9}%` }}>
-              {v.kieu === 'ne' ? 'Né!' : v.kieu === 'hoi' ? `+${v.so}` : v.kieu === 'khien' ? `🛡${v.so}` : `−${v.so}`}
+              {v.kieu === 'ne' ? 'Né!' : v.kieu === 'khac' ? 'Khắc!' : v.kieu === 'hoi' ? `+${v.so}` : v.kieu === 'khien' ? `🛡${v.so}` : `−${v.so}`}
             </span>
           ) : (
             <img key={khoa} className={`vfx vfx-${v.loai}`} src={anhVfx(v.loai, v.id)} alt="" draggable={false} />

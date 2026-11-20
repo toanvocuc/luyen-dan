@@ -6,6 +6,7 @@ import {
   HE,
   NGUYEN,
   THIEN_PHU,
+  khacHe,
   nguyenCua,
   heSoChieu,
   timBiTich,
@@ -17,7 +18,27 @@ import {
 
 // ---------- trạng thái trong trận ----------
 
-export type TtId = 'kiem-thuong' | 'pha-giap' | 'lien-kich' | 'chan-dong' | 'choang' | 'noi-thuong' | 'diem-huyet' | 'thieu-dot' | 'han-khi' | 'khi-the' | 'truy-phong';
+export type TtId =
+  | 'kiem-thuong'
+  | 'pha-giap'
+  | 'lien-kich'
+  | 'chan-dong'
+  | 'choang'
+  | 'noi-thuong'
+  | 'diem-huyet'
+  | 'thieu-dot'
+  | 'han-khi'
+  | 'khi-the'
+  | 'truy-phong'
+  // đợt 1 combat theo lượt
+  | 'phan-don'
+  | 'vo-cuong'
+  | 'doc-dich'
+  | 'cuong-huyet'
+  | 'kim-cuong'
+  | 'phong-hanh'
+  /** Chỉ để hiện: địch đang gồng đòn lớn. */
+  | 'gong';
 export interface TtTang {
   tang: number;
   /** Còn bấy nhiêu lượt (0 = không hết hạn). */
@@ -37,7 +58,27 @@ export const TT: Record<TtId, { ten: string; toiDa: number; anh: string; moTa: s
   'han-khi': { ten: 'Hàn khí', toiDa: 1, anh: 'han-khi', moTa: 'Chịu thêm 10% sát thương' },
   'khi-the': { ten: 'Khí thế', toiDa: 2, anh: 'khi-the', moTa: 'Mỗi tầng: tuyệt chiêu hồi nhanh 1 lượt' },
   'truy-phong': { ten: 'Truy phong', toiDa: 1, anh: 'lien-kich', moTa: 'Võ kỹ kế tiếp +30%' },
+  'phan-don': { ten: 'Thế phản đòn', toiDa: 1, anh: 'phan-don', moTa: 'Đòn kế tiếp của địch bị giảm và phản lại' },
+  'vo-cuong': { ten: 'Vỡ cương khí', toiDa: 1, anh: 'vo-cuong', moTa: 'Choáng, chịu thêm 30% sát thương' },
+  'doc-dich': { ten: 'Vạn độc', toiDa: 5, anh: 'doc', moTa: 'Trúng độc đan: mất máu mỗi lượt' },
+  'cuong-huyet': { ten: 'Cuồng huyết', toiDa: 5, anh: 'cuong-huyet', moTa: 'Sát thương tăng (Cuồng Huyết Đan)' },
+  'kim-cuong': { ten: 'Kim cương thể', toiDa: 5, anh: 'kim-cuong', moTa: 'Nhận ít sát thương hơn (Kim Cương Đan)' },
+  'phong-hanh': { ten: 'Phong hành', toiDa: 5, anh: 'phong-hanh', moTa: 'Né tránh tăng (Phong Hành Đan)' },
+  gong: { ten: 'Gồng đòn lớn', toiDa: 1, anh: 'gong', moTa: 'Sắp tung đòn lớn: ngắt, phá cương khí hoặc thủ' },
 };
+/** Đan chiến: độ mạnh theo phẩm [hạ, trung, thượng, cực, đan văn] (tầng của trạng thái = phẩm + 1). */
+export const DAN_CHIEN = {
+  cuongHuyet: [0.25, 0.3, 0.36, 0.43, 0.5],
+  kimCuong: [0.25, 0.3, 0.35, 0.4, 0.45],
+  phongHanh: [0.15, 0.19, 0.23, 0.27, 0.32],
+  /** Vạn Độc: phần máu tối đa của địch mất mỗi lượt. */
+  vanDoc: [0.02, 0.025, 0.03, 0.036, 0.042],
+  /** Lôi Hỏa: sát thương = phần máu tối đa của địch; vào cương khí gấp 3. */
+  loiHoa: [0.04, 0.05, 0.06, 0.075, 0.09],
+  luot: 3,
+} as const;
+/** Cương khí (hộ thể của địch): còn cương thì máu chỉ nhận 65% sát thương; vỡ thì choáng và chịu thêm 30%; vỡ xong bấy nhiêu lượt thì tụ lại. */
+export const LUAT_CUONG = { quaCuong: 0.6, voThem: 0.3, tuLai: 2, tuLaiPhan: 1 } as const;
 export const anhTt = (id: string) => `./hinh/combat/tt/${id}.webp`;
 
 /** Trạng thái riêng của một trận (lưu trong trận boss; tự đánh thì chỉ sống trong lúc mô phỏng). */
@@ -54,6 +95,12 @@ export interface ChienTran {
   luot: number;
   /** Chân nguyên còn lại (thiếu ở trận cũ thì coi như đầy). */
   nguyen?: number;
+  /** Cương khí của địch (chỉ trận có cương khí, ví dụ boss): còn lại, tối đa, số lượt nữa thì tụ lại sau khi vỡ. */
+  cuong?: number;
+  cuongMax?: number;
+  cuongCho?: number;
+  /** Thế phản đòn đang giăng: đòn kế tiếp của địch giảm `giam`, phản lại `phan` phần đòn gốc. */
+  phan?: { giam: number; phan: number } | null;
 }
 export const chienMoi = (nguyen: number = NGUYEN.toiDa): ChienTran => ({ dich: {}, minh: {}, khien: 0, hoi: 0, choangCho: 0, luot: 0, nguyen });
 /** Chân nguyên tối đa của người chơi. */
@@ -69,7 +116,7 @@ export const duNguyen = (hs: HoSo, st: ChienTran, loai: 'vo-ky' | 'tuyet-chieu')
 
 export type Vfx =
   | { loai: 'vet' | 'tuyet' | 'nguyen-to' | 'phu'; id: string; ben: 'dich' | 'minh' }
-  | { loai: 'so'; so: number; kieu: 'thuong' | 'bao' | 'dot' | 'hoi' | 'ne' | 'khien'; ben: 'dich' | 'minh' }
+  | { loai: 'so'; so: number; kieu: 'thuong' | 'bao' | 'dot' | 'hoi' | 'ne' | 'khien' | 'khac'; ben: 'dich' | 'minh' }
   | { loai: 'rung' };
 export const anhVfx = (loai: string, id: string) => `./hinh/combat/${loai}/${id}.webp`;
 
@@ -78,6 +125,10 @@ export const anhVfx = (loai: string, id: string) => `./hinh/combat/${loai}/${id}
 /** Những gì của người chơi mà trận đánh cần, dựng từ kho ở nơi gọi. */
 export interface HoSo {
   voKy: BiTich | null;
+  /** Hai ô võ kỹ phụ (null = trống / chưa mở). */
+  phu?: (BiTich | null)[];
+  /** Hệ ngũ hành của địch (để tính khắc chế); không có thì không tính. */
+  nguyenToDich?: NguyenTo | null;
   tuyetChieu: BiTich | null;
   thanPhap: string | null;
   tamPhap: string[];
@@ -117,10 +168,26 @@ function thongTinChieu(hs: HoSo, bt: BiTich | null) {
 /** Tuyệt chiêu có dùng được lúc này không (đã lắp, đã mở ô, hết hồi). */
 export const tuyetChieuSan = (hs: HoSo, st: ChienTran, moO: boolean) => moO && !!hs.tuyetChieu && st.hoi <= 0 && nguyenNay(st, hs) >= nguyenCua(hs.tuyetChieu.id);
 
+export type ODanh = 'vo-ky' | 'phu0' | 'phu1' | 'tuyet-chieu' | 'thuong';
+/** Bí tịch ở một ô đánh. */
+export const btO = (hs: HoSo, o: ODanh): BiTich | null =>
+  o === 'thuong' ? null : o === 'tuyet-chieu' ? hs.tuyetChieu : o === 'vo-ky' ? hs.voKy : hs.phu?.[o === 'phu0' ? 0 : 1] ?? null;
+/** Đủ chân nguyên cho chiêu ở ô này chưa. */
+export const duNguyenO = (hs: HoSo, st: ChienTran, o: ODanh) => {
+  const bt = btO(hs, o);
+  return !bt || nguyenNay(st, hs) >= nguyenCua(bt.id);
+};
+
 export interface KetDon {
   st: ChienTran;
   /** Sát thương lên địch. */
   dmg: number;
+  /** Đòn này ngắt được đòn lớn địch đang gồng (chiêu "ngắt", hoặc làm vỡ cương khí). */
+  ngat?: boolean;
+  /** Đòn này làm vỡ cương khí. */
+  vo?: boolean;
+  /** Giải Huyệt Chỉ: nơi gọi giải một trạng thái xấu của người chơi. */
+  giai?: boolean;
   /** Máu người chơi hồi lại (tuyệt đối). */
   hoi: number;
   dong: string[];
@@ -131,14 +198,19 @@ export interface KetDon {
  * Người chơi ra một đòn. `donChuan(ngoai)` = sát thương 100% của đòn ngoại gia (Lực) hoặc nội gia (Thần thức) lên địch này.
  * `heSoGiap`: địch đang thủ giáp thì < 1 (Nhất Dương Chỉ xuyên qua).
  */
-export function raDon(hs: HoSo, st0: ChienTran, loai0: 'vo-ky' | 'tuyet-chieu' | 'thuong', donChuan: (ngoai: boolean) => number, mauMaxDich: number, heSoGiap: number, rng: () => number): KetDon {
-  // đánh thường (quyền cước) = võ kỹ khi chưa lắp gì: không tốn chân nguyên
-  const loai = loai0 === 'thuong' ? 'vo-ky' : loai0;
-  const bt = loai0 === 'thuong' ? null : loai === 'tuyet-chieu' ? hs.tuyetChieu : hs.voKy;
+export function raDon(hs: HoSo, st0: ChienTran, o0: ODanh, donChuan: (ngoai: boolean) => number, mauMaxDich: number, heSoGiap: number, rng: () => number): KetDon {
+  // đánh thường (quyền cước) = võ kỹ khi chưa lắp gì: không tốn chân nguyên; võ kỹ phụ đi chung nhánh võ kỹ
+  const loai = o0 === 'tuyet-chieu' ? 'tuyet-chieu' : 'vo-ky';
+  const bt = btO(hs, o0);
   const c = thongTinChieu(hs, bt);
+  const g = bt ? timBiTich(bt.id) : null;
   const toiDa = nguyenToiDa(hs);
   const tieu = bt ? nguyenCua(bt.id) : 0;
-  let st: ChienTran = { ...st0, dich: { ...st0.dich }, minh: { ...st0.minh }, luot: st0.luot + 1, nguyen: Math.min(toiDa, nguyenNay(st0, hs) - tieu + NGUYEN.hoiMoiLuot) };
+  let st: ChienTran = { ...quaLuotMinh(st0), dich: { ...st0.dich }, luot: st0.luot + 1, nguyen: Math.min(toiDa, nguyenNay(st0, hs) - tieu + NGUYEN.hoiMoiLuot) };
+  st.minh = { ...st.minh };
+  let ngat = g?.vai === 'ngat';
+  let vo = false;
+  let giai = false;
   const dong: string[] = [];
   const vfx: Vfx[] = [];
   const goc = donChuan(HE[c.he].ngoai);
@@ -149,6 +221,12 @@ export function raDon(hs: HoSo, st0: ChienTran, loai0: 'vo-ky' | 'tuyet-chieu' |
   chung *= 1 + 0.1 * tang(st.dich, 'pha-giap');
   if (st.dich['han-khi']) chung *= 1.1;
   if (coTam(hs, 'cuong-huyet') && hs.mauNay < hs.mauMax * 0.3) chung *= 1.2;
+  if (st.minh['cuong-huyet']) chung *= 1 + DAN_CHIEN.cuongHuyet[tang(st.minh, 'cuong-huyet') - 1];
+  if (st.dich['vo-cuong']) chung *= 1 + LUAT_CUONG.voThem;
+  // ngũ hành: hệ của chiêu khắc hệ của địch thì đau hơn chút, phá cương nhanh hơn
+  const khac = khacHe(c.nguyenTo, hs.nguyenToDich);
+  chung *= khac.dmg;
+  const heCuong = (g?.cuong ?? 1) * khac.cuong;
   const giap = c.id === 'nhat-duong' ? 1 : heSoGiap;
   const nguyenTo = c.nguyenTo && hs.linhCan.he.includes(c.nguyenTo) ? c.nguyenTo : null;
   const h = hs.linhCan.hieuLuc;
@@ -160,7 +238,21 @@ export function raDon(hs: HoSo, st0: ChienTran, loai0: 'vo-ky' | 'tuyet-chieu' |
   const danh = (heSo: number) => {
     const bao = baoKich();
     coBao ||= bao;
-    const d = Math.round(goc * heSo * chung * giap * (0.9 + rng() * 0.2) * (bao ? 1.6 : 1));
+    let d = goc * heSo * chung * giap * (0.9 + rng() * 0.2) * (bao ? 1.6 : 1);
+    // cương khí: đỡ trước một phần, cạn thì vỡ (choáng + chịu thêm sát thương)
+    if (st.cuongMax && (st.cuong ?? 0) > 0) {
+      st.cuong = (st.cuong ?? 0) - d * heCuong;
+      d *= LUAT_CUONG.quaCuong;
+      if (st.cuong <= 0) {
+        st.cuong = 0;
+        st.cuongCho = LUAT_CUONG.tuLai;
+        st.dich = them(them(st.dich, 'vo-cuong', 1, 2), 'choang', 1, 2);
+        vo = true;
+        ngat = true;
+        vfx.push({ loai: 'phu', id: 'vo-cuong', ben: 'dich' }, { loai: 'rung' });
+      }
+    }
+    d = Math.round(d);
     tong += d;
     vfx.push({ loai: 'so', so: d, kieu: bao ? 'bao' : 'thuong', ben: 'dich' });
     return d;
@@ -172,7 +264,7 @@ export function raDon(hs: HoSo, st0: ChienTran, loai0: 'vo-ky' | 'tuyet-chieu' |
       heSo *= 1.3;
       st.minh = bo(st.minh, 'truy-phong');
     }
-    danh(heSo);
+    if (heSo > 0) danh(heSo);
     vfx.unshift({ loai: 'vet', id: c.he, ben: 'dich' });
     const pha: string[] = [];
     if (c.id === 'luu-van-kiem') {
@@ -198,7 +290,47 @@ export function raDon(hs: HoSo, st0: ChienTran, loai0: 'vo-ky' | 'tuyet-chieu' |
     } else if (c.id === 'kinh-hong-chi' && rng() < 0.7 + coThem) {
       st.dich = them(st.dich, 'diem-huyet', 1, lt);
       pha.push('Điểm huyệt');
+    } else if (c.id === 'kiem-khi-tram') {
+      st.dich = them(st.dich, 'kiem-thuong', 2, lt);
+      pha.push('2 tầng Kiếm thương');
+    } else if (c.id === 'kiem-vong' || c.id === 'thai-cuc-thoi-thu') {
+      st.phan = c.id === 'kiem-vong' ? { giam: 0.6, phan: 0.9 } : { giam: 0.7, phan: 0.7 };
+      st.minh = them(st.minh, 'phan-don', 1, 0);
+      vfx.push({ loai: 'phu', id: 'khien', ben: 'minh' });
+      pha.push('Giăng thế phản đòn');
+    } else if (c.id === 'doan-nhac-dao') {
+      st.dich = them(st.dich, 'pha-giap', 1, lt);
+      pha.push('Phá giáp');
+    } else if (c.id === 'huyet-dao') {
+      hoi += Math.round(tong * 0.5);
+    } else if (c.id === 'hoi-ma-thuong') {
+      st.minh = them(st.minh, 'lien-kich', 1, 0);
+    } else if (c.id === 'thuong-tran' || c.id === 'kim-chung-trao') {
+      const k = Math.round(hs.mauMax * (c.id === 'thuong-tran' ? 0.15 : 0.25));
+      st.khien = Math.min(hs.mauMax * 0.4, st.khien + k);
+      vfx.push({ loai: 'phu', id: 'cuong-khi', ben: 'minh' }, { loai: 'so', so: k, kieu: 'khien', ben: 'minh' });
+      pha.push(`Khiên +${k}`);
+    } else if (c.id === 'bang-son-quyen') {
+      st.dich = them(st.dich, 'chan-dong', 1, lt);
+      if (tang(st.dich, 'chan-dong') >= 3 && st.choangCho <= 0) {
+        st.dich = them(bo(st.dich, 'chan-dong'), 'choang', 1, 2);
+        st.choangCho = 5;
+        vfx.push({ loai: 'phu', id: 'choang', ben: 'dich' });
+        pha.push('CHOÁNG');
+      }
+    } else if (c.id === 'hap-tinh-chuong') {
+      st.nguyen = Math.min(toiDa, (st.nguyen ?? toiDa) + 30);
+      st.dich = them(st.dich, 'noi-thuong', 1, lt);
+      vfx.push({ loai: 'phu', id: 'khi-the', ben: 'minh' });
+      pha.push('Chân nguyên +30, Nội thương');
+    } else if (c.id === 'pha-huyet-chi') {
+      st.dich = them(st.dich, 'diem-huyet', 1, lt);
+      pha.push('Điểm huyệt');
+    } else if (c.id === 'giai-huyet-chi') {
+      hoi += Math.round(hs.mauMax * 0.08);
+      giai = true;
     }
+    if (vo) pha.push('CƯƠNG KHÍ VỠ');
     dong.push(`Ngươi dùng ${c.ten}: −${tong}${coBao ? ' (bạo kích!)' : ''}.${pha.length ? ` ${pha.join(', ')}.` : ''}`);
   } else {
     vfx.unshift({ loai: 'tuyet', id: c.he, ben: 'dich' }, { loai: 'rung' });
@@ -243,6 +375,8 @@ export function raDon(hs: HoSo, st0: ChienTran, loai0: 'vo-ky' | 'tuyet-chieu' |
     dong.push(`Ngươi tung tuyệt chiêu ${c.ten}: −${tong}${coBao ? ' (bạo kích!)' : ''}.${chu}`);
   }
   if (loai === 'vo-ky' && st.hoi > 0) st.hoi -= 1;
+  if (loai === 'tuyet-chieu' && vo) dong.push('Cương khí vỡ!');
+  if (khac.kieu === 'khac' && (tong > 0 || vo)) vfx.push({ loai: 'so', so: 0, kieu: 'khac', ben: 'dich' });
 
   // hiệu ứng linh căn của chiêu (chỉ khi chiêu cùng hệ với linh căn)
   if (nguyenTo) {
@@ -260,18 +394,76 @@ export function raDon(hs: HoSo, st0: ChienTran, loai0: 'vo-ky' | 'tuyet-chieu' |
   }
   if (hoi > 0) vfx.push({ loai: 'so', so: hoi, kieu: 'hoi', ben: 'minh' }, { loai: 'phu', id: 'hoi', ben: 'minh' });
   if (coBao) vfx.push({ loai: 'phu', id: 'bao', ben: 'dich' }, { loai: 'rung' });
-  return { st, dmg: tong, hoi, dong, vfx };
+  return { st, dmg: tong, hoi, dong, vfx, ngat, vo, giai };
+}
+
+/** Qua một lượt của người chơi: đếm lùi các trạng thái có hạn trên mình (đan chiến). */
+function quaLuotMinh(st: ChienTran): ChienTran {
+  let minh = st.minh;
+  for (const id of Object.keys(minh) as TtId[]) {
+    const t = minh[id]!;
+    if (t.luot <= 0) continue;
+    if (t.luot <= 1) minh = bo(minh, id);
+    else minh = { ...minh, [id]: { ...t, luot: t.luot - 1 } };
+  }
+  return minh === st.minh ? st : { ...st, minh };
 }
 
 /** Người chơi thủ thế: mất Liên kích, +1 Khí thế, tuyệt chiêu vẫn hồi. */
-export function thuThe(st: ChienTran, hs: HoSo): ChienTran {
+export function thuThe(st0: ChienTran, hs: HoSo): ChienTran {
+  const st = quaLuotMinh(st0);
   const nguyen = Math.min(nguyenToiDa(hs), nguyenNay(st, hs) + NGUYEN.hoiMoiLuot + NGUYEN.hoiKhiThu);
   return { ...st, minh: them(bo(st.minh, 'lien-kich'), 'khi-the', 1, 0), hoi: Math.max(0, st.hoi - 1), luot: st.luot + 1, nguyen };
 }
-/** Dùng đan: mất Liên kích, tuyệt chiêu vẫn hồi. `nguyenThem`: Hồi Nguyên Đan. */
-export function dungDanTran(st: ChienTran, hs: HoSo, nguyenThem = 0): ChienTran {
+/** Đan chiến dùng trong trận: uống (buff mình) hoặc ném (vào địch). Phẩm 0–4 (4 = đan văn). */
+export type DanChienId = 'cuong-huyet-dan' | 'kim-cuong-dan' | 'phong-hanh-dan' | 'van-doc-dan' | 'loi-hoa-dan' | 'tan-linh-dan';
+export const DAN_NEM: readonly DanChienId[] = ['van-doc-dan', 'loi-hoa-dan', 'tan-linh-dan'];
+/**
+ * Dùng đan: mất Liên kích, tuyệt chiêu vẫn hồi. `nguyenThem`: Hồi Nguyên Đan.
+ * `chien`: đan chiến (buff gắn lên mình, hoặc ném vào địch: trả thêm sát thương / cờ ngắt để nơi gọi xử lý).
+ */
+export function dungDanTran(
+  st0: ChienTran,
+  hs: HoSo,
+  nguyenThem = 0,
+  chien?: { id: DanChienId; pham: number; mauMaxDich: number },
+): ChienTran & { _dan?: { dmg: number; ngat: boolean; vo: boolean; vfx: Vfx[] } } {
+  let st = quaLuotMinh(st0);
   const nguyen = Math.min(nguyenToiDa(hs), nguyenNay(st, hs) + NGUYEN.hoiMoiLuot + nguyenThem);
-  return { ...st, minh: bo(st.minh, 'lien-kich'), hoi: Math.max(0, st.hoi - 1), luot: st.luot + 1, nguyen };
+  st = { ...st, minh: bo(st.minh, 'lien-kich'), dich: { ...st.dich }, hoi: Math.max(0, st.hoi - 1), luot: st.luot + 1, nguyen };
+  if (!chien) return st;
+  const m = Math.max(0, Math.min(4, chien.pham));
+  const vfx: Vfx[] = [];
+  let dmg = 0;
+  let ngat = false;
+  let vo = false;
+  const L = DAN_CHIEN.luot + 1; // +1 vì lượt dùng đan cũng bị đếm
+  if (chien.id === 'cuong-huyet-dan') st.minh = { ...st.minh, 'cuong-huyet': { tang: m + 1, luot: L } };
+  else if (chien.id === 'kim-cuong-dan') st.minh = { ...st.minh, 'kim-cuong': { tang: m + 1, luot: L } };
+  else if (chien.id === 'phong-hanh-dan') st.minh = { ...st.minh, 'phong-hanh': { tang: m + 1, luot: L } };
+  else if (chien.id === 'van-doc-dan') {
+    st.dich = { ...st.dich, 'doc-dich': { tang: m + 1, luot: DAN_CHIEN.luot } };
+    vfx.push({ loai: 'phu', id: 'doc-no', ben: 'dich' });
+  } else if (chien.id === 'loi-hoa-dan') {
+    let d = chien.mauMaxDich * DAN_CHIEN.loiHoa[m];
+    if (st.cuongMax && (st.cuong ?? 0) > 0) {
+      st.cuong = (st.cuong ?? 0) - d * 3;
+      d *= LUAT_CUONG.quaCuong;
+      if (st.cuong <= 0) {
+        st.cuong = 0;
+        st.cuongCho = LUAT_CUONG.tuLai;
+        st.dich = them(them(st.dich, 'vo-cuong', 1, 2), 'choang', 1, 2);
+        vo = ngat = true;
+        vfx.push({ loai: 'phu', id: 'vo-cuong', ben: 'dich' });
+      }
+    }
+    dmg = Math.round(d);
+    vfx.push({ loai: 'phu', id: 'loi-hoa', ben: 'dich' }, { loai: 'so', so: dmg, kieu: 'thuong', ben: 'dich' }, { loai: 'rung' });
+  } else if (chien.id === 'tan-linh-dan') {
+    ngat = true;
+    vfx.push({ loai: 'phu', id: 'tan-linh', ben: 'dich' });
+  }
+  return { ...st, _dan: { dmg, ngat, vo, vfx } };
 }
 
 /** Đầu lượt của địch: trạng thái rút máu, đếm lùi thời hạn. Trả về địch có đang choáng không (mất lượt). */
@@ -281,11 +473,17 @@ export function dauLuotDich(st0: ChienTran, mauMaxDich: number, hs: HoSo): { st:
   const ktt = tang(st.dich, 'kiem-thuong');
   const nt = tang(st.dich, 'noi-thuong');
   const td = tang(st.dich, 'thieu-dot');
-  const dmg = Math.round(mauMaxDich * (0.015 * ktt + 0.02 * nt + 0.015 * td * hs.linhCan.hieuLuc));
+  const vd = tang(st.dich, 'doc-dich');
+  const dmg = Math.round(mauMaxDich * (0.015 * ktt + 0.02 * nt + 0.015 * td * hs.linhCan.hieuLuc + (vd ? DAN_CHIEN.vanDoc[vd - 1] : 0)));
+  if (st.cuongMax && (st.cuong ?? 0) <= 0 && (st.cuongCho ?? 0) > 0) {
+    st.cuongCho = (st.cuongCho ?? 0) - 1;
+    if (st.cuongCho <= 0) st.cuong = Math.round(st.cuongMax * LUAT_CUONG.tuLaiPhan);
+  }
   const dong: string[] = [];
   if (dmg > 0) {
     vfx.push({ loai: 'so', so: dmg, kieu: 'dot', ben: 'dich' });
     if (td) vfx.push({ loai: 'nguyen-to', id: 'hoa', ben: 'dich' });
+    if (vd) vfx.push({ loai: 'phu', id: 'doc-no', ben: 'dich' });
     dong.push(`Vết thương trên địch rút −${dmg}.`);
   }
   const choang = st.dich.choang?.luot === 2;
@@ -300,19 +498,31 @@ export function dauLuotDich(st0: ChienTran, mauMaxDich: number, hs: HoSo): { st:
 }
 
 /** Người chơi hứng một đòn của địch: né (thân pháp), giảm vì Điểm huyệt, khiên đỡ trước. `dmgGoc` đã tính phòng ngự. */
-export function hungDon(hs: HoSo, st0: ChienTran, dmgGoc: number, rng: () => number): { st: ChienTran; dmg: number; ne: boolean; dong: string[]; vfx: Vfx[] } {
+export function hungDon(hs: HoSo, st0: ChienTran, dmgGoc: number, rng: () => number): { st: ChienTran; dmg: number; ne: boolean; dong: string[]; vfx: Vfx[]; phan: number } {
   let st: ChienTran = { ...st0, minh: { ...st0.minh } };
   const vfx: Vfx[] = [];
-  let ne = rng() < Math.min(0.3, (0.3 * hs.rThanPhap) / (hs.rThanPhap + 1)) + (hs.thanPhap === 'lang-ba' ? 0.08 : 0);
+  const ph = tang(st.minh, 'phong-hanh');
+  let ne = rng() < Math.min(0.3, (0.3 * hs.rThanPhap) / (hs.rThanPhap + 1)) + (hs.thanPhap === 'lang-ba' ? 0.08 : 0) + (ph ? DAN_CHIEN.phongHanh[ph - 1] : 0);
   if (hs.thanPhap === 'lang-ba' && st.luot > 0 && st.luot % 5 === 0) ne = true;
   if (ne) {
     if (hs.thanPhap === 'truy-phong') st.minh = them(st.minh, 'truy-phong', 1, 0);
     if (hs.thanPhap === 'huyen-anh') st.minh = them(st.minh, 'khi-the', 1, 0);
     vfx.push({ loai: 'phu', id: 'ne', ben: 'minh' }, { loai: 'so', so: 0, kieu: 'ne', ben: 'minh' });
-    return { st, dmg: 0, ne: true, dong: ['Ngươi né được!'], vfx };
+    return { st, dmg: 0, ne: true, dong: ['Ngươi né được!'], vfx, phan: 0 };
   }
   let dmg = dmgGoc * (1 - 0.12 * tang(st.dich, 'diem-huyet'));
   const dong: string[] = [];
+  const kc = tang(st.minh, 'kim-cuong');
+  if (kc) dmg *= 1 - DAN_CHIEN.kimCuong[kc - 1];
+  let phan = 0;
+  if (st.phan) {
+    phan = Math.round(dmgGoc * st.phan.phan);
+    dmg *= 1 - st.phan.giam;
+    dong.push(`Thế phản đòn hoá giải ${Math.round(st.phan.giam * 100)}%, trả lại ${phan}.`);
+    vfx.push({ loai: 'phu', id: 'ngat', ben: 'minh' });
+    st.phan = null;
+    st.minh = bo(st.minh, 'phan-don');
+  }
   if (st.khien > 0) {
     const hut = Math.min(st.khien, dmg);
     st.khien -= hut;
@@ -322,7 +532,7 @@ export function hungDon(hs: HoSo, st0: ChienTran, dmgGoc: number, rng: () => num
   }
   dmg = Math.round(dmg);
   if (dmg > 0) vfx.push({ loai: 'so', so: dmg, kieu: 'thuong', ben: 'minh' });
-  return { st, dmg, ne: false, dong, vfx };
+  return { st, dmg, ne: false, dong, vfx, phan };
 }
 
 /** Máy chọn chiêu khi tự đánh: tuyệt chiêu khi sẵn và đáng dùng, còn lại võ kỹ. */

@@ -3,8 +3,25 @@
 // Thuần tính toán, không dính giao diện. Không khoá cảnh giới: quái tầng 1 đã ngang tu sĩ Kim Đan.
 import { CANH_GIOI, CHI_SO, DAN_PHUONG, LUAT, LO_DAN, anhDan, timDanPhuong, type ChiSo, type PhamThat } from './duLieu.ts';
 import { chiSo, hoSoChien, mauHienTai, mauToiDa, type Kho } from './kho.ts';
-import { chienMoi, dauLuotDich, duNguyen, dungDanTran, hungDon, raDon, thuThe, tuDanh, tuyetChieuSan, type ChienTran, type DichTuDong, type KetTuDong, type Vfx } from './chienDau.ts';
-import { MO_O, rngHat, themLuyenThuc } from './voCong.ts';
+import {
+  DAN_CHIEN,
+  chienMoi,
+  dauLuotDich,
+  duNguyenO,
+  dungDanTran,
+  hungDon,
+  nguyenToiDa,
+  raDon,
+  thuThe,
+  tuDanh,
+  tuyetChieuSan,
+  type ChienTran,
+  type DanChienId,
+  type DichTuDong,
+  type KetTuDong,
+  type Vfx,
+} from './chienDau.ts';
+import { MO_O, rngHat, themLuyenThuc, type NguyenTo } from './voCong.ts';
 import { giayKhoaMatHon, theLucHienTai } from './kyNgo.ts';
 import { chiSoThu, hieuLucThu, thuXuatChien, timLoaiThu } from './linhThu.ts';
 
@@ -46,6 +63,10 @@ export const LUAT_VUC = {
   thuDoMoi: 5,
   /** Đỡ đòn: chỉ nhận bấy nhiêu phần sát thương; đỡ trúng đòn lớn thì phản lại nửa đòn đánh thường. */
   doDon: 0.3,
+  /** Cương khí của boss: phần máu tối đa. */
+  cuongBoss: 0.32,
+  /** Cuồng Huyết Đan: uống vào mất ngay bấy nhiêu phần máu. */
+  cuongHuyetMau: 0.08,
 } as const;
 
 export const TANG_BOSS: Record<number, BossId> = { 16: 'hat-hau', 33: 'huyet-dang', 50: 'ma-long' };
@@ -141,6 +162,8 @@ export interface Boss {
   soDon: number;
   /** Hệ số sát thương nhận theo kiểu đánh (giáp dày: sức mạnh kém hiệu quả). */
   khang: { luc: number; thanThuc: number };
+  /** Hệ ngũ hành: chiêu hệ khắc nó phá cương khí nhanh hơn và đau hơn chút. */
+  he: NguyenTo;
   mo: string;
   chieu: readonly Chieu[];
 }
@@ -151,6 +174,7 @@ export const BOSS: Record<BossId, Boss> = {
     tang: 16,
     soDon: 11,
     khang: { luc: 0.7, thanThuc: 1.2 },
+    he: 'tho',
     mo: 'Cổng đá vỡ vụn. Mặt nạ xương có sừng ngẩng lên, đuôi độc cong vút. Giáp quá dày: thần thức sẽ hiệu quả hơn.',
     chieu: [
       { id: 'thuong', ten: 'Kìm thép', loai: 'thuong', anh: 'dung', dmg: 0.1, bao: 'Nó giương đôi kìm, chuẩn bị kẹp tới.' },
@@ -165,6 +189,7 @@ export const BOSS: Record<BossId, Boss> = {
     tang: 33,
     soDon: 13,
     khang: { luc: 1.2, thanThuc: 0.75 },
+    he: 'moc',
     mo: 'Thân cây chết đen như than, chín con mắt lần lượt mở. Thần thức vô dụng với nó, nhưng thân gỗ thì chém được.',
     chieu: [
       { id: 'thuong', ten: 'Roi gai', loai: 'thuong', anh: 'dung', dmg: 0.11, bao: 'Những sợi dây gai quằn quại, sẵn sàng quất tới.' },
@@ -179,6 +204,7 @@ export const BOSS: Record<BossId, Boss> = {
     tang: 50,
     soDon: 14,
     khang: { luc: 1, thanThuc: 1 },
+    he: 'hoa',
     mo: 'Đáy vực. Những vòng thân đen như núi chuyển động, xiềng xích loảng xoảng. Chúa vực đã thức giấc.',
     chieu: [
       { id: 'thuong', ten: 'Long trảo', loai: 'thuong', anh: 'dung', dmg: 0.13, bao: 'Móng vuốt khổng lồ cào xuống mặt đá.' },
@@ -342,6 +368,10 @@ export interface TranBoss {
   dongNguoi?: string[];
   /** Trạng thái trận theo bộ máy chung (chienDau.ts): hiệu ứng trên boss và trên người chơi, hồi chiêu, khiên. */
   chien?: ChienTran;
+  /** Đòn lớn boss đang gồng đã bị ngắt (lượt boss tới mất đòn đó). */
+  ngat?: boolean;
+  /** Vừa bị ngắt một lần: đòn lớn kế tiếp nó gồng chắc hơn, không ngắt được. */
+  khangNgat?: boolean;
 }
 export interface VucTrangThai {
   /** Ngày (giờ Việt Nam) của mê cung hiện tại; qua ngày thì vực đổi hình (xem lamMoiVuc). */
@@ -733,6 +763,17 @@ const pt = (x: number) => `${Math.round(x * 100)}%`;
 /** Những viên dùng được trong vực: đan hồi máu, ba đan giải trạng thái, Uyên Huyết Đan (trong túi hoặc trong kho). */
 /** Chân nguyên Hồi Nguyên Đan hồi lại theo phẩm [hạ, trung, thượng, cực, đan văn]. */
 export const HOI_NGUYEN = [30, 40, 55, 75, 100] as const;
+/** Đan chiến: tả ngắn theo phẩm m. */
+const DAN_CHIEN_ID: readonly DanChienId[] = ['cuong-huyet-dan', 'kim-cuong-dan', 'phong-hanh-dan', 'van-doc-dan', 'loi-hoa-dan', 'tan-linh-dan'];
+function taDanChien(id: DanChienId, m: number): string {
+  const L = DAN_CHIEN.luot;
+  if (id === 'cuong-huyet-dan') return `Uống: sát thương +${pt(DAN_CHIEN.cuongHuyet[m])} trong ${L} lượt, mất ${pt(LUAT_VUC.cuongHuyetMau)} máu`;
+  if (id === 'kim-cuong-dan') return `Uống: nhận ít hơn ${pt(DAN_CHIEN.kimCuong[m])} sát thương trong ${L} lượt`;
+  if (id === 'phong-hanh-dan') return `Uống: né +${pt(DAN_CHIEN.phongHanh[m])} trong ${L} lượt`;
+  if (id === 'van-doc-dan') return `Ném: địch mất ${pt(DAN_CHIEN.vanDoc[m])} máu mỗi lượt trong ${L} lượt`;
+  if (id === 'loi-hoa-dan') return `Ném: nổ ${pt(DAN_CHIEN.loiHoa[m])} máu địch, phá cương khí gấp 3`;
+  return 'Ném: xoá giáp hoá của địch, ngắt đòn lớn đang gồng';
+}
 export function dsDanVuc(k: Kho): MonDan[] {
   const ra: MonDan[] = [];
   const uyen = (k.vuc.tui['uyen-huyet-dan'] ?? 0) + (k.vatVuc['uyen-huyet-dan'] ?? 0);
@@ -740,14 +781,17 @@ export function dsDanVuc(k: Kho): MonDan[] {
   for (const p of DAN_PHUONG) {
     const giai = DAN_GIAI[p.id];
     const nguyen = p.id === 'hoi-nguyen-dan';
-    if (nguyen && !k.vuc.tran) continue;
-    if (!giai && !nguyen && p.uong?.loai !== 'hoi-mau') continue;
+    const chien = DAN_CHIEN_ID.includes(p.id as DanChienId);
+    if ((nguyen || chien) && !k.vuc.tran) continue;
+    if (!giai && !nguyen && !chien && p.uong?.loai !== 'hoi-mau') continue;
     const dong: [PhamThat | 'dv', number][] = [[3, k.tuiDan[p.id]?.[3] ?? 0], [2, k.tuiDan[p.id]?.[2] ?? 0], [1, k.tuiDan[p.id]?.[1] ?? 0], [0, k.tuiDan[p.id]?.[0] ?? 0]];
     dong.unshift(['dv', k.danVan[p.id] ?? 0]);
     for (const [loai, co] of dong) {
       if (co < 1) continue;
       const m = loai === 'dv' ? 4 : loai;
-      const moTa = nguyen
+      const moTa = chien
+        ? taDanChien(p.id as DanChienId, m)
+        : nguyen
         ? `Chân nguyên +${HOI_NGUYEN[m]}`
         : giai
         ? giai.tt
@@ -760,7 +804,7 @@ export function dsDanVuc(k: Kho): MonDan[] {
   return ra;
 }
 /** Dùng một viên. Trả về kho mới và câu tả, hoặc null nếu không có viên đó. */
-export function dungDanVuc(k: Kho, khoa: string, luc = Date.now()): { kho: Kho; chu: string; nguyen?: number } | null {
+export function dungDanVuc(k: Kho, khoa: string, luc = Date.now()): { kho: Kho; chu: string; nguyen?: number; chien?: { id: DanChienId; pham: number } } | null {
   if (khoa === 'uyen-huyet-dan') {
     let kho: Kho;
     if ((k.vuc.tui['uyen-huyet-dan'] ?? 0) > 0) kho = datVuc(k, { tui: { ...k.vuc.tui, 'uyen-huyet-dan': k.vuc.tui['uyen-huyet-dan'] - 1 } });
@@ -786,6 +830,12 @@ export function dungDanVuc(k: Kho, khoa: string, luc = Date.now()): { kho: Kho; 
   const p = timDanPhuong(id);
   const giai = DAN_GIAI[id];
   if (id === 'hoi-nguyen-dan') return { kho, chu: `${p.ten}: chân nguyên +${HOI_NGUYEN[m]}.`, nguyen: HOI_NGUYEN[m] };
+  if (DAN_CHIEN_ID.includes(id as DanChienId)) {
+    const dc = id as DanChienId;
+    if (dc === 'cuong-huyet-dan') kho = truMau(kho, Math.round(mauToiDa(kho) * LUAT_VUC.cuongHuyetMau), luc);
+    const nem = dc === 'van-doc-dan' || dc === 'loi-hoa-dan' || dc === 'tan-linh-dan';
+    return { kho, chu: `${nem ? 'Ném' : 'Uống'} ${p.ten}: ${taDanChien(dc, m).replace(/^(Uống|Ném): /, '')}.`, chien: { id: dc, pham: m } };
+  }
   if (giai) {
     if (giai.tt) {
       kho = hoiMau(kho, giai.hoi[m], luc);
@@ -821,6 +871,8 @@ export function batDauTran(k: Kho, rng: () => number = Math.random, luc = Date.n
   const mauMax = Math.round(chuanVuc('khiHuyet', b.tang) * 8);
   const tran: TranBoss = { diem: d.id, boss: b.id, mau: mauMax, mauMax, luot: 0, yDo: 'thuong', anh: 'dung', giap: 0, cuong: false, hoiCho: 0, nhatKy: [] };
   tran.yDo = chonYDo(tran, 1, rng);
+  const cuong = Math.round(mauMax * LUAT_VUC.cuongBoss);
+  tran.chien = { ...chienMoi(nguyenToiDa(hoSoBoss(k, tran, luc))), cuong, cuongMax: cuong };
   return datVuc(k, { tran });
 }
 /** Sát thương 100% một đòn của người chơi lên boss (chưa tính giáp hoá, chưa nhân ngẫu nhiên). */
@@ -832,7 +884,10 @@ export function donChuanBoss(k: Kho, t: TranBoss, cs: 'luc' | 'thanThuc', luc = 
 /** Sát thương một đòn thường của người chơi (có tính giáp hoá). */
 export const satThuong = (k: Kho, t: TranBoss, cs: 'luc' | 'thanThuc', luc = Date.now()) => donChuanBoss(k, t, cs, luc) * (t.giap > 0 ? 0.5 : 1);
 /** Hồ sơ chiến đấu của người chơi trong trận boss. */
-export const hoSoBoss = (k: Kho, t: TranBoss, luc = Date.now()) => hoSoChien(k, chuanVuc('thanPhap', BOSS[t.boss].tang) * LUAT_VUC.heSoBoss, luc);
+export const hoSoBoss = (k: Kho, t: TranBoss, luc = Date.now()) => ({
+  ...hoSoChien(k, chuanVuc('thanPhap', BOSS[t.boss].tang) * LUAT_VUC.heSoBoss, luc),
+  nguyenToDich: BOSS[t.boss].he,
+});
 /** Tuyệt chiêu dùng được lượt này chưa. */
 export const tuyetChieuBossSan = (k: Kho, t: TranBoss, luc = Date.now()) => tuyetChieuSan(hoSoBoss(k, t, luc), t.chien ?? chienMoi(), k.tuVi.canhGioi >= MO_O.tuyetChieu);
 /** Sát thương một chiêu của boss lên người chơi (chưa tính đỡ đòn). */
@@ -847,7 +902,7 @@ export function thuRaTran(k: Kho, luc = Date.now()) {
   const t = thuXuatChien(k);
   return t && hieuLucThu(t, luc) > 0 ? t : null;
 }
-export type HanhDong = { loai: 'vo-ky' | 'tuyet-chieu' | 'thuong' | 'do' } | { loai: 'dan'; khoa: string };
+export type HanhDong = { loai: 'vo-ky' | 'phu0' | 'phu1' | 'tuyet-chieu' | 'thuong' | 'do' } | { loai: 'dan'; khoa: string };
 export interface KetLuot {
   kho: Kho;
   ket: 'tiep' | 'thang' | 'chet';
@@ -880,12 +935,24 @@ export function nguoiDanh(k: Kho, hd: HanhDong, rng: () => number = Math.random,
     const r = dungDanVuc(kho, hd.khoa, luc);
     if (!r) return null;
     kho = r.kho;
-    st = dungDanTran(st, hoSoBoss(kho, t, luc), r.nguyen ?? 0);
+    const { _dan, ...st2 } = dungDanTran(st, hoSoBoss(kho, t, luc), r.nguyen ?? 0, r.chien && { ...r.chien, mauMaxDich: t.mauMax });
+    st = st2;
     dong.push(r.chu);
-  } else if (hd.loai === 'vo-ky' || hd.loai === 'tuyet-chieu' || hd.loai === 'thuong') {
+    if (_dan) {
+      t.mau = Math.max(0, t.mau - _dan.dmg);
+      vfx.push(..._dan.vfx);
+      if (r.chien?.id === 'tan-linh-dan' && t.giap > 0) {
+        t.giap = 0;
+        dong.push('Giáp hoá tan biến.');
+      }
+      if (_dan.vo) dong.push('Cương khí vỡ!');
+      if (_dan.ngat && chieuBoss(t, t.yDo).loai === 'lon') ngatDon(t, dong, vfx);
+    }
+  } else if (hd.loai === 'vo-ky' || hd.loai === 'phu0' || hd.loai === 'phu1' || hd.loai === 'tuyet-chieu' || hd.loai === 'thuong') {
     const hs = hoSoBoss(kho, t, luc);
     if (hd.loai === 'tuyet-chieu' && !tuyetChieuSan(hs, st, kho.tuVi.canhGioi >= MO_O.tuyetChieu)) return null;
-    if (hd.loai === 'vo-ky' && !duNguyen(hs, st, 'vo-ky')) return null;
+    if (hd.loai !== 'tuyet-chieu' && !duNguyenO(hs, st, hd.loai)) return null;
+    if ((hd.loai === 'phu0' || hd.loai === 'phu1') && !hs.phu?.[hd.loai === 'phu0' ? 0 : 1]) return null;
     const d = raDon(hs, st, hd.loai, (ngoai) => donChuanBoss(kho, t, ngoai ? 'luc' : 'thanThuc', luc), t.mauMax, t.giap > 0 ? 0.5 : 1, rng);
     st = d.st;
     t.mau = Math.max(0, t.mau - d.dmg);
@@ -893,6 +960,14 @@ export function nguoiDanh(k: Kho, hd: HanhDong, rng: () => number = Math.random,
     dong.push(...d.dong);
     if (t.giap > 0) dong.push('(Giáp hoá: chỉ được nửa.)');
     vfx.push(...d.vfx);
+    if (d.giai) {
+      const xau = (['mau', 'doc', 'yeu'] as const).find((x) => kho.vuc.tt[x] > 0);
+      if (xau) {
+        kho = datVuc(kho, { tt: { ...kho.vuc.tt, [xau]: 0 } });
+        dong.push(`Giải ${TRANG_THAI[xau].ten.toLowerCase()}.`);
+      }
+    }
+    if (d.ngat && !d.vo && chieuBoss(t, t.yDo).loai === 'lon') ngatDon(t, dong, vfx);
   } else {
     st = thuThe(st, hoSoBoss(kho, t, luc));
     dong.push('Ngươi thủ thế, chờ đòn. +1 Khí thế.');
@@ -918,6 +993,17 @@ export function nguoiDanh(k: Kho, hd: HanhDong, rng: () => number = Math.random,
   t.dongNguoi = dong;
   return { kho: datVuc(kho, { tran: t }), ket: 'tiep', dong, chieu: null, nhan: [], thuDanh, thuDo: false, dinh: [], vfx };
 }
+/** Ngắt đòn lớn boss đang gồng: lượt tới nó mất đòn đó. */
+function ngatDon(t: TranBoss, dong: string[], vfx: Vfx[]) {
+  if (t.ngat) return;
+  if (t.khangNgat) {
+    dong.push(`${chieuBoss(t, t.yDo).ten} lần này gồng quá chắc, không ngắt nổi!`);
+    return;
+  }
+  t.ngat = true;
+  dong.push(`Ngắt được ${chieuBoss(t, t.yDo).ten}!`);
+  vfx.push({ loai: 'phu', id: 'ngat', ben: 'dich' }, { loai: 'rung' });
+}
 /** Nửa lượt của boss: ra chiêu đã báo trước, trạng thái rút máu, rồi báo trước chiêu kế tiếp. */
 export function bossDanh(k: Kho, rng: () => number = Math.random, luc = Date.now()): KetLuot | null {
   const t0 = k.vuc.tran;
@@ -941,6 +1027,9 @@ export function bossDanh(k: Kho, rng: () => number = Math.random, luc = Date.now
   if (t.mau > 0 && !dl.choang) t.anh = chieu.anh;
   if (t.mau <= 0 || dl.choang) {
     // boss gục vì vết thương, hoặc choáng mất lượt: không ra chiêu
+  } else if (t.ngat && chieu.loai === 'lon') {
+    dong.push(`${b.ten} bị ngắt, ${chieu.ten} tan thành mây khói!`);
+    t.khangNgat = true;
   } else if (chieu.loai === 'buff') {
     if (chieu.id === 'giap-hoa') t.giap = 2;
     if (chieu.id === 'nghich-lan') t.cuong = true;
@@ -958,9 +1047,14 @@ export function bossDanh(k: Kho, rng: () => number = Math.random, luc = Date.now
     vfx.push(...h.vfx);
     const dmg = h.dmg;
     kho = truMau(kho, dmg, luc);
+    if (h.phan > 0) {
+      t.mau = Math.max(0, t.mau - h.phan);
+      vfx.push({ loai: 'so', so: h.phan, kieu: 'thuong', ben: 'dich' });
+    }
     if (h.ne) dong.push(`${b.ten} dùng ${chieu.ten}, nhưng ngươi né được!`);
     else dong.push(`${b.ten} dùng ${chieu.ten}: ngươi mất ${dmg} máu.${dangDo ? ' (đã đỡ)' : ''}`, ...h.dong);
     if (chieu.loai === 'lon' && !h.ne) vfx.push({ loai: 'rung' });
+    if (chieu.loai === 'lon') t.khangNgat = false;
     if (chieu.tt && !h.ne) {
       kho = datVuc(kho, { tt: themTrangThai(kho.vuc.tt, chieu.tt, dangDo ? 0.5 : 1, heSoHac(kho)) });
       for (const id of Object.keys(chieu.tt) as TrangThaiId[]) dinh.push(id);
@@ -972,6 +1066,7 @@ export function bossDanh(k: Kho, rng: () => number = Math.random, luc = Date.now
     }
   }
   t.chien = st;
+  t.ngat = false;
   if (t.giap > 0 && chieu.id !== 'giap-hoa') t.giap -= 1;
   if (t.hoiCho > 0 && chieu.id !== 'hap-huyet') t.hoiCho -= 1;
   const tk = tick(kho, luc);

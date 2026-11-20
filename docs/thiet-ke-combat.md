@@ -293,3 +293,31 @@ Tổng ≈ **3 tuần** làm việc (chưa tính thần khí, trang phục).
 4. Thiên phú võ học (mục 5b): 5 bậc, xuất thân nghiêng thiên phú — đồng ý?
 2. Kiểu B: có cho "tự uống đan" không, hay uống đan chỉ khi đánh tay?
 3. 20 bí tịch gốc với tên như mục 5.3 — có muốn đổi tên / thêm bớt hệ không?
+
+---
+
+## 9. Đợt 1 nâng chiều sâu trận theo lượt (chốt 2026-11-20)
+
+Nguyên tắc: **một bộ luật đối xứng cho mọi đấu thủ** (người chơi, boss, quái, và sau này NPC ở Đại hội tỉ võ đánh nhau). NPC cũng có chỉ số, thiên phú, linh căn, bí tịch, đan; máy chọn chiêu dùng chung `mayChon`.
+
+1. **Bảng chiêu 4 ô**: võ kỹ chính + 2 ô võ kỹ phụ (mở theo cảnh giới, lắp được bí tịch khác hệ, hệ chính mạnh nhất nhờ thiên phú) + tuyệt chiêu. Mỗi hệ có thêm 2 bí tịch (ảnh: vo-cong/vo-ky-moi.png):
+   | Hệ | Có sẵn (gieo) | Mới: phá / ngắt | Mới: hộ thân |
+   |---|---|---|---|
+   | Kiếm | Lưu Vân (Kiếm thương) | Kiếm Khí Trảm: gieo 2 tầng Kiếm thương, cương ×1,6 | Kiếm Võng: thế phản đòn (giảm 60%, trả 90%) |
+   | Đao | Cuồng Lan (Phá giáp) | Đoạn Nhạc Đao: gieo Phá giáp, cương ×2,2 | Huyết Ẩm Đao: hút 50% máu |
+   | Thương | Bôn Lôi (Liên kích) | Hồi Mã Thương: ngắt đòn đang gồng | Thương Trận: khiên |
+   | Quyền | Khai Sơn (Chấn động) | Băng Sơn Quyền: ngắt + chấn động | Kim Chung Tráo: khiên lớn |
+   | Chưởng | Hàn Băng (Nội thương) | Hấp Tinh Chưởng: +30 chân nguyên, Nội thương | Thái Cực Thôi Thủ: giảm 70%, trả 70% |
+   | Chỉ | Kinh Hồng (Điểm huyệt) | Phá Huyệt Chỉ: ngắt + điểm huyệt | Giải Huyệt Chỉ: giải trạng thái xấu |
+2. **Cương khí (hộ thể)**: mọi đấu thủ có thanh cương khí theo phòng ngự. Còn cương khí thì giảm mạnh sát thương vào máu. Vỡ → choáng 1 lượt + nhận thêm sát thương lượt đó. Thủ (đỡ) hồi cương khí.
+3. **Ngũ hành khắc nhẹ** (không bắt buộc đúng hệ mới chơi được): Kim→Mộc→Thổ→Thủy→Hỏa→Kim. Đánh hệ khắc: phá cương khí ×1,5 và sát thương +15%. Bị khắc ngược: phá cương khí ×0,8. Các hệ khác bình thường. Lôi là dị linh căn: không khắc ai, phá cương khí +10% với mọi hệ. Con số chốt sau mô phỏng.
+4. **Ngắt đòn**: đòn lớn phải gồng 1 lượt (đã báo ý đồ). Trong lượt gồng: chiêu loại "ngắt" hoặc làm vỡ cương khí → huỷ đòn; Thủ → chặn gần hết + phản đòn; không làm gì → ăn trọn.
+5. **Đan chiến & đan ném** (ảnh: dan-chien/dan-chien.png), luyện ở lò như đan thường, phẩm quyết định độ mạnh: Cuồng Huyết (công, mất máu mỗi lượt), Kim Cương (thủ + hồi cương khí), Phong Hành (né, tốc) / Vạn Độc (ném: độc), Lôi Hỏa (ném: nổ, phá cương khí lớn), Tán Linh (ném: xoá buff, ngắt gồng).
+
+### 9.1 Số đã chốt sau mô phỏng (2026-11-20)
+
+- Cương khí boss = 32% máu tối đa. Còn cương: máu chỉ nhận 60% sát thương. Vỡ: choáng 1 lượt + chịu thêm 30%; 2 lượt sau tụ lại đầy (`LUAT_CUONG`, `LUAT_VUC.cuongBoss`).
+- Ngắt: ngắt thành công một lần thì đòn lớn kế tiếp của boss **không ngắt được** (`khangNgat`) — nếu không, hệ có chiêu ngắt thắng 100%.
+- Hệ boss: Độc Hạt Hậu = Thổ (sợ Mộc), Cửu Mục Thụ Yêu = Mộc (sợ Kim), U Uyên Ma Long = Hỏa (sợ Thủy).
+- Mô phỏng (cùng cảnh giới boss, 200 trận/hệ): chỉ đánh như cũ 17–100%; biết dùng chiêu phụ (ngắt khi gồng, phá cương rồi tung tuyệt chiêu) 74–100%, riêng Chưởng gặp Thụ Yêu 31% (boss kháng thần thức, như thiết kế cũ). Đan chiến chưa tính vào mô phỏng.
+- **Chưa làm:** cương khí cho người chơi và trận NPC đấu NPC (Đại hội tỉ võ) — bộ máy đã tách hàm khắc hệ / cương khí để dùng lại.

@@ -13,7 +13,10 @@ import {
   NGUYEN_TO,
   PHAM_BI_TICH,
   TEN_LOAI_BT,
+  TEN_VAI,
   THIEN_PHU,
+  oCua,
+  vaiCua,
   anhBiTich,
   boBiTich,
   canhGioiMoO,
@@ -35,6 +38,8 @@ import { LucChienLon } from './LucChien.tsx';
 
 const O_HIEN: { o: O; ten: string; loai: LoaiBiTich }[] = [
   { o: 'voKy', ten: 'Võ kỹ', loai: 'vo-ky' },
+  { o: 'phu0', ten: 'Chiêu phụ', loai: 'vo-ky' },
+  { o: 'phu1', ten: 'Chiêu phụ 2', loai: 'vo-ky' },
   { o: 'tuyetChieu', ten: 'Tuyệt chiêu', loai: 'tuyet-chieu' },
   { o: 'thanPhap', ten: 'Thân pháp', loai: 'than-phap' },
   { o: 'tamPhap0', ten: 'Tâm pháp', loai: 'tam-phap' },
@@ -160,7 +165,9 @@ export function NhanVatTrang({
               {nguyenCua(bt.id) ? ` · ${nguyenCua(bt.id)} chân nguyên` : ''}
               {timBiTich(bt.id).hoi ? ` · hồi ${timBiTich(bt.id).hoi} lượt` : ''}
             </small>
-            <p>{timBiTich(bt.id).moTa}</p>
+            <p>
+              {timBiTich(bt.id).loai === 'vo-ky' && <b className="nhan-vai">{TEN_VAI[vaiCua(bt.id)]}</b>} {timBiTich(bt.id).moTa}
+            </p>
             {bt.nguyenTo && (
               <small className={lc.he.includes(bt.nguyenTo) ? 'hop' : 'khong-hop'}>
                 Hệ {NGUYEN_TO[bt.nguyenTo].ten}: {lc.he.includes(bt.nguyenTo) ? NGUYEN_TO[bt.nguyenTo].tac : 'không hợp linh căn, không có hiệu ứng nguyên tố'}
@@ -180,16 +187,24 @@ export function NhanVatTrang({
                   Tháo
                 </button>
               ) : (
-                <button
-                  className="nut-nho chinh"
-                  disabled={!(['voKy', 'tuyetChieu', 'thanPhap', 'tamPhap0', 'tamPhap1'] as O[]).some((o) => O_HIEN.find((x) => x.o === o)!.loai === timBiTich(bt.id).loai && cg >= canhGioiMoO(o))}
-                  onClick={() => {
-                    phat('nut-bam');
-                    doiKho((k) => ({ ...k, voCong: lapBiTich(k.voCong, bt.uid, k.tuVi.canhGioi) }));
-                  }}
-                >
-                  Lắp
-                </button>
+                (() => {
+                  const cac = oCua(timBiTich(bt.id).loai).filter((o) => cg >= canhGioiMoO(o));
+                  // võ kỹ: chọn ô (chính hay phụ); loại khác: một nút Lắp
+                  const nut = timBiTich(bt.id).loai === 'vo-ky' && cac.length > 1 ? cac : [null];
+                  return nut.map((o) => (
+                    <button
+                      key={o ?? 'lap'}
+                      className="nut-nho chinh"
+                      disabled={!cac.length}
+                      onClick={() => {
+                        phat('nut-bam');
+                        doiKho((k) => ({ ...k, voCong: lapBiTich(k.voCong, bt.uid, k.tuVi.canhGioi, o ?? undefined) }));
+                      }}
+                    >
+                      {o ? `Lắp ${O_HIEN.find((x) => x.o === o)!.ten.toLowerCase()}` : 'Lắp'}
+                    </button>
+                  ));
+                })()
               )}
               {bt.cap < CAP_LUYEN_THUC_TOI_DA &&
                 danNgo.slice(0, 1).map(([l, n]) => (

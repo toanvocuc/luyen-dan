@@ -1,0 +1,61 @@
+BƯỚC 12 — COMBAT ĐỢT 1: chiêu phụ, đan chiến / đan ném, cương khí, ngắt đòn.
+Chọn 3.1 Pro, tỉ lệ ghi ở đầu khối. Mỗi khối dán 1 lần = 1 ảnh. Lưu vào Hinh_anh/_gemini/<thư mục>/ đúng tên.
+Ảnh (1), (2), (4) NỀN TRẮNG. Ảnh (3) NỀN ĐEN tuyệt đối (để ghép phát sáng) — nếu ra nền xám/xanh đậm, nhắn thêm: 'make the background pure solid black'.
+Nếu Gemini vẽ dư / thiếu ô cũng không sao, tôi cắt theo hình chứ không theo lưới — chỉ cần ĐÚNG THỨ TỰ.
+
+===== (1) vo-cong/vo-ky-moi.png   (tỉ lệ 4:3)
+Create ONE single image: a sheet of 12 martial art skill icons for an original xianxia cultivation game, arranged in a grid of 3 rows x 4 columns, landscape 4:3. Each icon is a single bold object with its energy effect, drawn large, readable at small size. Every item is complete and centered in its own cell with wide empty white space between items; nothing touches, overlaps or is cut off. Order left to right, top row first:
+1. SWORD finisher: a straight jian sword plunging downward, many small cyan sword-qi shards converging and exploding at its tip
+2. SWORD counter: a jian sword held upright inside a woven net of thin cyan sword-light threads, like a defensive web
+3. SABER heavy: a huge broad dao saber cleaving down onto a cracking stone slab, orange sparks bursting
+4. SABER bloodthirst: a curved dao saber dripping with a crimson mist that swirls back toward the hilt
+5. SPEAR interrupt: a spear sweeping back in a sharp U-turn arc of white-gold wind, knocking aside a shadowy claw
+6. SPEAR formation: three spears crossed in a triangle forming a glowing golden barrier between them
+7. FIST mountain-crush: a fist smashing a small mountain peak into flying rock fragments, golden shockwave
+8. FIST golden bell: a translucent bronze temple bell of golden qi covering a clenched fist
+9. PALM redirect: two open palms circling around a small swirling taiji of pale blue water, deflecting a red streak away
+10. PALM absorb: an open palm drawing streams of blue-violet qi motes inward into its center
+11. FINGER piercing seal: a single pointing finger striking a glowing violet point, cracks of light spreading from it
+12. FINGER cleansing: two fingers raised with a soft jade-green light washing away dark ink smoke
+
+ART STYLE: Chinese ink-wash (shuimo) painting blended with refined semi-realistic digital illustration, matching a premium xianxia cultivation game: delicate brush linework, soft watercolor washes, muted palette of ink black, warm grey and rice-paper white with restrained accent colors.
+
+Plain pure white background everywhere, no dividing lines, no numbers, no labels, no text, no calligraphy, no logo, no watermark. Highest resolution.
+
+===== (2) dan-chien/dan-chien.png   (tỉ lệ 3:2)
+Create ONE single image: a sheet of 6 magical pill icons for an original xianxia alchemy game, arranged in a grid of 2 rows x 3 columns, landscape 3:2. Each pill is a single perfectly round glossy sphere seen straight on, filling most of its cell, with a soft specular highlight at the upper left, rich painted surface pattern, thin dark outline, exactly like a set of premium game item icons. Every pill is centered in its own cell with wide empty white space between; nothing touches, overlaps or is cut off. Order left to right, top row first:
+1. Berserk Blood Pill: dark scarlet sphere with throbbing black-red vein patterns and a faint fiery glow
+2. Diamond Body Pill: polished bronze-gold sphere with an engraved faint hexagon armor pattern
+3. Wind Walker Pill: pale silver-cyan sphere with swirling white wind streaks around it
+4. Myriad Poison Pill: sickly violet-green sphere with dark bubbling toxic swirls, a thin wisp of green smoke rising
+5. Thunder Fire Pill: cracked black sphere with bright orange lava and tiny blue lightning glowing through the cracks
+6. Qi Dispersing Pill: milky white translucent sphere with a soft grey spiral of mist inside that seems to dissolve outward
+
+ART STYLE: semi-realistic painted fantasy game item, smooth shading, saturated but elegant colors, subtle inner glow.
+
+Plain pure white background everywhere, no shadow, no plate, no dividing lines, no labels, no text, no numbers, no logo, no watermark. Highest resolution.
+
+===== (3) combat/hieu-ung-moi.png   (tỉ lệ 3:2)
+Create ONE single image: a sheet of 6 combat effects (VFX sprites) for an original xianxia cultivation game, arranged in a grid of 2 rows x 3 columns, landscape 3:2. Order left to right, top row first:
+1. POISON BURST: a bursting cloud of glowing violet-green toxic mist with small droplets splashing outward
+2. THUNDER FIRE EXPLOSION: a round explosion of orange fire with jagged blue-white lightning bolts shooting out
+3. DISPEL: a ring of white light expanding outward, scattering grey ink smoke into fading wisps
+4. QI BARRIER: a tall oval translucent barrier of pale golden qi with faint flowing rune-like brush strokes on its surface, glowing edge
+5. BARRIER SHATTER: the same pale golden oval barrier breaking apart into many flying glass-like shards of light with a bright crack at the center
+6. INTERRUPT: two crossing brush-stroke slashes forming a sharp X of white-gold light, with a burst of sparks at the crossing point
+
+Each effect is centered in its own cell with wide empty black space around it; nothing touches, overlaps or is cut off at the cell edges. ART STYLE: luminous energy drawn as Chinese calligraphy brush strokes and ink-wash splashes that GLOW, like a premium xianxia game skill effect; bright saturated light on the strokes, soft glow falloff. Background: PURE SOLID BLACK everywhere (#000000), no gradient, no floor, no characters, no weapons held by anyone, no text, no labels, no numbers, no logo, no watermark, no dividing lines. Highest resolution.
+
+===== (4) combat/trang-thai-moi.png   (tỉ lệ 1:1)
+Create ONE single image: a sheet of 9 small combat status-effect icons for an original xianxia cultivation game, arranged in a grid of 3 rows x 3 columns, square 1:1. Order left to right, top row first:
+1. Charging a big attack: a clenched fist surrounded by gathering spiral streaks of red qi
+2. Barrier broken: a cracked pale golden oval shield with shards falling
+3. Counter stance: two crossed blades with a small glowing spark between them
+4. Berserk blood (pill buff): a scarlet drop with a tiny flame on top
+5. Diamond body (pill buff): a small bronze-gold hexagon armor plate
+6. Wind walker (pill buff): a light swirl of silver-cyan wind
+7. Elemental advantage: two circling arrows of five colors (gold, green, blue, red, ochre) chasing each other
+8. Siphon: a blue-violet qi mote being pulled into a small vortex
+9. Cleansed: a jade-green lotus bud with soft light
+
+Each icon is a single bold symbol drawn large, readable at very small size, centered in its own cell with wide empty white space between icons; nothing touches or is cut off. ART STYLE: Chinese ink-wash (shuimo) painting blended with refined semi-realistic digital illustration, delicate brush linework, soft watercolor washes, one clear accent color per icon. Plain pure white background everywhere, no frame, no circle border, no dividing lines, no text, no calligraphy characters, no numbers, no logo, no watermark. Highest resolution.

@@ -5,7 +5,7 @@
 //   Phần đan, bùa, tâm pháp cộng chỉ số, linh thú cộng chỉ số, trang phục (sau này) đều đã nằm trong chỉ số.
 // - Võ công: hệ số chiêu (phẩm, luyện thục), thiên phú hệ võ, tuyệt chiêu chia theo hồi chiêu, thân pháp, tâm pháp, hợp linh căn.
 // - Linh thú xuất chiến (đánh hộ, đỡ hộ), môn quy tông môn.
-import { HE, THIEN_PHU, heSoChieu, linhCanCua, thienPhuCua, timBiTich, timTrongTui, MO_O, type BiTich } from './voCong.ts';
+import { HE, THIEN_PHU, heSoChieu, linhCanCua, thienPhuCua, timBiTich, timTrongTui, vaiCua, voKyPhu, MO_O, type BiTich } from './voCong.ts';
 import { chiSoChuaGiam, tamPhapDangLap, type Kho } from './kho.ts';
 import { thuXuatChien, timLoaiThu } from './linhThu.ts';
 
@@ -23,6 +23,7 @@ export interface LucChien {
 /** Các nút bật / tắt từng nguồn, để tách phần góp của từng nguồn. */
 interface Bat {
   voKy: boolean;
+  phu: boolean;
   tuyet: boolean;
   phuTro: boolean;
   linhCan: boolean;
@@ -56,6 +57,13 @@ function tinh(k: Kho, b: Bat): number {
   dps *= 1 + (0.1 * r) / (r + 1);
   let ehp = s.khiHuyet * (1 + s.phongNgu / Math.max(1, s.khiHuyet / 10)) / (1 - (0.3 * r) / (r + 1));
 
+  // chiêu phụ: phá / ngắt góp thêm chút sát thương (dùng xen kẽ), hộ thân góp máu hiệu dụng
+  if (b.phu)
+    for (const bt of voKyPhu(v, cg)) {
+      if (!bt) continue;
+      if (vaiCua(bt.id) === 'ho') ehp *= 1.06;
+      else dps += (congCua(bt) * heSoDu(bt)) * 0.12;
+    }
   if (b.phuTro) {
     const thanPhap = cg >= MO_O.thanPhap ? timTrongTui(v, v.lap.thanPhap)?.id : undefined;
     if (thanPhap) {
@@ -88,13 +96,14 @@ export function lucChien(k: Kho): LucChien {
   if (!k.nhanVat || !k.voCong) return { tong: 0, phan: [] };
   const buoc: [keyof Bat, string, string][] = [
     ['voKy', 'Võ kỹ', 'phẩm, luyện thục, thiên phú hệ võ'],
+    ['phu', 'Chiêu phụ', 'phá, ngắt đòn, hộ thân'],
     ['tuyet', 'Tuyệt chiêu', 'chia theo số lượt hồi chiêu'],
     ['phuTro', 'Thân pháp & tâm pháp', 'né đòn, kéo dài trạng thái…'],
     ['linhCan', 'Hợp linh căn', 'chiêu cùng hệ linh căn'],
     ['thu', 'Linh thú', 'đánh hộ, đỡ hộ'],
     ['tong', 'Môn quy', 'ưu đãi tông môn'],
   ];
-  const bat: Bat = { voKy: false, tuyet: false, phuTro: false, linhCan: false, thu: false, tong: false };
+  const bat: Bat = { voKy: false, phu: false, tuyet: false, phuTro: false, linhCan: false, thu: false, tong: false };
   let truoc = tinh(k, bat);
   const phan: PhanLucChien[] = [{ ten: 'Chỉ số & cảnh giới', them: Math.round(truoc), chu: 'khí huyết, lực, phòng ngự, thân pháp, thần thức (gồm đan, bùa, tâm pháp, linh thú)' }];
   for (const [khoa, ten, chu] of buoc) {

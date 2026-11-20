@@ -70,6 +70,9 @@ function tiengDon(vfx: Vfx[], tre: number, macDinh: Tieng | null = 'danh-trung-v
   if (co((v) => v.loai === 'so' && v.kieu === 'ne')) ds.push('ne-don');
   if (co((v) => v.loai === 'so' && v.kieu === 'khien')) ds.push('do-khien');
   if (co((v) => v.loai === 'so' && v.kieu === 'hoi')) ds.push('hoi-mau');
+  if (co((v) => v.loai === 'phu' && (v.id === 'vo-cuong' || v.id === 'loi-hoa'))) ds.push('bao-kich');
+  if (co((v) => v.loai === 'phu' && v.id === 'ngat' && v.ben === 'dich')) ds.push('choang');
+  if (co((v) => v.loai === 'phu' && v.id === 'doc-no')) ds.push('trung-doc');
   ds.forEach((t, i) => setTimeout(() => phat(t), tre + i * 120));
 }
 /** Mỗi bước: tiếng chân, rồi một tiếng thì thầm ngẫu nhiên. */
@@ -291,7 +294,7 @@ export function VucTham({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho
     vuaTuyet.current = tuyetCh;
     const tb = timTrongTui(kho.voCong, kho.voCong.lap.tuyetChieu);
     const heTuyet = tuyetCh && tb ? timBiTich(tb.id).he : undefined;
-    if (hd.loai === 'vo-ky') {
+    if (hd.loai === 'vo-ky' || hd.loai === 'phu0' || hd.loai === 'phu1') {
       phat('vo-ky');
       tiengDon(r.vfx, 170);
     } else if (hd.loai === 'thuong') tiengDon(r.vfx, 170);
@@ -307,7 +310,7 @@ export function VucTham({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho
     }
     datSuKien({
       id: ++demSk.current,
-      loai: tuyetCh ? 'tuyet' : hd.loai === 'vo-ky' || hd.loai === 'thuong' ? 'danh' : hd.loai === 'do' ? 'thu' : 'dan',
+      loai: tuyetCh ? 'tuyet' : hd.loai === 'vo-ky' || hd.loai === 'phu0' || hd.loai === 'phu1' || hd.loai === 'thuong' ? 'danh' : hd.loai === 'do' ? 'thu' : 'dan',
       vfx: r.vfx,
       tenChieu: tuyetCh && tb ? timBiTich(tb.id).ten : undefined,
       he: heTuyet,

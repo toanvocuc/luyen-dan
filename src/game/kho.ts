@@ -5,7 +5,7 @@ import { loiThe, timXuatThan, type NhanVat } from './nhanVat.ts';
 import type { QuaMoDau } from './quaMoDau.ts';
 import { tacDungThu, type Thu } from './linhThu.ts';
 import { buVuc, vatCanDotPha, timVatVuc, vucMoi, type VucTrangThai } from './vucTham.ts';
-import { buVoCong, linhCanCua, MO_O, thienPhuCua, timTrongTui, voCongKhoiDau, type VoCongKho } from './voCong.ts';
+import { buVoCong, linhCanCua, MO_O, thienPhuCua, timTrongTui, voKyPhu, voCongKhoiDau, type VoCongKho } from './voCong.ts';
 import type { HoSo } from './chienDau.ts';
 
 export interface Kho {
@@ -1028,6 +1028,7 @@ export function hoSoChien(k: Kho, chuanThanPhap: number, luc = Date.now()): HoSo
   const cg = k.tuVi.canhGioi;
   return {
     voKy: timTrongTui(v, v.lap.voKy),
+    phu: voKyPhu(v, cg),
     tuyetChieu: cg >= MO_O.tuyetChieu ? timTrongTui(v, v.lap.tuyetChieu) : null,
     thanPhap: cg >= MO_O.thanPhap ? timTrongTui(v, v.lap.thanPhap)?.id ?? null : null,
     tamPhap: tamPhapDangLap(k),

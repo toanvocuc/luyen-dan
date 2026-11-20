@@ -6519,6 +6519,7 @@ p.nhan-mat.vuc {
   left: 8px;
   bottom: max(10px, env(safe-area-inset-bottom));
   width: 50%;
+  max-width: calc(100% - min(53%, 245px) - 18px);
   z-index: 3;
   display: flex;
   flex-direction: column;
@@ -6777,3 +6778,92 @@ p.nhan-mat.vuc {
 .nut-tron-tran.thieu { filter: grayscale(0.85) brightness(0.6); }
 .nut-tron-tran.thieu:active { animation: lac-thieu 0.25s; }
 @keyframes lac-thieu { 25% { translate: -3px 0; } 75% { translate: 3px 0; } }
+
+/* ---- combat đợt 1: cương khí, hệ boss, chiêu phụ ---- */
+.thanh-cuong {
+  position: relative;
+  height: 12px;
+  margin: 3px 9% 0 9%;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(233, 196, 106, 0.55);
+  overflow: hidden;
+}
+.thanh-cuong i {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: linear-gradient(180deg, #fff3c4, #e9c46a 55%, #9a7420);
+  transition: width 0.3s ease-out;
+}
+.thanh-cuong em {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-style: normal;
+  font-size: 9.5px;
+  line-height: 1;
+  color: #2a1d08;
+  font-weight: 700;
+}
+.thanh-cuong.vo { border-color: rgba(255, 120, 90, 0.6); }
+.thanh-cuong.vo em { color: #ffb4a0; }
+.he-boss {
+  display: inline-block;
+  margin-top: 2px;
+  padding: 0 8px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.45);
+  font-size: 10.5px;
+  color: #ead7b4;
+}
+.y-do-tran .khong-ngat { color: #ff9f80; font-weight: 700; }
+
+/* cụm nút: tuyệt chiêu lớn ở góc, võ kỹ và hai chiêu phụ xếp vòng cung quanh nó, ba nút nhỏ ở trên */
+.cum-nut-tran {
+  width: 53%;
+  max-width: 245px;
+  aspect-ratio: 1;
+}
+.nut-tron-tran.tuyet { right: 2%; bottom: 3%; width: 44%; top: auto; left: auto; }
+.nut-tron-tran.vo-ky { left: 10%; bottom: 4%; width: 31%; top: auto; }
+.nut-tron-tran.phu { width: 26%; aspect-ratio: 1; }
+.nut-tron-tran.phu0 { left: 21%; top: 31%; }
+.nut-tron-tran.phu1 { left: 54%; top: 17%; }
+.nut-tron-tran.phu small { bottom: -13px; font-size: 9.5px; }
+.nut-tron-tran.phu > i { font-size: 22px; color: rgba(233, 196, 106, 0.5); }
+.nut-tron-tran.nho { width: 19%; }
+.nut-tron-tran.quyen { left: 0; top: 52%; }
+.nut-tron-tran.thu { left: 2%; top: 22%; }
+.nut-tron-tran.dan { left: 30%; top: 2%; right: auto; }
+.nut-tron-tran.goi-y { animation: goi-y-ngat 0.9s ease-in-out infinite; }
+@keyframes goi-y-ngat { 50% { box-shadow: 0 0 16px 5px rgba(255, 120, 80, 0.85); } }
+.nhan-khac {
+  position: absolute;
+  left: -4%;
+  top: -4%;
+  z-index: 2;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #2f7d3a;
+  border: 1px solid #b6f0b0;
+  font-size: 12px;
+  color: #fff;
+  font-weight: 700;
+}
+.so-bay.khac { color: #9cf59a; font-size: 17px; font-weight: 800; }
+.nhan-vai {
+  display: inline-block;
+  padding: 0 6px;
+  margin-right: 4px;
+  border-radius: 6px;
+  background: #3a2c18;
+  border: 1px solid #b08a45;
+  font-size: 11px;
+  color: #f1d9a0;
+}
