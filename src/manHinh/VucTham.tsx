@@ -5,7 +5,7 @@ import { datNhac, phat, type Tieng } from '../amThanh.ts';
 import { LUAT } from '../game/duLieu.ts';
 import { mauHienTai, mauToiDa, type Kho } from '../game/kho.ts';
 import { giayDuBuoc, theLucHienTai } from '../game/kyNgo.ts';
-import { anhThu, timLoaiThu } from '../game/linhThu.ts';
+import { timLoaiThu } from '../game/linhThu.ts';
 import {
   BOSS,
   LUAT_VUC,
@@ -18,7 +18,6 @@ import {
   batDauTran,
   bossConSong,
   chayTron,
-  chieuBoss,
   chuTui,
   danhQuai,
   diVuc,
@@ -43,17 +42,15 @@ import {
   tiLeChay,
   timQuai,
   tuBo,
-  hoSoBoss,
-  tuyetChieuBossSan,
   uocTiLeDanh,
   type HanhDong,
   type TrangThaiId,
 } from '../game/vucTham.ts';
 import { dongHo, useBayGio } from './PhuongThi.tsx';
-import { AnhThu } from './LinhThuVien.tsx';
-import { HangTrangThai, LopHieuUng, useHieuUng } from './HieuUngTran.tsx';
-import { MO_O, anhBiTich, nguyenCua, timBiTich, timTrongTui } from '../game/voCong.ts';
-import { chienMoi, duNguyen, nguyenNay, nguyenToiDa, type KetTuDong } from '../game/chienDau.ts';
+import { LopHieuUng, useHieuUng } from './HieuUngTran.tsx';
+import { ManTran, type SuKienTran } from './ManTran.tsx';
+import { MO_O, timBiTich, timTrongTui } from '../game/voCong.ts';
+import type { KetTuDong } from '../game/chienDau.ts';
 
 const KC = 92; // khoảng cách giữa hai tầng trên bản đồ (px)
 const DINH = 56; // lề trên của tầng 0
@@ -140,12 +137,8 @@ export function VucTham({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho
   const d = diemVuc(kho, v.viTri);
   const [bao, datBao] = useState<Bao>(null);
   const [moDan, datMoDan] = useState(false);
-  /** Khay kỹ năng trong trận boss. */
-  const [moKhay, datMoKhay] = useState(false);
   const [boQuaCong, datBoQuaCong] = useState<number | null>(null);
   const [rung, datRung] = useState(0);
-  /** Người chơi trúng đòn: rung màn trận. */
-  const [rungNguoi, datRungNguoi] = useState(0);
   const cuonRef = useRef<HTMLDivElement>(null);
   const tl = theLucHienTai(kho, luc);
   const mau = mauHienTai(kho, luc);
@@ -154,6 +147,12 @@ export function VucTham({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho
   const tran = v.tran;
   const gap = v.gap;
   const hu = useHieuUng(() => datRung((x) => x + 1));
+  /** Sự kiện cho màn trận boss chạy hiệu ứng; màn kết chiếu xong mới hiện bảng kể. */
+  const [suKien, datSuKien] = useState<SuKienTran | null>(null);
+  const demSk = useRef(0);
+  const [ketTranAnim, datKetTranAnim] = useState<{ thang: boolean; hien: boolean; tran: NonNullable<typeof v.tran> } | null>(null);
+  /** Lượt vừa rồi người chơi tung tuyệt chiêu: boss đợi cảnh cắt chiếu xong mới đánh trả. */
+  const vuaTuyet = useRef(false);
   /** Trận tự đánh với quái đang phát lại từng lượt (kết quả đã ghi vào kho từ trước). */
   const [phatLai, datPhatLai] = useState<{ td: KetTuDong; i: number; quai: string; lop: number; ket: () => void } | null>(null);
   const voKy = timTrongTui(kho.voCong, kho.voCong.lap.voKy);
@@ -252,14 +251,22 @@ export function VucTham({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho
   const coCong = d.loai === 'boss' && !tran && bossConSong(kho, d.id, luc) && boQuaCong !== d.id && !gap && !bao;
   const daPhaCong = !!v.bossDiet[d.id];
   /** Kết thúc trận (thắng / gục) sau nửa lượt nào cũng xử như nhau. */
-  const ketTran = (r: NonNullable<ReturnType<typeof nguoiDanh>>, bossId: keyof typeof BOSS, tuiTruoc: Record<string, number>) => {
-    if (r.ket === 'thang') {
-      setTimeout(() => phat('thang-vuc'), 500);
-      datBao({ loai: 'thang-boss', ten: BOSS[bossId].ten, anh: anhBoss(bossId, 'dung'), lop: lopTang(BOSS[bossId].tang), nhan: r.nhan });
-    } else if (r.ket === 'chet') {
-      phat('chet-vuc');
-      datBao({ loai: 'chet', mat: chuTui(tuiTruoc) });
-    }
+  const ketTran = (r: NonNullable<ReturnType<typeof nguoiDanh>>, bossId: keyof typeof BOSS, tuiTruoc: Record<string, number>, tranCuoi: NonNullable<typeof v.tran>, tre = 0) => {
+    if (r.ket === 'tiep') return;
+    const thang = r.ket === 'thang';
+    // giữ ảnh trận cuối NGAY (kho đã xoá trận) để màn trận không biến mất giữa cảnh cắt; màn kết hiện sau
+    datKetTranAnim({ thang, hien: false, tran: { ...tranCuoi, choBoss: false } });
+    // thanh máu boss về 0 đúng lúc đòn chót nổ
+    if (thang) setTimeout(() => datKetTranAnim((c) => (c ? { ...c, tran: { ...c.tran, mau: 0 } } : c)), Math.max(0, tre - 50));
+    setTimeout(() => {
+      datKetTranAnim((c) => (c ? { ...c, hien: true } : c));
+      phat(thang ? 'thang-vuc' : 'chet-vuc');
+    }, tre + 500);
+    setTimeout(() => {
+      datKetTranAnim(null);
+      if (thang) datBao({ loai: 'thang-boss', ten: BOSS[bossId].ten, anh: anhBoss(bossId, 'dung'), lop: lopTang(BOSS[bossId].tang), nhan: r.nhan });
+      else datBao({ loai: 'chet', mat: chuTui(tuiTruoc) });
+    }, tre + 2600);
   };
   /** Nửa lượt của người chơi; boss đánh trả sau một nhịp (xem hiệu ứng choBoss bên dưới). */
   const hanhDong = (hd: HanhDong) => {
@@ -267,14 +274,22 @@ export function VucTham({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho
     const r = nguoiDanh(kho, hd);
     if (!r) return;
     doiKho(() => r.kho);
-    if (hd.loai === 'vo-ky' || hd.loai === 'tuyet-chieu') {
-      phat('danh-trung-vuc');
-      if (hd.loai === 'tuyet-chieu') setTimeout(() => phat('gam-boss'), 150);
-      datRung((x) => x + 1);
+    const tuyetCh = hd.loai === 'tuyet-chieu';
+    vuaTuyet.current = tuyetCh;
+    if (hd.loai === 'vo-ky' || hd.loai === 'thuong') setTimeout(() => phat('danh-trung-vuc'), 170);
+    else if (tuyetCh) {
+      phat('gam-boss');
+      setTimeout(() => phat('danh-trung-vuc'), 1150);
     } else if (hd.loai === 'do') phat('do-don');
     else phat('hao-cam');
-    hu.phat(r.vfx);
-    ketTran(r, tran.boss, kho.vuc.tui);
+    const tb = timTrongTui(kho.voCong, kho.voCong.lap.tuyetChieu);
+    datSuKien({
+      id: ++demSk.current,
+      loai: tuyetCh ? 'tuyet' : hd.loai === 'vo-ky' || hd.loai === 'thuong' ? 'danh' : hd.loai === 'do' ? 'thu' : 'dan',
+      vfx: r.vfx,
+      tenChieu: tuyetCh && tb ? timBiTich(tb.id).ten : undefined,
+    });
+    ketTran(r, tran.boss, kho.vuc.tui, tran, tuyetCh ? 1200 : 300);
   };
   // boss đánh trả chậm một giây sau đòn của người chơi (cả khi tải lại trang giữa chừng)
   const khoRef = useRef(kho);
@@ -288,13 +303,13 @@ export function VucTham({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho
       const r = bossDanh(k0);
       if (!r) return;
       doiKho(() => r.kho);
-      hu.phat(r.vfx);
+      const lon = r.chieu?.loai === 'lon';
+      datSuKien({ id: ++demSk.current, loai: 'boss', vfx: r.vfx, lon });
       if (r.chieu && r.chieu.loai !== 'thuong') phat('gam-boss');
-      else if (r.chieu?.dmg && !r.thuDo) phat('bi-danh');
-      if (r.chieu?.dmg && !r.thuDo) datRungNguoi((x) => x + 1);
-      if (r.dinh[0]) setTimeout(() => phat(TIENG_TT[r.dinh[0]]), 600);
-      ketTran(r, t0.boss, k0.vuc.tui);
-    }, 1000);
+      if (r.chieu?.dmg && !r.thuDo) setTimeout(() => phat('bi-danh'), lon ? 420 : 220);
+      if (r.dinh[0]) setTimeout(() => phat(TIENG_TT[r.dinh[0]]), 800);
+      ketTran(r, t0.boss, k0.vuc.tui, t0, 600);
+    }, vuaTuyet.current ? 2100 : 1100);
     return () => clearTimeout(id);
   }, [tran?.choBoss, tran?.luot]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -325,11 +340,6 @@ export function VucTham({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho
     return daToi ? anhDau('quai') : null;
   };
   const thu = thuRaTran(kho, luc);
-  const danhSau = (n: number, moi: number) => {
-    let k = 1;
-    while ((n + k) % moi) k++;
-    return k;
-  };
 
   return (
     <div className="man-vuc">
@@ -513,125 +523,21 @@ export function VucTham({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho
         </KhungVuc>
       )}
 
-      {/* ---- trận boss ---- */}
-      {tran && !bao && (
-        <div className={`tran-vuc ${rungNguoi % 2 ? 'trung-a' : rungNguoi ? 'trung-b' : ''}`}>
-          <div className="dau-tran">
-            <b>{BOSS[tran.boss].ten}</b>
-            <ThanhMau loai="mau-boss" nay={tran.mau} max={tran.mauMax} chu={`${tran.mau}/${tran.mauMax}${tran.giap > 0 ? ' · giáp hoá' : ''}${tran.cuong ? ' · hoá ma' : ''}`} />
-            <HangTrangThai bang={tran.chien?.dich} />
-          </div>
-          <SanDau lop={lopTang(BOSS[tran.boss].tang)} anh={anhBoss(tran.boss, tran.anh)} rung={rung} lon>
-            <LopHieuUng ds={hu.ds} ben="dich" />
-            <LopHieuUng ds={hu.ds} ben="minh" />
-          </SanDau>
-          <p className={`y-do ${!tran.choBoss && chieuBoss(tran, tran.yDo).loai === 'lon' ? 'nguy' : ''} ${tran.choBoss ? 'cho' : ''}`}>
-            {tran.choBoss ? `${BOSS[tran.boss].ten} đang ra đòn…` : `Lượt ${tran.luot + 1}: ${chieuBoss(tran, tran.yDo).bao}`}
-          </p>
-          {/* nhật ký cả trận: lượt mới nhất ở trên, kéo xuống để xem lại */}
-          <div className="nhat-ky">
-            {tran.choBoss && !!tran.dongNguoi?.length && <p className="moi">Lượt {tran.luot}: {tran.dongNguoi.join(' ')}</p>}
-            {tran.nhatKy.map((x, i) => (
-              <p key={tran.nhatKy.length - i} className={i === 0 && !tran.choBoss ? 'moi' : ''}>
-                {x}
-              </p>
-            ))}
-            {!tran.nhatKy.length && !tran.choBoss && <p className="trong">Chưa ra đòn nào. Đọc ý đồ của nó ở trên rồi chọn.</p>}
-          </div>
-          <div className="nguoi-tran">
-            <ThanhMau loai="mau" nay={mau} max={mauMax} chu={`Máu ${mau}/${mauMax}`} />
-            <HangTrangThai bang={tran.chien?.minh} khien={tran.chien?.khien} />
-            <DongTrangThai kho={kho} />
-            {thu && (
-              <div className="thu-tran">
-                <AnhThu src={anhThu(thu.loai, thu.dang)} ten={timLoaiThu(thu.loai).ten} />
-                <span>
-                  {timLoaiThu(thu.loai).ten}: đánh sau {danhSau(tran.luot, LUAT_VUC.thuDanhMoi)} lượt · hộ thể sau {danhSau(tran.luot, LUAT_VUC.thuDoMoi)} lượt
-                </span>
-              </div>
-            )}
-          </div>
-          {(() => {
-            const hs = hoSoBoss(kho, tran, luc);
-            const st = tran.chien ?? chienMoi(nguyenToiDa(hs));
-            const nguyen = nguyenNay(st, hs);
-            const max = nguyenToiDa(hs);
-            const chieu = (
-              loai: 'vo-ky' | 'tuyet-chieu' | 'thuong',
-              ten: string,
-              anh: string | null,
-              moTa: string,
-              tieu: number,
-              duoc: boolean,
-            ) => (
-              <button
-                key={loai}
-                data-im
-                className={`dong-chieu ${loai === 'tuyet-chieu' && duoc ? 'san' : ''}`}
-                disabled={!duoc || !!tran.choBoss}
-                onClick={() => {
-                  datMoKhay(false);
-                  hanhDong({ loai });
-                }}
-              >
-                {anh ? <img src={anh} alt="" draggable={false} /> : <i />}
-                <span>
-                  <b>{ten}</b>
-                  <small>{moTa}</small>
-                </span>
-                <em>{tieu ? `${tieu} 💧` : 'Miễn phí'}</em>
-              </button>
-            );
-            const moTuyet = kho.tuVi.canhGioi >= MO_O.tuyetChieu;
-            return (
-              <>
-                <ThanhMau loai="nguyen" nay={nguyen} max={max} chu={`Chân nguyên ${Math.round(nguyen)}/${max}`} />
-                {moKhay && (
-                  <div className="khay-chieu">
-                    <h4>
-                      Kỹ năng <span>Chân nguyên {Math.round(nguyen)}</span>
-                    </h4>
-                    {voKy && chieu('vo-ky', timBiTich(voKy.id).ten, anhBiTich(voKy.id), timBiTich(voKy.id).moTa, nguyenCua(voKy.id), duNguyen(hs, st, 'vo-ky'))}
-                    {tuyet
-                      ? chieu(
-                          'tuyet-chieu',
-                          timBiTich(tuyet.id).ten,
-                          anhBiTich(tuyet.id),
-                          st.hoi > 0 ? `Hồi chiêu: còn ${st.hoi} lượt` : nguyen < nguyenCua(tuyet.id) ? 'Thiếu chân nguyên' : timBiTich(tuyet.id).moTa,
-                          nguyenCua(tuyet.id),
-                          tuyetChieuBossSan(kho, tran, luc),
-                        )
-                      : chieu('tuyet-chieu', 'Tuyệt chiêu', null, moTuyet ? 'Chưa lắp. Lắp ở Hành trang › Nhân vật & võ công.' : 'Mở ở Trúc Cơ', 0, false)}
-                    {chieu('thuong', 'Quyền cước', './hinh/combat/loai/quyen.webp', 'Đánh thường, không tốn chân nguyên', 0, true)}
-                  </div>
-                )}
-              </>
-            );
-          })()}
-          <div className="nut-tran ba-nut">
-            <button data-im className={`nut chinh ${moKhay ? 'dang' : ''}`} disabled={!!tran.choBoss} onClick={() => datMoKhay((x) => !x)}>
-              Kỹ năng {moKhay ? '▾' : '▴'}
-              <small>{voKy ? timBiTich(voKy.id).ten : 'Quyền cước'}</small>
-            </button>
-            <button data-im className="nut" disabled={!!tran.choBoss} onClick={() => { datMoKhay(false); hanhDong({ loai: 'do' }); }}>
-              Thủ
-              <small>nhận {phanTram(LUAT_VUC.doDon)} · +Khí thế</small>
-            </button>
-            <button className="nut" disabled={!!tran.choBoss} onClick={() => { datMoKhay(false); datMoDan(true); }}>
-              Đan ▴
-              <small>mất lượt</small>
-            </button>
-          </div>
-          <button
-            className="nut-nho lui-tran"
-            disabled={!!tran.choBoss}
-            onClick={() => {
-              if (confirm('Rút lui? Boss sẽ hồi đầy máu.')) doiKho((k) => luiTran(k));
-            }}
-          >
-            Rút lui
-          </button>
-        </div>
+      {/* ---- trận boss (toàn màn hình, xem ManTran.tsx) ---- */}
+      {((tran && !bao) || ketTranAnim) && (
+        <ManTran
+          kho={kho}
+          tran={ketTranAnim?.tran ?? tran!}
+          luc={luc}
+          suKien={suKien}
+          ket={ketTranAnim?.hien ? { thang: ketTranAnim.thang } : null}
+          khoa={!!ketTranAnim}
+          onHanhDong={hanhDong}
+          onDan={() => datMoDan(true)}
+          onRutLui={() => {
+            if (confirm('Rút lui? Boss sẽ hồi đầy máu.')) doiKho((k) => luiTran(k));
+          }}
+        />
       )}
 
       {/* ---- dùng đan ---- */}

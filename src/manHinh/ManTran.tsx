@@ -1,0 +1,254 @@
+// Màn trận boss toàn màn hình: boss ở trên, nhân vật quay lưng ở góc dưới trái, cụm nút chiêu tròn ở góc dưới phải.
+// Mọi chuyển động làm bằng CSS trên ảnh tĩnh: thở, lao tới, giật lùi khi trúng, đứng hình, rung màn,
+// tuyệt chiêu có cảnh cắt (dải mực + nửa người + tên chiêu), màn kết thắng / thua.
+import { useEffect, useRef, useState } from 'react';
+import { chienMoi, duNguyen, nguyenNay, nguyenToiDa, type Vfx } from '../game/chienDau.ts';
+import { bacNen } from '../game/duLieu.ts';
+import { mauHienTai, mauToiDa, type Kho } from '../game/kho.ts';
+import { anhThu, timLoaiThu } from '../game/linhThu.ts';
+import { MO_O, anhBiTich, nguyenCua, timBiTich, timTrongTui } from '../game/voCong.ts';
+import { BOSS, LUAT_VUC, NEN_TRAN, anhBoss, chieuBoss, hoSoBoss, lopTang, thuRaTran, tuyetChieuBossSan, type HanhDong, type TranBoss } from '../game/vucTham.ts';
+import { anhNhanVatDung } from './BupBe.tsx';
+import { HangTrangThai, LopHieuUng, useHieuUng } from './HieuUngTran.tsx';
+import { AnhThu } from './LinhThuVien.tsx';
+
+export interface SuKienTran {
+  id: number;
+  loai: 'danh' | 'tuyet' | 'thu' | 'dan' | 'boss';
+  vfx: Vfx[];
+  tenChieu?: string;
+  /** Đòn của boss là đòn lớn (gồng người, rung mạnh). */
+  lon?: boolean;
+}
+
+const BO_THEO_BAC = ['pham-y', 'thanh-van', 'dan-su', 'kiem-tu', 'tien-bao'] as const;
+const anhLung = (gioi: string | undefined, cg: number) => `./hinh/nhan-vat-lung/${gioi === 'Nữ' ? 'nu' : 'nam'}-${BO_THEO_BAC[bacNen(cg) - 1]}.webp`;
+const anhNenTran = (lop: number) => `./hinh/vuc-tham/nen/${NEN_TRAN[lop]}.webp`;
+
+/** Thanh có khung đồng; phần đã mất có vệt trắng chạy chậm theo sau. */
+function Thanh({ loai, nay, max, chu }: { loai: 'boss' | 'mau' | 'nguyen'; nay: number; max: number; chu: string }) {
+  const pt = Math.max(0, Math.min(100, (nay / Math.max(1, max)) * 100));
+  return (
+    <div className={`thanh-tran ${loai}`}>
+      <div className="ruot">
+        <i className="vet" style={{ width: `${pt}%` }} />
+        <i className="day" style={{ width: `${pt}%` }} />
+      </div>
+      <em>{chu}</em>
+    </div>
+  );
+}
+
+export function ManTran({
+  kho,
+  tran,
+  luc,
+  suKien,
+  ket,
+  onHanhDong,
+  onDan,
+  onRutLui,
+  khoa = false,
+}: {
+  kho: Kho;
+  tran: TranBoss;
+  luc: number;
+  suKien: SuKienTran | null;
+  /** Trận vừa xong: chiếu màn kết rồi mới gọi onXong của nó. */
+  ket: { thang: boolean } | null;
+  onHanhDong: (hd: HanhDong) => void;
+  onDan: () => void;
+  onRutLui: () => void;
+  /** Trận đã ngã ngũ (đang chiếu kết): khoá mọi nút. */
+  khoa?: boolean;
+}) {
+  const b = BOSS[tran.boss];
+  const lop = lopTang(b.tang);
+  const [rung, datRung] = useState(0);
+  const hu = useHieuUng(() => datRung((x) => x + 1));
+  const [dongBoss, datDongBoss] = useState('');
+  const [dongNguoi, datDongNguoi] = useState('');
+  const [catCanh, datCatCanh] = useState<{ ten: string; id: number } | null>(null);
+  const [moNhatKy, datMoNhatKy] = useState(false);
+  const henGio = useRef<number[]>([]);
+  const sau = (ms: number, f: () => void) => henGio.current.push(window.setTimeout(f, ms));
+  useEffect(() => () => henGio.current.forEach((id) => clearTimeout(id)), []);
+
+  const nv = kho.nhanVat!;
+  const hs = hoSoBoss(kho, tran, luc);
+  const st = tran.chien ?? chienMoi(nguyenToiDa(hs));
+  const nguyen = nguyenNay(st, hs);
+  const nguyenMax = nguyenToiDa(hs);
+  const voKy = timTrongTui(kho.voCong, kho.voCong.lap.voKy);
+  const tuyet = kho.tuVi.canhGioi >= MO_O.tuyetChieu ? timTrongTui(kho.voCong, kho.voCong.lap.tuyetChieu) : null;
+  const tuyetSan = tuyetChieuBossSan(kho, tran, luc);
+  const voKySan = !voKy || duNguyen(hs, st, 'vo-ky');
+  const ban = !!tran.choBoss || !!catCanh || !!ket || khoa;
+  const thu = thuRaTran(kho, luc);
+  const chieu = chieuBoss(tran, tran.yDo);
+
+  // chạy hiệu ứng theo từng sự kiện
+  const daChay = useRef(0);
+  useEffect(() => {
+    if (!suKien || suKien.id === daChay.current) return;
+    daChay.current = suKien.id;
+    const trungDich = suKien.vfx.some((v) => v.loai === 'so' && v.ben === 'dich');
+    const trungMinh = suKien.vfx.some((v) => v.loai === 'so' && v.ben === 'minh' && v.kieu === 'thuong');
+    if (suKien.loai === 'danh') {
+      datDongNguoi('lao');
+      sau(170, () => {
+        hu.phat(suKien.vfx);
+        if (trungDich) datDongBoss('trung');
+      });
+      sau(520, () => {
+        datDongNguoi('');
+        datDongBoss('');
+      });
+    } else if (suKien.loai === 'tuyet') {
+      datCatCanh({ ten: suKien.tenChieu ?? 'Tuyệt chiêu', id: suKien.id });
+      sau(1150, () => {
+        datCatCanh(null);
+        datDongNguoi('lao');
+        hu.phat(suKien.vfx);
+        datDongBoss('trung');
+        datRung((x) => x + 1);
+      });
+      sau(1700, () => {
+        datDongNguoi('');
+        datDongBoss('');
+      });
+    } else if (suKien.loai === 'boss') {
+      datDongBoss(suKien.lon ? 'gong' : 'lao');
+      sau(suKien.lon ? 420 : 220, () => {
+        datDongBoss('lao');
+        hu.phat(suKien.vfx);
+        if (trungMinh) datDongNguoi('trung');
+      });
+      sau(suKien.lon ? 900 : 650, () => {
+        datDongBoss('');
+        datDongNguoi('');
+      });
+    } else hu.phat(suKien.vfx);
+  }, [suKien?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const dongMoi = tran.choBoss ? (tran.dongNguoi ?? []).join(' ') : tran.nhatKy[0] ?? '';
+
+  return (
+    <div className={`man-tran ${rung % 2 ? 'rung-a' : rung ? 'rung-b' : ''}`}>
+      <div className="nen-man-tran" style={{ backgroundImage: `url(${anhNenTran(lop)}), url(${anhNenTran(0)})` }} />
+      <div className="suong-tran" />
+
+      {/* ---- boss ---- */}
+      <header className="dau-man-tran">
+        <button className="nut-goc" onClick={() => datMoNhatKy(true)} aria-label="Diễn biến">
+          ≡
+        </button>
+        <div className="ten-boss-tran">
+          <b>{b.ten}</b>
+          <Thanh loai="boss" nay={tran.mau} max={tran.mauMax} chu={`${tran.mau.toLocaleString('vi-VN')} / ${tran.mauMax.toLocaleString('vi-VN')}${tran.giap > 0 ? ' · giáp hoá' : ''}${tran.cuong ? ' · hoá ma' : ''}`} />
+          <HangTrangThai bang={tran.chien?.dich} />
+        </div>
+        <button className="nut-goc" disabled={ban} onClick={onRutLui} aria-label="Rút lui" title="Rút lui">
+          ⚑
+        </button>
+      </header>
+      <div className={`san-boss ${dongBoss}`}>
+        <img key={tran.anh} className="anh-boss" src={anhBoss(tran.boss, tran.anh)} alt="" draggable={false} />
+        <LopHieuUng ds={hu.ds} ben="dich" />
+      </div>
+      <p className={`y-do-tran ${!tran.choBoss && chieu.loai === 'lon' ? 'nguy' : ''}`} key={tran.luot + (tran.choBoss ? 'c' : '')}>
+        {tran.choBoss ? `${b.ten} đang ra đòn…` : chieu.bao}
+      </p>
+      {dongMoi && (
+        <p className="dong-moi-tran" key={dongMoi}>
+          {dongMoi}
+        </p>
+      )}
+
+      {/* ---- người chơi ---- */}
+      <div className={`san-nguoi ${dongNguoi}`}>
+        <img className="anh-nguoi" src={anhLung(nv.gioiTinh, kho.tuVi.canhGioi)} alt="" draggable={false} />
+        <LopHieuUng ds={hu.ds} ben="minh" />
+      </div>
+      {thu && (
+        <div className="thu-tran-moi">
+          <AnhThu src={anhThu(thu.loai, thu.dang)} ten={timLoaiThu(thu.loai).ten} />
+        </div>
+      )}
+      <div className="the-nguoi-tran">
+        <b>{nv.ten}</b>
+        <Thanh loai="mau" nay={mauHienTai(kho, luc)} max={mauToiDa(kho)} chu={`${mauHienTai(kho, luc).toLocaleString('vi-VN')} / ${mauToiDa(kho).toLocaleString('vi-VN')}`} />
+        <Thanh loai="nguyen" nay={nguyen} max={nguyenMax} chu={`Chân nguyên ${Math.round(nguyen)}`} />
+        <HangTrangThai bang={tran.chien?.minh} khien={tran.chien?.khien} />
+      </div>
+
+      {/* ---- cụm nút ---- */}
+      <div className="cum-nut-tran">
+        <button className={`nut-tron-tran tuyet ${tuyetSan ? 'san' : ''}`} disabled={ban || !tuyetSan} onClick={() => onHanhDong({ loai: 'tuyet-chieu' })}>
+          <span
+            className="vong-hoi"
+            style={{ ['--pt' as string]: `${tuyet && st.hoi > 0 ? (st.hoi / (timBiTich(tuyet.id).hoi ?? 3)) * 100 : 0}%` }}
+          />
+          {tuyet ? <img src={anhBiTich(tuyet.id)} alt="" draggable={false} /> : <i>🔒</i>}
+          {tuyet && st.hoi > 0 && <b className="so-hoi">{st.hoi}</b>}
+          <small>{tuyet ? timBiTich(tuyet.id).ten : 'Tuyệt chiêu'}</small>
+          {tuyet && <em className="gia-nguyen">{nguyenCua(tuyet.id)}</em>}
+        </button>
+        <button className="nut-tron-tran vo-ky" disabled={ban || !voKySan} onClick={() => onHanhDong({ loai: voKy ? 'vo-ky' : 'thuong' })}>
+          {voKy ? <img src={anhBiTich(voKy.id)} alt="" draggable={false} /> : <img src="./hinh/combat/loai/quyen.webp" alt="" draggable={false} />}
+          <small>{voKy ? timBiTich(voKy.id).ten : 'Quyền cước'}</small>
+          {voKy && <em className="gia-nguyen">{nguyenCua(voKy.id)}</em>}
+        </button>
+        <button className="nut-tron-tran nho quyen" disabled={ban} onClick={() => onHanhDong({ loai: 'thuong' })} title="Quyền cước: không tốn chân nguyên">
+          <img src="./hinh/combat/loai/quyen.webp" alt="" draggable={false} />
+          <small>Thường</small>
+        </button>
+        <button className="nut-tron-tran nho thu" disabled={ban} onClick={() => onHanhDong({ loai: 'do' })} title={`Thủ: nhận ${Math.round(LUAT_VUC.doDon * 100)}% sát thương, +Khí thế, hồi chân nguyên`}>
+          <i>盾</i>
+          <small>Thủ</small>
+        </button>
+        <button className="nut-tron-tran nho dan" disabled={ban} onClick={onDan} title="Dùng đan (mất lượt)">
+          <i>丹</i>
+          <small>Đan</small>
+        </button>
+      </div>
+
+      {/* ---- cảnh cắt tuyệt chiêu ---- */}
+      {catCanh && (
+        <div className="cat-canh" key={catCanh.id}>
+          <div className="dai-muc" />
+          <img className="dai-vang" src="./hinh/tran/dai-tuyet-chieu.webp" alt="" draggable={false} />
+          <img className="ban-than" src={anhNhanVatDung(nv.gioiTinh, kho.tuVi.canhGioi)} alt="" draggable={false} />
+          <b className="ten-chieu-lon">{catCanh.ten}</b>
+        </div>
+      )}
+
+      {/* ---- màn kết ---- */}
+      {ket && (
+        <div className={`ket-man-tran ${ket.thang ? 'thang' : 'thua'}`}>
+          <img src={`./hinh/tran/ket-${ket.thang ? 'thang' : 'thua'}.webp`} alt="" draggable={false} />
+          <b>{ket.thang ? 'Đại thắng' : 'Bại trận'}</b>
+        </div>
+      )}
+
+      {moNhatKy && (
+        <div className="lop-phu" onClick={() => datMoNhatKy(false)}>
+          <div className="bang tam bang-vuc" onClick={(e) => e.stopPropagation()}>
+            <h2>Diễn biến trận</h2>
+            <div className="nhat-ky">
+              {tran.nhatKy.map((x, i) => (
+                <p key={tran.nhatKy.length - i}>{x}</p>
+              ))}
+              {!tran.nhatKy.length && <p className="trong">Chưa ra đòn nào.</p>}
+            </div>
+            <div className="hang-nut">
+              <button className="nut-nho" onClick={() => datMoNhatKy(false)}>
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
