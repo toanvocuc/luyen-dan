@@ -6,7 +6,8 @@ import { chienMoi, duNguyen, nguyenNay, nguyenToiDa, type Vfx } from '../game/ch
 import { bacNen } from '../game/duLieu.ts';
 import { mauHienTai, mauToiDa, type Kho } from '../game/kho.ts';
 import { anhThu, timLoaiThu } from '../game/linhThu.ts';
-import { MO_O, anhBiTich, nguyenCua, timBiTich, timTrongTui } from '../game/voCong.ts';
+import { phat } from '../amThanh.ts';
+import { MO_O, anhBiTich, type He, nguyenCua, timBiTich, timTrongTui } from '../game/voCong.ts';
 import { BOSS, LUAT_VUC, NEN_TRAN, anhBoss, chieuBoss, hoSoBoss, lopTang, thuRaTran, tuyetChieuBossSan, type HanhDong, type TranBoss } from '../game/vucTham.ts';
 import { anhNhanVatDung } from './BupBe.tsx';
 import { HangTrangThai, LopHieuUng, useHieuUng } from './HieuUngTran.tsx';
@@ -17,12 +18,16 @@ export interface SuKienTran {
   loai: 'danh' | 'tuyet' | 'thu' | 'dan' | 'boss';
   vfx: Vfx[];
   tenChieu?: string;
+  /** Hệ võ của tuyệt chiêu: chọn ảnh cảnh cắt. */
+  he?: He;
   /** Đòn của boss là đòn lớn (gồng người, rung mạnh). */
   lon?: boolean;
 }
 
 const BO_THEO_BAC = ['pham-y', 'thanh-van', 'dan-su', 'kiem-tu', 'tien-bao'] as const;
 const anhLung = (gioi: string | undefined, cg: number) => `./hinh/nhan-vat-lung/${gioi === 'Nữ' ? 'nu' : 'nam'}-${BO_THEO_BAC[bacNen(cg) - 1]}.webp`;
+/** Ảnh cảnh cắt tuyệt chiêu: bóng mực theo hệ võ (một ảnh hợp mọi bộ trang phục). */
+const anhTuyetKy = (gioi: string | undefined, he: He) => `./hinh/tuyet-ky/${gioi === 'Nữ' ? 'nu' : 'nam'}-${he}.webp`;
 const anhNenTran = (lop: number) => `./hinh/vuc-tham/nen/${NEN_TRAN[lop]}.webp`;
 
 /** Thanh có khung đồng; phần đã mất có vệt trắng chạy chậm theo sau. */
@@ -68,7 +73,7 @@ export function ManTran({
   const hu = useHieuUng(() => datRung((x) => x + 1));
   const [dongBoss, datDongBoss] = useState('');
   const [dongNguoi, datDongNguoi] = useState('');
-  const [catCanh, datCatCanh] = useState<{ ten: string; id: number } | null>(null);
+  const [catCanh, datCatCanh] = useState<{ ten: string; id: number; he?: He } | null>(null);
   const [moNhatKy, datMoNhatKy] = useState(false);
   const henGio = useRef<number[]>([]);
   const sau = (ms: number, f: () => void) => henGio.current.push(window.setTimeout(f, ms));
@@ -83,6 +88,8 @@ export function ManTran({
   const tuyet = kho.tuVi.canhGioi >= MO_O.tuyetChieu ? timTrongTui(kho.voCong, kho.voCong.lap.tuyetChieu) : null;
   const tuyetSan = tuyetChieuBossSan(kho, tran, luc);
   const voKySan = !voKy || duNguyen(hs, st, 'vo-ky');
+  /** Tuyệt chiêu đã hồi xong nhưng thiếu chân nguyên: vẫn bấm được để nghe tiếng báo thiếu. */
+  const tuyetThieuNguyen = !!tuyet && !tuyetSan && st.hoi <= 0 && !duNguyen(hs, st, 'tuyet-chieu');
   const ban = !!tran.choBoss || !!catCanh || !!ket || khoa;
   const thu = thuRaTran(kho, luc);
   const chieu = chieuBoss(tran, tran.yDo);
@@ -105,7 +112,7 @@ export function ManTran({
         datDongBoss('');
       });
     } else if (suKien.loai === 'tuyet') {
-      datCatCanh({ ten: suKien.tenChieu ?? 'Tuyệt chiêu', id: suKien.id });
+      datCatCanh({ ten: suKien.tenChieu ?? 'Tuyệt chiêu', id: suKien.id, he: suKien.he });
       sau(1150, () => {
         datCatCanh(null);
         datDongNguoi('lao');
@@ -184,7 +191,11 @@ export function ManTran({
 
       {/* ---- cụm nút ---- */}
       <div className="cum-nut-tran">
-        <button className={`nut-tron-tran tuyet ${tuyetSan ? 'san' : ''}`} disabled={ban || !tuyetSan} onClick={() => onHanhDong({ loai: 'tuyet-chieu' })}>
+        <button data-im
+          className={`nut-tron-tran tuyet ${tuyetSan ? 'san' : ''} ${tuyetThieuNguyen ? 'thieu' : ''}`}
+          disabled={ban || (!tuyetSan && !tuyetThieuNguyen)}
+          onClick={() => (tuyetThieuNguyen ? phat('het-nguyen') : (phat('nut-bam'), onHanhDong({ loai: 'tuyet-chieu' })))}
+        >
           <span
             className="vong-hoi"
             style={{ ['--pt' as string]: `${tuyet && st.hoi > 0 ? (st.hoi / (timBiTich(tuyet.id).hoi ?? 3)) * 100 : 0}%` }}
@@ -194,7 +205,12 @@ export function ManTran({
           <small>{tuyet ? timBiTich(tuyet.id).ten : 'Tuyệt chiêu'}</small>
           {tuyet && <em className="gia-nguyen">{nguyenCua(tuyet.id)}</em>}
         </button>
-        <button className="nut-tron-tran vo-ky" disabled={ban || !voKySan} onClick={() => onHanhDong({ loai: voKy ? 'vo-ky' : 'thuong' })}>
+        <button
+          data-im
+          className={`nut-tron-tran vo-ky ${voKySan ? '' : 'thieu'}`}
+          disabled={ban}
+          onClick={() => (voKySan ? (phat('nut-bam'), onHanhDong({ loai: voKy ? 'vo-ky' : 'thuong' })) : phat('het-nguyen'))}
+        >
           {voKy ? <img src={anhBiTich(voKy.id)} alt="" draggable={false} /> : <img src="./hinh/combat/loai/quyen.webp" alt="" draggable={false} />}
           <small>{voKy ? timBiTich(voKy.id).ten : 'Quyền cước'}</small>
           {voKy && <em className="gia-nguyen">{nguyenCua(voKy.id)}</em>}
@@ -218,7 +234,11 @@ export function ManTran({
         <div className="cat-canh" key={catCanh.id}>
           <div className="dai-muc" />
           <img className="dai-vang" src="./hinh/tran/dai-tuyet-chieu.webp" alt="" draggable={false} />
-          <img className="ban-than" src={anhNhanVatDung(nv.gioiTinh, kho.tuVi.canhGioi)} alt="" draggable={false} />
+          {catCanh.he ? (
+            <img className="ban-than tuyet-ky" src={anhTuyetKy(nv.gioiTinh, catCanh.he)} alt="" draggable={false} />
+          ) : (
+            <img className="ban-than" src={anhNhanVatDung(nv.gioiTinh, kho.tuVi.canhGioi)} alt="" draggable={false} />
+          )}
           <b className="ten-chieu-lon">{catCanh.ten}</b>
         </div>
       )}

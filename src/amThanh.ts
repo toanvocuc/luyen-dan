@@ -48,6 +48,24 @@ const TIENG = {
   'thi-tham-1': { dau: 0.88, dai: 3, am: 0.28 },
   'thi-tham-2': { dau: 0.11, dai: 3, am: 2.5 },
   'thi-tham-3': { dau: 0.66, dai: 2.9, am: 0.9 },
+  // màn trận boss (đo 2026-11-20)
+  'tuyet-kiem': { dau: 0.04, dai: 1.35, am: 0.56 },
+  'tuyet-dao': { dau: 0.05, dai: 1.3, am: 0.43 },
+  'tuyet-thuong': { dau: 0.1, dai: 1.55, am: 0.66 },
+  'tuyet-quyen': { dau: 0.02, dai: 2.35, am: 0.19 },
+  'tuyet-chuong': { dau: 0.01, dai: 2.9, am: 0.16 },
+  'tuyet-chi': { dau: 0.05, dai: 1.05, am: 0.4 },
+  'cat-canh': { dau: 0.04, dai: 0.95, am: 0.68 },
+  'vo-ky': { dau: 0.15, dai: 0.45, am: 1.05 },
+  'bao-kich': { dau: 0, dai: 0.8, am: 0.7 },
+  'ne-don': { dau: 0.07, dai: 0.35, am: 0.85 },
+  'do-khien': { dau: 0.12, dai: 0.75, am: 0.6 },
+  'boss-gong': { dau: 0.08, dai: 1.3, am: 0.31 },
+  choang: { dau: 0.03, dai: 1.3, am: 0.55 },
+  'hoi-mau': { dau: 0.14, dai: 0.65, am: 5 },
+  'het-nguyen': { dau: 0, dai: 0.45, am: 0.65 },
+  'dai-thang': { dau: 0, dai: 2.05, am: 0.68 },
+  'bai-tran': { dau: 0.06, dai: 1.8, am: 0.9 },
 } as const;
 export type Tieng = keyof typeof TIENG;
 

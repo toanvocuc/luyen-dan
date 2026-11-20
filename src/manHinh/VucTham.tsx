@@ -1,5 +1,6 @@
 // Vực Thẳm: bản đồ mê cung đi XUỐNG 50 tầng. Chạm điểm kề để đi; gặp quái thì Đánh / Bỏ chạy / Từ bỏ;
 // boss đánh theo lượt (linh thú xuất chiến cùng đánh và hộ thể). Luật nằm ở game/vucTham.ts.
+import type { Vfx } from '../game/chienDau.ts';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { datNhac, phat, type Tieng } from '../amThanh.ts';
 import { LUAT } from '../game/duLieu.ts';
@@ -59,6 +60,18 @@ const anhNen = (ten: string) => `./hinh/vuc-tham/nen/${ten}.webp`;
 const phanTram = (x: number) => `${Math.round(x * 100)}%`;
 const mauTiLe = (x: number) => (x >= 0.6 ? 'cao' : x >= 0.3 ? 'vua' : 'thap');
 const TIENG_TT: Record<TrangThaiId, Tieng> = { doc: 'trung-doc', mau: 'chay-mau', yeu: 'bi-danh', hac: 'hac-hoa' };
+/** Tiếng của một đòn theo hiệu ứng nó gây ra: bạo kích, choáng, né, khiên đỡ, hồi máu. */
+function tiengDon(vfx: Vfx[], tre: number, macDinh: Tieng | null = 'danh-trung-vuc') {
+  const co = (f: (v: Vfx) => boolean) => vfx.some(f);
+  const ds: Tieng[] = [];
+  if (co((v) => v.loai === 'so' && v.ben === 'dich' && v.kieu === 'bao')) ds.push('bao-kich');
+  else if (macDinh && co((v) => v.loai === 'so' && v.ben === 'dich')) ds.push(macDinh);
+  if (co((v) => v.loai === 'phu' && v.id === 'choang' && v.ben === 'dich')) ds.push('choang');
+  if (co((v) => v.loai === 'so' && v.kieu === 'ne')) ds.push('ne-don');
+  if (co((v) => v.loai === 'so' && v.kieu === 'khien')) ds.push('do-khien');
+  if (co((v) => v.loai === 'so' && v.kieu === 'hoi')) ds.push('hoi-mau');
+  ds.forEach((t, i) => setTimeout(() => phat(t), tre + i * 120));
+}
 /** Mỗi bước: tiếng chân, rồi một tiếng thì thầm ngẫu nhiên. */
 function tiengBuoc() {
   phat('buoc-di');
@@ -260,7 +273,7 @@ export function VucTham({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho
     if (thang) setTimeout(() => datKetTranAnim((c) => (c ? { ...c, tran: { ...c.tran, mau: 0 } } : c)), Math.max(0, tre - 50));
     setTimeout(() => {
       datKetTranAnim((c) => (c ? { ...c, hien: true } : c));
-      phat(thang ? 'thang-vuc' : 'chet-vuc');
+      phat(thang ? 'dai-thang' : 'bai-tran');
     }, tre + 500);
     setTimeout(() => {
       datKetTranAnim(null);
@@ -276,18 +289,28 @@ export function VucTham({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho
     doiKho(() => r.kho);
     const tuyetCh = hd.loai === 'tuyet-chieu';
     vuaTuyet.current = tuyetCh;
-    if (hd.loai === 'vo-ky' || hd.loai === 'thuong') setTimeout(() => phat('danh-trung-vuc'), 170);
-    else if (tuyetCh) {
-      phat('gam-boss');
-      setTimeout(() => phat('danh-trung-vuc'), 1150);
-    } else if (hd.loai === 'do') phat('do-don');
-    else phat('hao-cam');
     const tb = timTrongTui(kho.voCong, kho.voCong.lap.tuyetChieu);
+    const heTuyet = tuyetCh && tb ? timBiTich(tb.id).he : undefined;
+    if (hd.loai === 'vo-ky') {
+      phat('vo-ky');
+      tiengDon(r.vfx, 170);
+    } else if (hd.loai === 'thuong') tiengDon(r.vfx, 170);
+    else if (tuyetCh) {
+      // mực quét + trống khi cảnh cắt mở, tiếng chiêu riêng của hệ khi bóng người lướt qua, đòn nổ lúc cảnh cắt đóng
+      phat('cat-canh');
+      setTimeout(() => phat(heTuyet ? `tuyet-${heTuyet}` : 'gam-boss'), 350);
+      tiengDon(r.vfx, 1150);
+    } else if (hd.loai === 'do') phat('do-khien');
+    else {
+      phat('hao-cam');
+      tiengDon(r.vfx, 250, null);
+    }
     datSuKien({
       id: ++demSk.current,
       loai: tuyetCh ? 'tuyet' : hd.loai === 'vo-ky' || hd.loai === 'thuong' ? 'danh' : hd.loai === 'do' ? 'thu' : 'dan',
       vfx: r.vfx,
       tenChieu: tuyetCh && tb ? timBiTich(tb.id).ten : undefined,
+      he: heTuyet,
     });
     ketTran(r, tran.boss, kho.vuc.tui, tran, tuyetCh ? 1200 : 300);
   };
@@ -305,8 +328,11 @@ export function VucTham({ kho, doiKho, onVe }: { kho: Kho; doiKho: (ham: (k: Kho
       doiKho(() => r.kho);
       const lon = r.chieu?.loai === 'lon';
       datSuKien({ id: ++demSk.current, loai: 'boss', vfx: r.vfx, lon });
-      if (r.chieu && r.chieu.loai !== 'thuong') phat('gam-boss');
+      if (lon) phat('boss-gong');
+      else if (r.chieu && r.chieu.loai !== 'thuong') phat('gam-boss');
       if (r.chieu?.dmg && !r.thuDo) setTimeout(() => phat('bi-danh'), lon ? 420 : 220);
+      else if (r.thuDo) setTimeout(() => phat('do-don'), lon ? 420 : 220);
+      tiengDon(r.vfx, lon ? 420 : 220, null);
       if (r.dinh[0]) setTimeout(() => phat(TIENG_TT[r.dinh[0]]), 800);
       ketTran(r, t0.boss, k0.vuc.tui, t0, 600);
     }, vuaTuyet.current ? 2100 : 1100);
